@@ -160,33 +160,38 @@ Roadmap (e.g. AAD/SSO, ServiceNow, RBAC): [SPEC.md](./SPEC.md).
 
 ## Quick Start | 快速开始
 
-<!-- TODO: Add a 30s demo GIF: upload PDF → assessment report. -->
-<!-- 可在此处添加约 30 秒演示 GIF：上传 PDF → 评估报告 -->
+📹 *Demo: a short GIF (upload → report) can be added under [docs/images/demo-assessment.gif](docs/images/demo-assessment.gif).*  
+*演示：可在 [docs/images/demo-assessment.gif](docs/images/demo-assessment.gif) 添加短视频。*
 
-### Option A: Docker（推荐，一条命令）| Docker (recommended)
+### Option A: Docker（推荐）| Docker (recommended)
 
 **中文**
 
 **前置**：已安装 [Docker](https://docs.docker.com/get-docker/) 与 [Docker Compose](https://docs.docker.com/compose/install/)。
 
+仅启动 API（使用 OpenAI 或本机已运行的 Ollama）：
+
 ```bash
 git clone https://github.com/arthurpanhku/Arthor-Agent.git
 cd Arthor-Agent
 docker compose up -d
+```
+
+需要连同 **Ollama 容器** 一起启动时：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
+docker compose exec ollama ollama pull llama2
 ```
 
 - **API 文档（Swagger）**：[http://localhost:8000/docs](http://localhost:8000/docs)  
 - **健康检查**：[http://localhost:8000/health](http://localhost:8000/health)
 
-编排中包含 API 与 Ollama。拉取模型后即可用本地 LLM 做评估：
-
-```bash
-docker compose exec ollama ollama pull llama2
-```
-
 **English**
 
 **Prerequisites**: [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/).
+
+API only (use OpenAI or Ollama on host):
 
 ```bash
 git clone https://github.com/arthurpanhku/Arthor-Agent.git
@@ -194,14 +199,15 @@ cd Arthor-Agent
 docker compose up -d
 ```
 
-- **API docs (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)  
-- **Health**: [http://localhost:8000/health](http://localhost:8000/health)
-
-Pull a model so assessments use the local LLM:
+With **Ollama in Docker**:
 
 ```bash
+docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
 docker compose exec ollama ollama pull llama2
 ```
+
+- **API docs (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)  
+- **Health**: [http://localhost:8000/health](http://localhost:8000/health)
 
 ---
 
@@ -243,15 +249,16 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ### 示例：提交评估 | Example: submit an assessment
 
+可使用仓库内 [examples/](examples/) 下的示例文件快速试跑。  
+You can use the sample files in [examples/](examples/) to try the API.
+
 ```bash
-# 提交一个或多个文档（如 PDF、Excel 问卷）
-# Submit one or more documents (e.g. a PDF and an Excel questionnaire)
+# 使用示例文本 / Use sample file from repo
 curl -X POST "http://localhost:8000/api/v1/assessments" \
-  -F "files=@questionnaire.xlsx" \
-  -F "files=@architecture.pdf" \
+  -F "files=@examples/sample.txt" \
   -F "scenario_id=default"
 
-# 响应：{ "task_id": "...", "status": "accepted" }
+# 响应：{ "task_id": "...", "status": "accepted" } — 用返回的 task_id 查询结果
 # Get the result (replace TASK_ID with the returned task_id)
 curl "http://localhost:8000/api/v1/assessments/TASK_ID"
 ```
@@ -259,8 +266,8 @@ curl "http://localhost:8000/api/v1/assessments/TASK_ID"
 ### 示例：上传知识库并检索 | Example: upload to KB and query
 
 ```bash
-# 上传策略文档到知识库 / Upload a policy document to the KB
-curl -X POST "http://localhost:8000/api/v1/kb/documents" -F "file=@security-policy.pdf"
+# 使用示例策略文件 / Use sample policy from repo
+curl -X POST "http://localhost:8000/api/v1/kb/documents" -F "file=@examples/sample-policy.txt"
 
 # 检索（RAG）/ Query the KB (RAG)
 curl -X POST "http://localhost:8000/api/v1/kb/query" \
@@ -274,29 +281,37 @@ curl -X POST "http://localhost:8000/api/v1/kb/query" \
 
 ```
 Arthor-Agent/
-├── app/
-│   ├── api/          # REST 路由：评估、知识库、健康检查
-│   ├── agent/        # 编排与评估流水线
-│   ├── core/         # 配置 (pydantic-settings)
-│   ├── kb/           # 知识库 (Chroma, 分块, RAG)
-│   ├── llm/          # LLM 抽象 (OpenAI, Ollama)
-│   ├── parser/       # 文档解析 (PDF, Word, Excel, PPT, 文本)
-│   ├── models/       # Pydantic 模型
-│   └── main.py       # FastAPI 应用
-├── docs/             # 设计与规格文档
+├── app/                  # 应用代码
+│   ├── api/              # REST 路由：评估、知识库、健康检查
+│   ├── agent/            # 编排与评估流水线
+│   ├── core/             # 配置 (pydantic-settings)
+│   ├── kb/                # 知识库 (Chroma, 分块, RAG)
+│   ├── llm/               # LLM 抽象 (OpenAI, Ollama)
+│   ├── parser/            # 文档解析 (PDF, Word, Excel, PPT, 文本)
+│   ├── models/            # Pydantic 模型
+│   └── main.py
+├── tests/                 # 自动化测试 (pytest)
+├── examples/              # 示例文件（问卷、策略样本）
+├── docs/                  # 设计与规格文档
 │   ├── 01-architecture-and-tech-stack.md
 │   ├── 02-api-specification.yaml
 │   ├── 03-assessment-report-and-skill-contract.md
 │   ├── 04-integration-guide.md
 │   ├── 05-deployment-runbook.md
 │   └── schemas/
-├── Dockerfile            # API 容器镜像
-├── docker-compose.yml    # API + Ollama 一键运行
-├── CHANGELOG.md          # 版本历史
-├── SPEC.md               # 产品/系统规格
-├── LICENSE               # MIT
-├── SECURITY.md           # 安全政策与披露
+├── .github/               # Issue/PR 模板、CI (Actions)
+├── Dockerfile
+├── docker-compose.yml     # 仅 API
+├── docker-compose.ollama.yml  # API + Ollama 可选
+├── CONTRIBUTING.md        # 贡献指南
+├── CODE_OF_CONDUCT.md    # 行为准则
+├── CHANGELOG.md
+├── SPEC.md
+├── LICENSE
+├── SECURITY.md
 ├── requirements.txt
+├── requirements-dev.txt   # 测试与开发依赖
+├── pytest.ini
 └── .env.example
 ```
 
@@ -332,6 +347,14 @@ Arthor-Agent/
 - **[SPEC.md](./SPEC.md)** — Product requirements: problem statement, solution, architecture summary, features, security controls, and open questions for development.
 - **[CHANGELOG.md](./CHANGELOG.md)** — Version history; [Releases](https://github.com/arthurpanhku/Arthor-Agent/releases) for release notes.
 - **Design docs** in [docs/](./docs/): architecture and tech stack, API spec (OpenAPI), assessment report and Skill contract, integration guide (AAD, ServiceNow), deployment runbook. Q1 launch: [docs/LAUNCH-CHECKLIST.md](./docs/LAUNCH-CHECKLIST.md).
+
+---
+
+## Contributing | 参与贡献
+
+**中文**：欢迎提交 Issue 与 Pull Request。请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 了解开发环境、测试与提交规范。参与即视为同意 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) 行为准则。
+
+**English**: Issues and Pull Requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, tests, and commit guidelines. By participating you agree to the [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ---
 

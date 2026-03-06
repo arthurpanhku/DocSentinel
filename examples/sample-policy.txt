@@ -1,0 +1,8 @@
+Internal Security Policy (Sample Excerpt)
+
+- Access control: Role-based access (RBAC) is required. Privileged access must use MFA.
+- Data protection: Sensitive data must be encrypted at rest (AES-256 or equivalent) and in transit (TLS 1.2+).
+- Patching: Critical CVEs must be remediated within 7 days; other patches on a regular cycle.
+- Audit: Security-relevant actions must be logged and retained for at least 90 days.
+
+Use this file to test the knowledge base upload and RAG query (e.g. "What are the access control requirements?").

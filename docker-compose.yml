@@ -1,8 +1,15 @@
-# Arthor Agent — one-command run: API + optional Ollama (local LLM)
-# Usage:
+# Arthor Agent — Docker Compose
+#
+# API only (use OpenAI or Ollama on host):
 #   docker compose up -d
-#   Open http://localhost:8000/docs and http://localhost:8000/health
-#   For local LLM: start ollama service and run `ollama pull llama2` in the ollama container or on host.
+#   Set LLM_PROVIDER=openai and OPENAI_API_KEY, or run Ollama on host and use
+#   OLLAMA_BASE_URL=http://host.docker.internal:11434
+#
+# API + local Ollama (in Docker):
+#   docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
+#   docker compose exec ollama ollama pull llama2
+#
+# Open http://localhost:8000/docs and http://localhost:8000/health
 
 services:
   app:
@@ -12,23 +19,13 @@ services:
     environment:
       - ENV=development
       - LLM_PROVIDER=ollama
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_BASE_URL=http://localhost:11434
       - OLLAMA_MODEL=llama2
       - CHROMA_PERSIST_DIR=/data/chroma
       - UPLOAD_MAX_FILE_SIZE_MB=50
       - UPLOAD_MAX_FILES=10
     volumes:
       - arthor-data:/data
-    depends_on:
-      - ollama
-
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
 
 volumes:
   arthor-data:
-  ollama-data:

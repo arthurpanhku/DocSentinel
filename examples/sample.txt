@@ -1,0 +1,12 @@
+Security Questionnaire (Sample)
+
+1. Do you use encryption at rest for sensitive data?
+   Answer: Yes. We use AES-256 for database and file storage.
+
+2. Is multi-factor authentication required for administrative access?
+   Answer: Yes. MFA is enforced for all admin accounts.
+
+3. How often are security patches applied?
+   Answer: Critical patches within 7 days; standard cycle monthly.
+
+This is a minimal sample for testing the assessment API. Replace with your own documents for real use.

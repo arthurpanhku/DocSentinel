@@ -1,0 +1,19 @@
+# Override: add Ollama and point app to it. Run with:
+#   docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
+
+services:
+  app:
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
+volumes:
+  ollama-data:
