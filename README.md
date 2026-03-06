@@ -160,7 +160,7 @@ Roadmap (e.g. AAD/SSO, ServiceNow, RBAC): [SPEC.md](./SPEC.md).
 
 ## Quick Start | 快速开始
 
-� **New Streamlit Frontend**:
+🚀 **New Streamlit Frontend**:
 Run the modern dashboard for a full experience:
 
 ```bash
@@ -174,10 +174,8 @@ streamlit run frontend/Home.py
 ![Assessment Workbench](docs/images/streamlit-workbench.png)
 *Assessment Workbench view*
 
-### Legacy Demo (Optional)
-�📹 **演示界面**：启动 API 后打开 [docs/demo.html](docs/demo.html)，选择文件并点击 Assess 即可获得评估报告。
-
-![Assessment demo UI](docs/images/demo-assessment-ui.png)
+![Knowledge Base](docs/images/streamlit-knowledge-base.png)
+*Knowledge Base Management view*
 
 *录制 30 秒 GIF*：按上述操作录屏，保存为 `docs/images/demo-assessment.gif`。详见 [docs/DEMO-RECORD.md](docs/DEMO-RECORD.md)。
 
