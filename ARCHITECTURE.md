@@ -1,5 +1,9 @@
 # System Architecture | 系统架构
 
+<p align="center">
+  <img src="docs/images/arthor-architect.png" width="200" alt="Arthor Architect"/>
+</p>
+
 **Arthor Agent** — System Architecture Document (open-source style)
 
 |                  |                                                                           |
