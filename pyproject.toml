@@ -35,8 +35,12 @@ dependencies = [
     "aiofiles",
     "streamlit",
     "plotly",
-    "moviepy"
+    "moviepy",
+    "mcp"
 ]
+
+[project.scripts]
+arthor-mcp = "app.mcp_server:mcp.run"
 
 [project.urls]
 "Homepage" = "https://github.com/arthurpanhku/Arthor-Agent"
