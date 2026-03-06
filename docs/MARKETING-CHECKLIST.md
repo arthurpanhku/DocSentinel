@@ -20,15 +20,22 @@ This document outlines the strategy to increase visibility and adoption of **Art
 ## 2. Ecosystem Integration | 生态集成
 
 - [ ] **Submit to MCP Registries**:
-    - [awesome-mcp](https://github.com/punkpeye/awesome-mcp)
+    - [awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers)
+    - [Official MCP Registry](https://github.com/modelcontextprotocol/registry) (New!) - Submit a PR to add your server to `data/seed.json` or follow their [publishing guide](https://modelcontextprotocol.info/tools/registry/).
     - [glama.ai/mcp/servers](https://glama.ai/mcp/servers)
     - [smithery.ai](https://smithery.ai)
 - [ ] **Submit to "Awesome" Lists**:
     - [awesome-langchain](https://github.com/kyrolabs/awesome-langchain)
-    - [awesome-security-automation](https://github.com/0x4D31/awesome-security-automation)
-    - [awesome-local-llm](https://github.com/janhq/awesome-local-ai)
+    - [awesome-security-automation](https://github.com/theodo-group/awesome-security-automation)
+    - [awesome-local-ai](https://github.com/janhq/awesome-local-ai)
 
-## 3. Content Marketing | 内容营销
+## 3. GitHub Optimization (SEO) | GitHub 优化
+
+- [ ] **Social Preview**: Create a custom Open Graph image (1280x640px) featuring the mascot and UI screenshots. Upload in Settings -> Social preview.
+- [ ] **Topics**: Ensure these tags are set: `mcp`, `mcp-server`, `security-automation`, `rag`, `llm`, `agent`, `compliance`.
+- [ ] **Description**: "AI security agent for document assessment (ISO 27001/SOC2) & questionnaire automation. Supports MCP, RAG, and local LLMs."
+
+## 4. Content Marketing | 内容营销
 
 - [ ] **Record the Demo Video**: Follow `docs/DEMO-RECORD.md`.
     - Upload to YouTube / Loom.
@@ -41,7 +48,7 @@ This document outlines the strategy to increase visibility and adoption of **Art
     - Highlight: MCP support, Local LLM (Ollama), RAG.
     - Tag: `@LangChainAI`, `@AnthropicAI` (for MCP), `@Ollama`.
 
-## 4. Community Launch | 社区发布
+## 5. Community Launch | 社区发布
 
 - [ ] **Hacker News (Show HN)**:
     - Title: "Show HN: Arthor-Agent – Open Source AI Security Assessment (MCP support)"
@@ -50,9 +57,14 @@ This document outlines the strategy to increase visibility and adoption of **Art
     - r/LocalLLaMA: Focus on "Run locally with Ollama".
     - r/netsec / r/cybersecurity: Focus on "Automating questionnaire reviews".
     - r/selfhosted: Focus on "Docker deployable security tool".
+    - r/mcp: Share in the new MCP-focused communities.
+- [ ] **Discord / Slack Communities**:
+    - Join [Anthropic Developer Discord](https://console.anthropic.com/discord) (share in #mcp channel).
+    - Join LangChain Discord.
+    - Join Ollama Discord.
 - [ ] **Product Hunt**: Prepare a launch page (optional but good for traffic).
 
-## 5. Documentation Polish | 文档打磨
+## 6. Documentation Polish | 文档打磨
 
 - [ ] **Shields.io Badges**: Ensure all badges in README are green/passing.
 - [ ] **"Deploy to..." Buttons**: Add One-Click Deploy for Render/Railway if possible.
