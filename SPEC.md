@@ -224,6 +224,7 @@ The system uses a layered design: **Access** (REST API / Web / CLI) → **Core**
 | **LLM**            | Configurable local models (Ollama).                                | P0       |
 | **Skill**          | At least 1 usable Skill (e.g. Questionnaire vs Policy).            | P0       |
 | **Skill**          | Extensible Skill interface.                                        | P1       |
+| **Agent Integration** | **MCP (Model Context Protocol)** support for external agents.   | P1       |
 | **Memory**         | Multi-turn context within a session.                               | P0       |
 | **Access**         | REST API; optional Web UI.                                         | P0 / P1  |
 | **Integrations**   | ServiceNow: Read project metadata.                                 | P0       |

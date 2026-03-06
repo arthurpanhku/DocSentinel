@@ -21,23 +21,24 @@ Thank you for your interest in contributing. We welcome issues, pull requests, a
     ```bash
     python3 -m venv .venv
     source .venv/bin/activate   # Windows: .venv\Scripts\activate
-    pip install -r requirements.txt
-    pip install -r requirements-dev.txt   # 测试与开发依赖
+    make install                # 一键安装所有依赖（含开发依赖）
+    pre-commit install          # 安装 Git 提交钩子
     ```
--   或使用 **Docker**：`docker compose up -d` 仅启动 API；需要容器内 Ollama 时使用 `docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d`。
+-   **MCP (Model Context Protocol) 开发**：
+    调试 MCP Server 时，建议使用 `arthor-mcp` 命令行工具：
+    ```bash
+    pip install -e .            # 以编辑模式安装当前包
+    arthor-mcp --help           # 验证安装
+    ```
 
 ### 运行测试
 
-请确保在**已激活本项目虚拟环境**的情况下运行（否则会报 `No module named 'fastapi'` 等）：
+请确保在**已激活本项目虚拟环境**的情况下运行：
 
 ```bash
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pytest
-# 或带覆盖率
-pytest --cov=app --cov-report=term-missing
+make test                   # 运行测试
+make lint                   # 检查代码风格
 ```
-
-不激活时也可用：`./.venv/bin/python -m pytest`
 
 -   测试不依赖真实 LLM（Ollama/OpenAI），通过 mock 完成。
 -   CI 在每次 push/PR 时自动运行测试（见 `.github/workflows/ci.yml`）。
@@ -70,23 +71,24 @@ pytest --cov=app --cov-report=term-missing
     ```bash
     python3 -m venv .venv
     source .venv/bin/activate   # Windows: .venv\Scripts\activate
-    pip install -r requirements.txt
-    pip install -r requirements-dev.txt   # Test and dev dependencies
+    make install                # Install all dependencies
+    pre-commit install          # Install git hooks
     ```
--   Or use **Docker**: `docker compose up -d` runs only the API; use `docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d` if you need Ollama in Docker.
+-   **MCP Development**:
+    To test the MCP server, install in editable mode:
+    ```bash
+    pip install -e .
+    arthor-mcp --help
+    ```
 
 ### Running tests
 
-Make sure you run tests **with the project venv activated** (otherwise you may see `No module named 'fastapi'`):
+Make sure you run tests **with the project venv activated**:
 
 ```bash
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pytest
-# Or with coverage
-pytest --cov=app --cov-report=term-missing
+make test                   # Run tests
+make lint                   # Check code style
 ```
-
-Without activating: `./.venv/bin/python -m pytest`
 
 -   Tests do not require a real LLM (Ollama/OpenAI); they use mocks.
 -   CI runs tests on every push/PR (see `.github/workflows/ci.yml`).

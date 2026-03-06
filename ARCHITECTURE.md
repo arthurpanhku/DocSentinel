@@ -83,13 +83,16 @@ flowchart TB
 ### 1. Access Layer | 接入层
 
 -   **REST API** (FastAPI): authentication (AAD/API Key), request validation, rate limiting, routing to assessment / KB / health.
--   **Optional**: Web UI, CLI; future: webhooks for events.
+-   **MCP Server** (Model Context Protocol): Standard interface for autonomous agents (Claude Desktop, OpenClaw) to discover and call tools.
+-   **Streamlit Frontend**: Interactive web UI for human users.
+-   **Optional**: CLI; future: webhooks for events.
 
 ### 2. Orchestrator | 任务编排
 
 -   Accepts assessment tasks (files + optional scenario/project ID).
 -   Coordinates: Parser → Knowledge Base retrieval → Skill(s) → LLM → report assembly.
 -   Can run multi-step reasoning and read/write Memory.
+-   **Security**: Enforces RBAC checks and Audit Logging for all operations.
 
 ### 3. Memory | 记忆体
 

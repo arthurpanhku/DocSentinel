@@ -132,29 +132,31 @@ flowchart TB
 
 **中文**
 
-| 领域           | 能力                                                                                              |
-| :------------- | :------------------------------------------------------------------------------------------------ |
-| **文档解析**   | Word、PDF、Excel、PPT、文本；输出为 Markdown/JSON 供 LLM 使用。                                   |
-| **知识库**     | 多格式上传、分块、向量化（如 Chroma）、RAG 检索。                                                 |
-| **评估**       | 提交文件 → 获得结构化报告（风险项、合规差距、整改建议）。                                         |
-| **LLM**        | 可配置提供商：**Ollama**（本地）、OpenAI 等。                                                     |
-| **API**        | REST：提交评估、获取结果、上传/查询知识库、健康检查。                                             |
-| **安全与合规** | 安全需求与控制（身份、数据、应用、运维）见 [SPEC §7.2](./SPEC.md)；[SECURITY.md](./SECURITY.md)。 |
+| 领域           | 能力                                                                                |
+| :------------- | :---------------------------------------------------------------------------------- |
+| **文档解析**   | Word、PDF、Excel、PPT、文本；输出为 Markdown/JSON 供 LLM 使用。                     |
+| **知识库**     | 多格式上传、分块、向量化（如 Chroma）、RAG 检索。                                   |
+| **评估**       | 提交文件 → 获得结构化报告（风险项、合规差距、整改建议）。                           |
+| **LLM**        | 可配置提供商：**Ollama**（本地）、OpenAI 等。                                       |
+| **API**        | REST：提交评估、获取结果、上传/查询知识库、健康检查。                               |
+| **安全与合规** | 内置 **RBAC**（角色权限控制）、**审计日志**与 **Prompt Injection** 防护。           |
+| **Agent集成**  | 支持 **MCP (Model Context Protocol)**，可被 OpenClaw、Claude Desktop 等智能体调用。 |
 
-路线图（如 AAD/SSO、ServiceNow、RBAC）见 [SPEC.md](./SPEC.md)。
+路线图（如 AAD/SSO、ServiceNow 集成）见 [SPEC.md](./SPEC.md)。
 
 **English**
 
-| Area                      | Capabilities                                                                                                                       |
-| :------------------------ | :--------------------------------------------------------------------------------------------------------------------------------- |
-| **Document parsing**      | Word, PDF, Excel, PPT, text; output as Markdown/JSON for the LLM.                                                                  |
-| **Knowledge base**        | Multi-format upload, chunking, embedding (e.g. Chroma), RAG query.                                                                 |
-| **Assessment**            | Submit files → get structured report (risk items, compliance gaps, remediations).                                                  |
-| **LLM**                   | Configurable provider: **Ollama** (local), OpenAI, or others via abstraction layer.                                                |
-| **API**                   | REST: submit assessment, get result, upload to KB, query KB, health.                                                               |
-| **Security & compliance** | Security requirements and controls (identity, data, application, ops) in [SPEC §7.2](./SPEC.md); see [SECURITY.md](./SECURITY.md). |
+| Area                      | Capabilities                                                                                  |
+| :------------------------ | :-------------------------------------------------------------------------------------------- |
+| **Document parsing**      | Word, PDF, Excel, PPT, text; output as Markdown/JSON for the LLM.                             |
+| **Knowledge base**        | Multi-format upload, chunking, embedding (e.g. Chroma), RAG query.                            |
+| **Assessment**            | Submit files → get structured report (risk items, compliance gaps, remediations).             |
+| **LLM**                   | Configurable provider: **Ollama** (local), OpenAI, or others via abstraction layer.           |
+| **API**                   | REST: submit assessment, get result, upload to KB, query KB, health.                          |
+| **Security & Compliance** | Built-in **RBAC**, **Audit Logs**, and **Prompt Injection** guards.                           |
+| **Agent Integration**     | Supports **MCP (Model Context Protocol)** for integration with OpenClaw, Claude Desktop, etc. |
 
-Roadmap (e.g. AAD/SSO, ServiceNow, RBAC): [SPEC.md](./SPEC.md).
+Roadmap (e.g. AAD/SSO, ServiceNow): [SPEC.md](./SPEC.md).
 
 ---
 
