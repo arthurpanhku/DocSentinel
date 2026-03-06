@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="docs/images/arthor-agent-mascot.png" width="200" alt="Arthor Agent mascot"/>
+</p>
+
+<p align="center">
   <strong>Arthor Agent</strong><br/>
   <em>Automated security assessment for documents and questionnaires</em>
 </p>
