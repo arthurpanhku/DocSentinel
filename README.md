@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/arthurpanhku/Arthor-Agent/raw/main/docs/images/arthor-agent-mascot.png" width="200" alt="Arthor Agent mascot"/>
+  <img src="docs/images/arthor-agent-mascot.png" width="200" alt="Arthor Agent mascot"/>
 </p>
 
 <p align="center">
