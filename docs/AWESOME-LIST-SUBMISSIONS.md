@@ -8,7 +8,7 @@ Since I cannot directly submit Pull Requests to external repositories on your be
 
 ## 1. Awesome MCP (Model Context Protocol)
 
-**Target Repo**: [punkpeye/awesome-mcp](https://github.com/punkpeye/awesome-mcp) or [wong2/awesome-mcp](https://github.com/wong2/awesome-mcp)  
+**Target Repo**: [punkpeye/awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) or [wong2/awesome-mcp-servers](https://github.com/wong2/awesome-mcp-servers)
 **Category**: `Servers` or `Tools`
 
 **Copy & Paste this line**:
@@ -20,8 +20,8 @@ Since I cannot directly submit Pull Requests to external repositories on your be
 
 ## 2. Awesome Security Automation
 
-**Target Repo**: [0x4D31/awesome-security-automation](https://github.com/0x4D31/awesome-security-automation)  
-**Category**: `Assessment` or `Compliance`
+**Target Repo**: [theodo-group/awesome-security-automation](https://github.com/theodo-group/awesome-security-automation)
+**Category**: `Awesome Code Analysis` or `Awesome CVEs tools`
 
 **Copy & Paste this line**:
 ```markdown
