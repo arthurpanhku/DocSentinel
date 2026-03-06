@@ -12,7 +12,7 @@ st.set_page_config(
 )
 
 # Sidebar
-st.sidebar.image("frontend/assets/logo.svg", width=100)
+st.sidebar.image("frontend/assets/arthor-architect.png", width=180)
 st.sidebar.title("Arthor Agent")
 st.sidebar.markdown("---")
 
@@ -43,7 +43,14 @@ st.sidebar.info(
 )
 
 # Main Content
-st.title("🛡️ Security Operations Dashboard")
+c1, c2 = st.columns([1, 4])
+with c1:
+    st.image("frontend/assets/arthor-architect.png", width=150)
+with c2:
+    st.title("Security Operations Dashboard")
+    st.caption("Powered by Arthor Architect - Your AI Security Partner")
+
+st.markdown("---")
 
 # Mock Data for Dashboard (Since we don't have persistent history DB yet)
 # Ideally, this would come from GET /api/v1/stats or similar
