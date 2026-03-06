@@ -160,8 +160,11 @@ Roadmap (e.g. AAD/SSO, ServiceNow, RBAC): [SPEC.md](./SPEC.md).
 
 ## Quick Start | 快速开始
 
-📹 **录制 30 秒演示**：先启动 API，再打开 [docs/demo.html](docs/demo.html) 选文件点 Assess，或运行 `./scripts/demo.sh`；录屏保存为 `docs/images/demo-assessment.gif`。详见 [docs/DEMO-RECORD.md](docs/DEMO-RECORD.md)。  
-*Record demo: start API, open [docs/demo.html](docs/demo.html) or run `./scripts/demo.sh`; save screen capture as [docs/images/demo-assessment.gif](docs/images/demo-assessment.gif). See [docs/DEMO-RECORD.md](docs/DEMO-RECORD.md).*
+📹 **演示界面**：启动 API 后打开 [docs/demo.html](docs/demo.html)，选择文件并点击 Assess 即可获得评估报告。
+
+![Assessment demo UI](docs/images/demo-assessment-ui.png)
+
+*录制 30 秒 GIF*：按上述操作录屏，保存为 `docs/images/demo-assessment.gif`。详见 [docs/DEMO-RECORD.md](docs/DEMO-RECORD.md)。
 
 ### Option A: Docker（推荐）| Docker (recommended)
 

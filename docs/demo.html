@@ -3,63 +3,315 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Arthor Agent — Demo</title>
+  <title>Arthor Agent — Assessment Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
-    h1 { font-size: 1.25rem; }
-    .row { margin: 1rem 0; }
-    input[type="file"] { margin-right: 0.5rem; }
-    button { padding: 0.5rem 1rem; background: #238636; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
-    button:hover { background: #2ea043; }
-    button:disabled { background: #8b949e; cursor: not-allowed; }
-    pre { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px; padding: 1rem; overflow: auto; font-size: 12px; }
-    .url { font-size: 0.9rem; color: #57606a; }
-    .error { color: #cf2222; }
-    .ok { color: #1a7f37; }
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --border: #2d3d52;
+      --text: #e6edf3;
+      --text-muted: #8b9cb3;
+      --accent: #58a6ff;
+      --accent-hover: #79b8ff;
+      --success: #3fb950;
+      --error: #f85149;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 24px rgba(0,0,0,.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    .page {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+    header p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .card h2 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group:last-of-type { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.65rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      transition: border-color .2s;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    input[type="text"]::placeholder { color: var(--text-muted); opacity: .8; }
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    input[type="file"] {
+      flex: 1;
+      min-width: 0;
+      padding: 0.5rem 0;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    input[type="file"]::file-selector-button {
+      padding: 0.5rem 1rem;
+      margin-right: 1rem;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 500;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      cursor: pointer;
+      transition: background .2s, border-color .2s;
+    }
+    input[type="file"]::file-selector-button:hover {
+      background: var(--border);
+      border-color: var(--text-muted);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+    }
+    .btn:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+    .btn:active:not(:disabled) { transform: scale(0.98); }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .btn .spinner {
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #out {
+      min-height: 0;
+    }
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .result-card .head {
+      padding: 0.75rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    .result-card .head.success { color: var(--success); }
+    .result-card .head.error { color: var(--error); }
+    .result-card pre {
+      padding: 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      overflow: auto;
+      max-height: 70vh;
+      color: var(--text);
+      margin: 0;
+    }
+    .result-card pre .key { color: #79c0ff; }
+    .result-card pre .str { color: #a5d6ff; }
+    .result-card pre .num { color: #d2a8ff; }
+    .result-card pre .bool { color: #7ee787; }
+    .result-card pre .null { color: var(--text-muted); }
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      padding-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <h1>Arthor Agent — Assessment demo</h1>
-  <p class="url">API: <input type="text" id="baseUrl" value="http://localhost:8000" size="40"> (start server with <code>uvicorn app.main:app</code> or Docker)</p>
-  <div class="row">
-    <input type="file" id="file" accept=".txt,.md,.pdf,.docx,.xlsx,.pptx">
-    <button id="btn">Assess</button>
+  <div class="page">
+    <header>
+      <h1>Arthor Agent</h1>
+      <p>Automated security assessment for documents and questionnaires</p>
+    </header>
+
+    <div class="card">
+      <h2>Assessment demo</h2>
+      <div class="form-group">
+        <label for="baseUrl">API base URL</label>
+        <input type="text" id="baseUrl" value="http://localhost:8000" placeholder="http://localhost:8000">
+      </div>
+      <div class="form-group">
+        <label>Document to assess</label>
+        <div class="file-row">
+          <input type="file" id="file" accept=".txt,.md,.pdf,.docx,.xlsx,.pptx">
+          <button type="button" class="btn" id="btn">
+            <span class="btn-text">Assess</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="out"></div>
+
+    <footer>
+      <a href="https://github.com/arthurpanhku/Arthor-Agent" target="_blank" rel="noopener">GitHub</a> · Start API with <code>uvicorn app.main:app</code> or Docker
+    </footer>
   </div>
-  <div id="out"></div>
+
   <script>
     const base = document.getElementById('baseUrl');
     const file = document.getElementById('file');
     const btn = document.getElementById('btn');
+    const btnText = btn.querySelector('.btn-text');
     const out = document.getElementById('out');
-    function log(msg, cls) {
-      const p = document.createElement('pre');
-      p.textContent = msg;
-      if (cls) p.className = cls;
-      out.appendChild(p);
+
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
     }
+    function highlightJson(obj) {
+      const str = JSON.stringify(obj, null, 2);
+      return str
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")\s*:/g, '<span class="key">$1</span>:')
+        .replace(/: ("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")/g, ': <span class="str">$1</span>')
+        .replace(/: (\d+\.?\d*)/g, ': <span class="num">$1</span>')
+        .replace(/: (true|false)/g, ': <span class="bool">$1</span>')
+        .replace(/: (null)/g, ': <span class="null">$1</span>');
+    }
+
+    function showResult(data, isError) {
+      const card = document.createElement('div');
+      card.className = 'result-card';
+      const head = document.createElement('div');
+      head.className = 'head ' + (isError ? 'error' : 'success');
+      head.textContent = isError ? 'Error' : 'Assessment report';
+      const pre = document.createElement('pre');
+      pre.innerHTML = typeof data === 'string' ? escapeHtml(data) : highlightJson(data);
+      card.appendChild(head);
+      card.appendChild(pre);
+      out.appendChild(card);
+    }
+
+    function setLoading(loading) {
+      btn.disabled = loading;
+      if (loading) {
+        const sp = document.createElement('span');
+        sp.className = 'spinner';
+        btn.innerHTML = '';
+        btn.appendChild(sp);
+      } else {
+        btn.innerHTML = '<span class="btn-text">Assess</span>';
+      }
+    }
+
     btn.addEventListener('click', async () => {
-      if (!file.files.length) { log('Please select a file.', 'error'); return; }
+      if (!file.files.length) {
+        showResult('Please select a file.', true);
+        return;
+      }
       out.innerHTML = '';
-      btn.disabled = true;
-      const api = base.value.replace(/\/$/, '') + '/api/v1';
+      setLoading(true);
+      const api = base.value.replace(/\/$/, '').trim() + '/api/v1';
       try {
         const fd = new FormData();
         fd.append('files', file.files[0]);
         fd.append('scenario_id', 'default');
-        log('Submitting...');
         const r1 = await fetch(api + '/assessments', { method: 'POST', body: fd });
         const data = await r1.json();
         const taskId = data.task_id;
-        if (!taskId) { log('No task_id: ' + JSON.stringify(data), 'error'); return; }
-        log('task_id: ' + taskId + '\nFetching report...');
+        if (!taskId) {
+          showResult(data, true);
+          return;
+        }
         const r2 = await fetch(api + '/assessments/' + taskId);
         const report = await r2.json();
-        log(JSON.stringify(report, null, 2), 'ok');
+        showResult(report, false);
       } catch (e) {
-        log('Error: ' + e.message + '\n\nIs the API running at ' + api + '?', 'error');
+        showResult('Error: ' + e.message + '\n\nIs the API running at ' + api + '?', true);
       }
-      btn.disabled = false;
+      setLoading(false);
     });
   </script>
 </body>
