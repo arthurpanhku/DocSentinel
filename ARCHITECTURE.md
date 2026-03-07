@@ -104,26 +104,29 @@ flowchart TB
 -   **Episodic** (optional): session summaries for “compare with last assessment”.
 -   **Implementation**: in-memory / Redis; optional vector store for semantic recall.
 
-### 4. Skills | 技能层
+### 4. Skills & Personas | 技能与角色
 
--   Reusable assessment capabilities (e.g. questionnaire vs. policy, evidence check, risk rating).
--   Input/output contract (e.g. JSON Schema); orchestrator invokes Skills and aggregates results.
+-   **Persona-based Assessment**: Defines "who" is assessing (e.g. ISO 27001 Auditor vs. AppSec Engineer).
+-   **Skill Templates**: JSON-based templates containing system prompts, risk focus areas, and compliance frameworks.
+-   **Registry**: Built-in skills (hardcoded) + Custom skills (file/DB backed).
+-   **Dynamic Orchestration**: Orchestrator injects skill-specific context into RAG queries and LLM prompts.
 
 ### 5. Knowledge Base (RAG) | 知识库
 
 -   **Ingest**: multi-format upload → Parser → chunk → embed → vector store (e.g. Chroma).
 -   **Query**: RAG retrieval returns relevant chunks for the orchestrator to inject into LLM context.
--   Supports multiple collections and metadata filters (e.g. by compliance framework).
+-   **History Reuse**: Indexes past assessment responses to answer "how did we answer this last time?".
 
 ### 6. Parser | 文件解析
 
--   Converts uploaded files (PDF, Word, Excel, PPT, text) into a unified format (Markdown/JSON) for the agent and for KB ingestion.
+-   Converts uploaded files (PDF, Word, Excel, PPT, text) into a unified format (Markdown/JSON).
 -   Uses open-source libs (e.g. PyMuPDF, python-docx, openpyxl); shared pipeline for assessment input and KB documents.
 
 ### 7. LLM Abstraction | LLM 抽象层
 
--   Single interface for chat/completion (and optional function calling).
--   Plugins: OpenAI, Anthropic, Qwen, **Ollama** (local), etc.; configuration-driven switch.
+-   Single interface for chat/completion.
+-   **Confidence Scoring**: Dedicated step to evaluate evidence strength (0.0-1.0).
+-   Plugins: OpenAI, Anthropic, Qwen, **Ollama** (local).
 
 ```mermaid
 flowchart LR

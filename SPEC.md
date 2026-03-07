@@ -19,10 +19,12 @@
 
 **History | 版本历史**
 
--   **v1.4**: PRD and System Architecture doc split; architecture details moved to ARCHITECTURE.md.  
-    PRD 与系统架构文档分离；架构细节迁移至 ARCHITECTURE.md。
--   **v1.3**: Added "Security Requirements and Controls" (§7.2).  
-    新增非业务性「安全需求与安全控制」（§7.2）。
+-   **v2.0**: Major upgrade. Added Multi-Agent Orchestration, Human-in-the-Loop Workflow, Skill/Persona Management, and One-Click Deployment.
+    重大更新。新增多代理编排、人机协作流、技能/角色管理及一键部署。
+-   **v1.4**: PRD and System Architecture doc split.
+    PRD 与系统架构文档分离。
+-   **v1.3**: Added "Security Requirements and Controls".
+    新增非业务性「安全需求与安全控制」。
 -   **v1.2**: KB multi-format upload & open-source parsing; Parser reuse.  
     知识库多格式上传与开源解析、Parser 复用。
 -   **v1.1**: Enterprise integration (ServiceNow), IAM (AAD/SSO, RBAC), Deployment.  
@@ -212,27 +214,28 @@ The system uses a layered design: **Access** (REST API / Web / CLI) → **Core**
 
 ### 6.1 Core Feature List | 核心功能列表
 
-| Module             | Feature                                                            | Priority |
-| :----------------- | :----------------------------------------------------------------- | :------- |
-| **Parser**         | Upload Word / PDF / Excel / PPT and convert to JSON/Markdown.      | P0       |
-| **Parser**         | OCR / Vision support for images.                                   | P1       |
-| **Knowledge Base** | Upload multi-format docs, parse, chunk, embed, and retrieve (RAG). | P0       |
-| **Knowledge Base** | Metadata filtering (e.g. by framework, customer).                  | P1       |
-| **Assessment**     | Select scenario, upload files, trigger assessment.                 | P0       |
-| **Assessment**     | Output structured report (Risks, Gaps, Remediation).               | P0       |
-| **LLM**            | Configurable commercial LLMs (OpenAI, Claude, etc.).               | P0       |
-| **LLM**            | Configurable local models (Ollama).                                | P0       |
-| **Skill**          | At least 1 usable Skill (e.g. Questionnaire vs Policy).            | P0       |
-| **Skill**          | Extensible Skill interface.                                        | P1       |
-| **Agent Integration** | **MCP (Model Context Protocol)** support for external agents.   | P1       |
-| **Memory**         | Multi-turn context within a session.                               | P0       |
-| **Access**         | REST API; optional Web UI.                                         | P0 / P1  |
-| **Integrations**   | ServiceNow: Read project metadata.                                 | P0       |
-| **Integrations**   | ServiceNow: Write back results / Webhook trigger.                  | P1       |
-| **IAM**            | AAD (Azure AD) Login & SSO.                                        | P0       |
-| **IAM**            | RBAC (Analyst, Lead, Project Owner, Admin, API Consumer).          | P0       |
-| **IAM**            | API Authentication (Bearer Token / API Key).                       | P0       |
-| **IAM**            | Data isolation by project/role.                                    | P0       |
+| Module             | Feature                                                                 | Priority |
+| :----------------- | :---------------------------------------------------------------------- | :------- |
+| **Parser**         | Upload Word / PDF / Excel / PPT and convert to JSON/Markdown.           | P0       |
+| **Parser**         | OCR / Vision support for images.                                        | P1       |
+| **Knowledge Base** | Upload multi-format docs, parse, chunk, embed, and retrieve (RAG).      | P0       |
+| **Knowledge Base** | Metadata filtering (e.g. by framework, customer).                       | P1       |
+| **Assessment**     | Select scenario, upload files, trigger assessment.                      | P0       |
+| **Assessment**     | Output structured report (Risks, Gaps, Remediation, **Confidence**).    | P0       |
+| **Assessment**     | **Human-in-the-Loop**: Review, approve, reject, comment workflow.       | P0       |
+| **LLM**            | Configurable commercial LLMs (OpenAI, Claude, etc.).                    | P0       |
+| **LLM**            | Configurable local models (Ollama).                                     | P0       |
+| **Skill**          | **Skill/Persona Management**: Create custom roles and import templates. | P0       |
+| **Skill**          | Built-in personas (e.g. SOC2 Auditor, AppSec Engineer).                 | P0       |
+| **Orchestrator**   | **Multi-Agent**: Policy -> Evidence -> Drafter -> Reviewer flow.        | P1       |
+| **Memory**         | **History Reuse**: Retrieve past similar answers.                       | P1       |
+| **Access**         | REST API; optional Web UI.                                              | P0 / P1  |
+| **Integrations**   | ServiceNow: Read project metadata.                                      | P0       |
+| **Integrations**   | ServiceNow: Write back results / Webhook trigger.                       | P1       |
+| **IAM**            | AAD (Azure AD) Login & SSO.                                             | P0       |
+| **IAM**            | RBAC (Analyst, Lead, Project Owner, Admin, API Consumer).               | P0       |
+| **IAM**            | API Authentication (Bearer Token / API Key).                            | P0       |
+| **IAM**            | Data isolation by project/role.                                         | P0       |
 
 ### 6.2 User Stories (Examples) | 用户故事（示例）
 

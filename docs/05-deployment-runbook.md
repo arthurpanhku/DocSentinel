@@ -34,35 +34,26 @@
 
 ## 2. Deployment Options | 部署方式
 
-### 2.1 Local / Standalone | 本地/单机
+### 2.1 One-Click Deployment (Recommended) | 一键部署（推荐）
 
-Suitable for Development, PoC, or Small Teams.
+Suitable for Development, PoC, or Small Teams. Includes API, Dashboard, and optional Ollama.
 
 ```bash
-# Clone and enter repo
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env       # Edit .env with your config
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+# Clone repo
+git clone https://github.com/arthurpanhku/Arthor-Agent.git
+cd Arthor-Agent
+
+# Run script
+chmod +x deploy.sh
+./deploy.sh
 ```
 
-*Note: Ensure `data/` directory is writable for local Vector DB persistence.*
+- **Dashboard**: [http://localhost:8501](http://localhost:8501)
+- **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### 2.2 Docker (Recommended) | 容器化部署
+### 2.2 Docker Manual | 容器化手动部署
 
 See `Dockerfile` and `docker-compose.yml` in repo.
-
-**Dockerfile Example**:
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
-EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
 
 **Compose Example**:
 ```yaml
@@ -72,6 +63,25 @@ services:
     ports: ["8000:8000"]
     env_file: .env
     volumes: ["./data:/app/data"]
+  
+  frontend:
+    build: 
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports: ["8501:8501"]
+    depends_on: ["agent"]
+```
+
+### 2.3 Python Standalone | Python 单机部署
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+# Run frontend separately
+streamlit run frontend/Home.py
 ```
 
 ### 2.3 Air-Gapped / Private Cloud | 内网/私有化

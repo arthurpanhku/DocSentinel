@@ -24,8 +24,9 @@ Agent outputs a **structured report** conforming to this schema. It is used for 
   "properties": {
     "version": { "type": "string", "const": "1.0" },
     "task_id": { "type": "string", "format": "uuid" },
-    "status": { "type": "string", "enum": ["completed", "partial", "failed"] },
+    "status": { "type": "string", "enum": ["completed", "partial", "failed", "review_pending", "approved", "rejected", "escalated"] },
     "summary": { "type": "string", "description": "Executive summary of findings" },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "Overall confidence score" },
     "risk_items": {
       "type": "array",
       "items": { "$ref": "#/$defs/RiskItem" }
@@ -154,52 +155,30 @@ Unified output format for both Assessment Input and Knowledge Base Ingestion.
 
 ---
 
-## 3. Skill Contract | Skill 契约
+## 3. Skill & Persona Definition | Skill 与角色定义
 
-### 3.1 General Agreement
+### 3.1 Skill Template Schema
 
--   **Uniform Signature**: All Skills implement the same interface invoked by the Orchestrator.
--   **Input**: `SkillInput` (context, parsed docs, KB chunks).
--   **Output**: `SkillOutput` (findings, summary).
+Each skill (or persona) is defined by a JSON template.
 
-### 3.2 SkillInput
+```json
+{
+  "id": "iso-27001-auditor",
+  "name": "ISO 27001 Lead Auditor",
+  "description": "Formal ISMS audit focusing on process, documentation, and controls.",
+  "system_prompt": "You are an ISO 27001 Lead Auditor...",
+  "risk_focus": ["Access Control", "Supplier Security"],
+  "compliance_frameworks": ["ISO/IEC 27001:2013"],
+  "is_builtin": true
+}
+```
 
-| Field              | Type   | Required | Description                   |
-| :----------------- | :----- | :------- | :---------------------------- |
-| `task_id`          | string | Yes      | Unique task ID                |
-| `scenario_id`      | string | No       | Assessment scenario ID        |
-| `parsed_documents` | array  | Yes      | List of `ParsedDocument`      |
-| `kb_chunks`        | array  | No       | Relevant RAG chunks           |
-| `project_metadata` | object | No       | Metadata from ServiceNow etc. |
-| `options`          | object | No       | Skill-specific config         |
+### 3.2 Skill Execution Contract
 
-### 3.3 SkillOutput
+-   **Input**: `parsed_documents` + `kb_chunks` + `history_chunks` + `skill_focus`
+-   **Output**: Structured `AssessmentReport` fragment (JSON).
 
-| Field           | Type    | Required | Description                                |
-| :-------------- | :------ | :------- | :----------------------------------------- |
-| `skill_id`      | string  | Yes      | e.g. `questionnaire_policy_check`          |
-| `success`       | boolean | Yes      | Execution status                           |
-| `findings`      | object  | Yes      | Subset of `AssessmentReport` (risks, gaps) |
-| `summary`       | string  | No       | Summary for this specific skill            |
-| `error_message` | string  | No       | If failed                                  |
-| `trace`         | array   | No       | Citations or reasoning trace               |
-
-### 3.4 Example Skill: Questionnaire vs Policy
-
-**Skill ID**: `questionnaire_policy_check`
-
-**Function**: Compares user-uploaded questionnaire/docs against Knowledge Base controls.
-
-**Input**:
--   `parsed_documents`: The questionnaire (e.g. Excel converted to Markdown table).
--   `kb_chunks`: Retrieved policy clauses relevant to the questionnaire content.
-
-**Output**:
--   `findings.compliance_gaps`: List of gaps with `evidence_suggestion`.
--   `findings.remediations`: Suggestions linked to gaps.
-
-**Implementation Note**:
-Can be implemented via LLM Prompt (Prompt + Parsed Docs + KB Chunks -> JSON) or a hybrid Rule+LLM engine.
+The Orchestrator injects the `system_prompt` and `risk_focus` into the LLM context to guide the generation.
 
 ---
 
