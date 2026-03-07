@@ -1,0 +1,16 @@
+# Frontend Streamlit App
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Only frontend needs
+COPY requirements.txt .
+RUN pip install --no-cache-dir streamlit httpx requests
+
+# Copy source
+COPY frontend/ ./frontend/
+COPY docs/images/ ./docs/images/
+
+EXPOSE 8501
+
+CMD ["streamlit", "run", "frontend/Home.py", "--server.port=8501", "--server.address=0.0.0.0"]

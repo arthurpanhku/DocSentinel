@@ -129,56 +129,22 @@ flowchart TB
 
 ## Quick Start | 快速开始
 
-🚀 **New Streamlit Frontend**:
-Run the modern dashboard for a full experience:
+### Option A: One-Click Deployment (Recommended) | 一键部署（推荐）
 
-```bash
-pip install streamlit plotly pandas
-streamlit run frontend/Home.py
-```
-
-### 📹 Demo Walkthrough | 演示视频
-
-![Demo Walkthrough](docs/images/demo-assessment.gif)
-
-### Screenshots | 界面截图
-
-![Streamlit Dashboard](docs/images/streamlit-dashboard.png)
-*Dashboard view*
-
-![Assessment Workbench](docs/images/streamlit-workbench.png)
-*Assessment Workbench view*
-
-![Knowledge Base](docs/images/streamlit-knowledge-base.png)
-*Knowledge Base Management view*
-
-### Option A: Docker（推荐 / Recommended）
-
-**前置 Prerequisites**: [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/).
-
-仅启动 API（使用 OpenAI 或本机已运行的 Ollama）：
-API only (use OpenAI or Ollama on host):
+Run the deployment script to start the full stack (API + Dashboard + Vector DB + optional Ollama).
+运行部署脚本以启动全栈服务（API + 仪表盘 + 向量库 + 可选 Ollama）。
 
 ```bash
 git clone https://github.com/arthurpanhku/Arthor-Agent.git
 cd Arthor-Agent
-docker compose up -d
+chmod +x deploy.sh
+./deploy.sh
 ```
 
-需要连同 **Ollama 容器** 一起启动时：
-With **Ollama in Docker**:
+-   **Dashboard**: [http://localhost:8501](http://localhost:8501)
+-   **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-```bash
-docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
-docker compose exec ollama ollama pull llama2
-```
-
--   **API 文档 (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)
--   **健康检查 (Health)**: [http://localhost:8000/health](http://localhost:8000/health)
-
----
-
-### Option B: Python（本地开发 / Local Dev）
+### Option B: Docker Manual
 
 **前置 Prerequisites**: **Python 3.10+**. Optional: [Ollama](https://ollama.ai) (`ollama pull llama2`).
 
