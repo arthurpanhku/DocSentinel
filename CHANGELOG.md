@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.0.0] — 2026-03-08
+
+### Major Release
+
+This release marks a significant milestone with **Skill Management**, **Templates**, **Multi-Agent Orchestration v2**, and **One-Click Deployment**.
+
+### Added
+- **Skill & Persona Management**:
+  - Built-in personas: `ISO 27001 Auditor`, `AppSec Engineer`, `GDPR DPO`, `Cloud Architect`.
+  - Custom skills: Create, update, delete custom personas via API and UI.
+  - Skill Templates: Import standard templates (SOC2, Supplier Risk, Architecture Review) from JSON.
+- **Dynamic Orchestration**:
+  - Orchestrator now injects persona-specific context (System Prompt, Risk Focus) into LLM calls.
+  - RAG retrieval is weighted by skill focus keywords.
+- **One-Click Deployment**:
+  - Added `./deploy.sh` script for zero-config setup of API, Dashboard, and Vector DB.
+  - Added `./test_integration.sh` for automated environment verification.
+- **Documentation**:
+  - Multi-language READMEs (English, Chinese, Japanese, Korean, French, German).
+  - Updated `ARCHITECTURE.md` and `SPEC.md` to reflect v2.0 features.
+  - Added "Features at a Glance" with UI screenshots in README.
+- **Community**:
+  - Added GitHub Issue Templates for submitting new Skills.
+
+### Changed
+- **API**:
+  - `POST /assessments` now accepts `skill_id` and `project_id`.
+  - Updated Pydantic models to be compatible with Python 3.9+ (removed `|` union types).
+- **Frontend**:
+  - New "Skills Manager" page for viewing and creating personas.
+  - "Assessment Workbench" now supports persona selection.
+
+### Fixed
+- Fixed `ParsedDocumentMetadata` type mismatch for text/markdown files.
+- Fixed `health` endpoint missing in `main.py`.
+
+---
+
 ## [0.3.0] — 2026-03-06
 
 ### Added
