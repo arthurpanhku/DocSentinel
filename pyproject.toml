@@ -33,7 +33,9 @@ dependencies = [
     "reportlab",
     "aiofiles",
     "moviepy",
-    "mcp"
+    "mcp",
+    "docling>=2.0.0",
+    "lightrag-hku>=1.0.0"
 ]
 
 [project.scripts]

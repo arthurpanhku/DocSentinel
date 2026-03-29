@@ -7,7 +7,7 @@ from mcp.server.fastmcp import FastMCP
 # Use absolute imports from app package
 from app.agent.orchestrator import run_assessment
 from app.kb.service import KnowledgeBaseService
-from app.models.parser import ParsedDocument, ParsedDocumentMetadata
+from app.parser import parse_file
 
 # Initialize MCP Server
 mcp = FastMCP("DocSentinel")
@@ -38,28 +38,13 @@ async def assess_document(file_path: str, scenario_id: str = "default") -> str:
     if not os.path.exists(file_path):
         return json.dumps({"error": f"File not found: {file_path}"})
 
-    # Simulate file reading and parsing
-    # In a real scenario, we would use the actual ParserService to parse the
-    # file content. For now, let's just read the text content if it's a text
-    # file, or use a placeholder. Since we can't easily reuse the full parser
-    # stack without UploadFile dependency, let's read the file as raw text for
-    # simplicity in this MVP MCP tool.
-
-    content = ""
+    # Use the full parser pipeline (Docling → Markdown for PDF/Word/Excel/PPT)
     try:
-        with open(file_path, errors="ignore") as f:
-            content = f.read()
+        with open(file_path, "rb") as f:
+            raw_content = f.read()
+        parsed_doc = parse_file(raw_content, os.path.basename(file_path))
     except Exception as e:
-        return json.dumps({"error": f"Failed to read file: {str(e)}"})
-
-    # Create a parsed document object
-    parsed_doc = ParsedDocument(
-        content=content,
-        metadata=ParsedDocumentMetadata(
-            filename=os.path.basename(file_path),
-            type="text/plain",  # Simplified
-        ),
-    )
+        return json.dumps({"error": f"Failed to parse file: {str(e)}"})
 
     try:
         # Use a random UUID for task_id since we are running standalone

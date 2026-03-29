@@ -1,16 +1,71 @@
 """
-Document parsing: multi-format to LLM-readable (Markdown/JSON).
-PRD §5.2.5; docs/01 — PyMuPDF, python-docx, openpyxl, python-pptx.
+Document parsing: multi-format to structured Markdown/JSON.
+Primary engine: Docling (preserves tables, headings, OCR for scanned PDFs).
+Fallback: legacy parsers (PyMuPDF, python-docx, openpyxl, python-pptx).
 """
 
 import io
+import logging
+import tempfile
 from pathlib import Path
 
+from app.core.config import settings
 from app.models.parser import ParsedDocument, ParsedDocumentMetadata
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Docling-based parser (primary)
+# ---------------------------------------------------------------------------
+
+
+def _parse_with_docling(content: bytes, filename: str) -> ParsedDocument:
+    """
+    Convert document to structured Markdown using Docling.
+    Supports PDF, DOCX, XLSX, PPTX with table/heading preservation.
+    """
+    from docling.document_converter import DocumentConverter
+
+    suffix = Path(filename).suffix.lower()
+
+    # Docling requires a file path — write to temp file
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        converter = DocumentConverter()
+        result = converter.convert(tmp_path)
+
+        # Export structured Markdown (preserves tables, headings, lists)
+        markdown_content = result.document.export_to_markdown()
+
+        # Export JSON structure for metadata/raw access
+        raw_structure = result.document.export_to_dict()
+
+        if not markdown_content or not markdown_content.strip():
+            markdown_content = "(no text extracted by Docling)"
+
+        return ParsedDocument(
+            content=markdown_content.strip(),
+            raw_structure=raw_structure,
+            metadata=ParsedDocumentMetadata(
+                filename=_safe_filename(filename),
+                type=suffix.lstrip("."),
+                parser_engine="docling",
+            ),
+        )
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
+
+
+# ---------------------------------------------------------------------------
+# Legacy parsers (fallback)
+# ---------------------------------------------------------------------------
 
 
 def _safe_filename(name: str) -> str:
-    """Sanitise filename for metadata (PRD §7.2 APP-01)."""
+    """Sanitise filename for metadata."""
     return Path(name).name[:255] if name else "unknown"
 
 
@@ -26,7 +81,7 @@ def _parse_pdf(content: bytes, filename: str) -> ParsedDocument:
     return ParsedDocument(
         content=text,
         metadata=ParsedDocumentMetadata(
-            filename=_safe_filename(filename), type="pdf"
+            filename=_safe_filename(filename), type="pdf", parser_engine="legacy"
         ),
     )
 
@@ -43,8 +98,7 @@ def _parse_docx(content: bytes, filename: str) -> ParsedDocument:
     return ParsedDocument(
         content=text,
         metadata=ParsedDocumentMetadata(
-            filename=_safe_filename(filename),
-            type="docx",
+            filename=_safe_filename(filename), type="docx", parser_engine="legacy"
         ),
     )
 
@@ -63,8 +117,7 @@ def _parse_xlsx(content: bytes, filename: str) -> ParsedDocument:
     return ParsedDocument(
         content=text,
         metadata=ParsedDocumentMetadata(
-            filename=_safe_filename(filename),
-            type="xlsx",
+            filename=_safe_filename(filename), type="xlsx", parser_engine="legacy"
         ),
     )
 
@@ -83,8 +136,7 @@ def _parse_pptx(content: bytes, filename: str) -> ParsedDocument:
     return ParsedDocument(
         content=text,
         metadata=ParsedDocumentMetadata(
-            filename=_safe_filename(filename),
-            type="pptx",
+            filename=_safe_filename(filename), type="pptx", parser_engine="legacy"
         ),
     )
 
@@ -97,14 +149,23 @@ def _parse_plain(content: bytes, filename: str, content_type: str) -> ParsedDocu
     return ParsedDocument(
         content=text.strip() or "(empty)",
         metadata=ParsedDocumentMetadata(
-            filename=_safe_filename(filename), type=content_type
+            filename=_safe_filename(filename),
+            type=content_type,
+            parser_engine="legacy",
         ),
     )
 
 
-# Allowed extensions and MIME (PRD §7.2 APP-01)
+# ---------------------------------------------------------------------------
+# Extension whitelist and dispatch
+# ---------------------------------------------------------------------------
+
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".md"}
-EXTENSION_TO_PARSER = {
+
+# Extensions that Docling can handle natively
+_DOCLING_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".pptx"}
+
+_LEGACY_PARSERS = {
     ".pdf": _parse_pdf,
     ".docx": _parse_docx,
     ".xlsx": _parse_xlsx,
@@ -117,7 +178,13 @@ EXTENSION_TO_PARSER = {
 def parse_file(content: bytes, filename: str) -> ParsedDocument:
     """
     Parse a single file into ParsedDocument.
-    Raises ValueError for unsupported type or parse error.
+
+    Engine selection (via PARSER_ENGINE config):
+      - "auto": Try Docling first for supported formats, fall back to legacy.
+      - "docling": Use Docling only (raises on failure).
+      - "legacy": Use legacy parsers only (original behavior).
+
+    Raises ValueError for unsupported file types.
     """
     path = Path(filename)
     suffix = path.suffix.lower()
@@ -125,5 +192,27 @@ def parse_file(content: bytes, filename: str) -> ParsedDocument:
         raise ValueError(
             f"Unsupported file type: {suffix}. Allowed: {sorted(ALLOWED_EXTENSIONS)}"
         )
-    parser_fn = EXTENSION_TO_PARSER[suffix]
-    return parser_fn(content, filename)
+
+    engine = settings.PARSER_ENGINE
+
+    # Plain text/markdown always use legacy (no benefit from Docling)
+    if suffix in {".txt", ".md"}:
+        return _LEGACY_PARSERS[suffix](content, filename)
+
+    # Docling-capable formats
+    if engine == "docling":
+        return _parse_with_docling(content, filename)
+
+    if engine == "auto" and suffix in _DOCLING_EXTENSIONS:
+        try:
+            return _parse_with_docling(content, filename)
+        except Exception as e:
+            logger.warning(
+                "Docling failed for %s, falling back to legacy parser: %s",
+                filename,
+                e,
+            )
+            return _LEGACY_PARSERS[suffix](content, filename)
+
+    # engine == "legacy" or fallback
+    return _LEGACY_PARSERS[suffix](content, filename)

@@ -22,11 +22,17 @@ langchain-core>=0.1.0
 chromadb>=0.4.22
 sentence-transformers>=2.2.0
 
-# Document parsing
+# Document parsing (legacy fallback)
 pymupdf>=1.23.0
 python-docx>=1.1.0
 openpyxl>=3.1.0
 python-pptx>=0.6.21
+
+# Document-to-Markdown conversion (primary)
+docling>=2.0.0
+
+# Graph-based RAG
+lightrag-hku>=1.0.0
 
 # HTTP & async
 httpx>=0.26.0

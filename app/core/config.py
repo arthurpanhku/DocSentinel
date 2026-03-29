@@ -35,12 +35,20 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama2"
 
+    # Parser engine: "docling", "legacy", or "auto" (docling with fallback)
+    PARSER_ENGINE: Literal["docling", "legacy", "auto"] = "auto"
+
     # Vector / KB
     VECTOR_STORE_TYPE: Literal["chroma"] = "chroma"
     CHROMA_PERSIST_DIR: str = "./data/chroma"
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     KB_AUTO_SYNC_DIR: str = "./examples"
     KB_AUTO_SYNC_INTERVAL_SECONDS: int = 0
+
+    # Graph RAG (LightRAG)
+    ENABLE_GRAPH_RAG: bool = True
+    LIGHTRAG_WORKING_DIR: str = "./data/lightrag"
+    GRAPH_RAG_QUERY_MODE: Literal["naive", "local", "global", "hybrid"] = "hybrid"
 
     @property
     def upload_max_bytes(self) -> int:

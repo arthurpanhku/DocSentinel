@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 class ParsedDocumentMetadata(BaseModel):
     filename: str
     type: Literal["pdf", "docx", "xlsx", "pptx", "txt", "md"]
+    parser_engine: Literal["docling", "legacy"] = "legacy"
     upload_time: datetime = Field(default_factory=datetime.utcnow)
     scenario_id: str | None = None
     file_hash: str | None = None

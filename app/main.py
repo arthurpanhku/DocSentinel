@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
 async def _kb_auto_sync_loop():
     while True:
         kb_service = KnowledgeBaseService()
-        kb_service.reindex_directory(settings.KB_AUTO_SYNC_DIR)
+        await kb_service.reindex_directory(settings.KB_AUTO_SYNC_DIR)
         await asyncio.sleep(settings.KB_AUTO_SYNC_INTERVAL_SECONDS)
 
 
