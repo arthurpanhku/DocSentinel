@@ -38,7 +38,7 @@ async def run_assessment(
     doc_context = _build_document_context(parsed_documents)
 
     # Pass skill context to agents
-    policy_chunks, history_chunks = _policy_and_history_agent(
+    policy_chunks, history_chunks = await _policy_and_history_agent(
         doc_context["query_seed"],
         skill_focus=skill.risk_focus
     )
@@ -83,7 +83,7 @@ def _build_document_context(parsed_documents: list[ParsedDocument]) -> dict:
 
 
 
-def _policy_and_history_agent(
+async def _policy_and_history_agent(
     query_seed: str,
     skill_focus: list[str] | None = None
 ) -> tuple[list, list]:
@@ -98,7 +98,8 @@ def _policy_and_history_agent(
     policy_chunks = []
     history_chunks = []
     try:
-        policy_chunks = kb.query(search_query, top_k=5)
+        # Hybrid query: vector + graph RAG (when enabled)
+        policy_chunks = await kb.query(search_query, top_k=5)
     except Exception:
         policy_chunks = []
     try:
@@ -210,9 +211,17 @@ def _format_chunks_with_ids(chunks: list, prefix: str) -> str:
     for i, d in enumerate(chunks):
         metadata = d.metadata or {}
         src = metadata.get("source", "unknown")
-        page = metadata.get("page")
+        source_type = metadata.get("source_type", "vector")
         c_id = f"{prefix}-{i + 1}"
-        formatted.append(f"[{c_id}] {src} p={page}\n{d.page_content[:600]}")
+
+        if source_type == "graph":
+            graph_mode = metadata.get("graph_mode", "hybrid")
+            formatted.append(
+                f"[{c_id}] [GRAPH/{graph_mode}] {src}\n{d.page_content[:600]}"
+            )
+        else:
+            page = metadata.get("page")
+            formatted.append(f"[{c_id}] {src} p={page}\n{d.page_content[:600]}")
     return "\n\n".join(formatted)
 
 

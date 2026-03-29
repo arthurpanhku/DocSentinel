@@ -36,7 +36,7 @@ async def test_orchestrator_uses_skill_prompt():
             # Mock KB (to avoid actual DB calls)
             with patch("app.agent.orchestrator.KnowledgeBaseService") as mock_kb_cls:
                 mock_kb = MagicMock()
-                mock_kb.query.return_value = []
+                mock_kb.query = AsyncMock(return_value=[])
                 mock_kb.query_history_responses.return_value = []
                 mock_kb_cls.return_value = mock_kb
 

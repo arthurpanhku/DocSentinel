@@ -1,4 +1,4 @@
-"""Knowledge base API: upload document, query (RAG)."""
+"""Knowledge base API: upload document, query (hybrid RAG)."""
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -20,7 +20,7 @@ class KBReindexRequest(BaseModel):
 
 @router.post("/documents")
 async def upload_document(file: UploadFile = File(...)):  # noqa: B008
-    """Upload a document to the knowledge base."""
+    """Upload a document to the knowledge base (vector + graph RAG)."""
     from app.core.config import settings
 
     content = await file.read()
@@ -31,15 +31,15 @@ async def upload_document(file: UploadFile = File(...)):  # noqa: B008
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
     kb = KnowledgeBaseService()
-    doc_id = kb.add_document(parsed)
+    doc_id = await kb.add_document(parsed)
     return {"document_id": doc_id}
 
 
 @router.post("/query")
 async def query_kb(body: KBQueryRequest):
-    """RAG query over the knowledge base."""
+    """Hybrid RAG query: vector similarity + graph retrieval."""
     kb = KnowledgeBaseService()
-    docs = kb.query(body.query, top_k=body.top_k)
+    docs = await kb.query(body.query, top_k=body.top_k)
     return {
         "chunks": [{"content": d.page_content, "metadata": d.metadata} for d in docs]
     }
@@ -48,4 +48,4 @@ async def query_kb(body: KBQueryRequest):
 @router.post("/reindex")
 async def reindex_kb(body: KBReindexRequest):
     kb = KnowledgeBaseService()
-    return kb.reindex_directory(body.directory)
+    return await kb.reindex_directory(body.directory)
