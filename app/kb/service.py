@@ -29,14 +29,29 @@ def _get_embeddings():
 
 
 class KnowledgeBaseService:
-    """Hybrid KB: ChromaDB (vector) + LightRAG (graph) for enriched retrieval."""
+    """Hybrid KB: ChromaDB (vector) + LightRAG (graph) for enriched retrieval.
+
+    Use get_kb_service() to obtain the shared singleton instance.
+    """
 
     CHUNK_SIZE = 1024
     CHUNK_OVERLAP = 128
     COLLECTION_NAME = "security_agent_kb"
     HISTORY_COLLECTION_NAME = "security_agent_history"
 
+    _instance: "KnowledgeBaseService | None" = None
+
+    def __new__(cls) -> "KnowledgeBaseService":
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self) -> None:
+        if self._initialized:
+            return
+        self._initialized = True
+
         persist_dir = Path(settings.CHROMA_PERSIST_DIR)
         persist_dir.mkdir(parents=True, exist_ok=True)
         self._vectorstore = Chroma(
@@ -341,3 +356,8 @@ class KnowledgeBaseService:
             except Exception as e:
                 errors.append(f"{path.name}: {e!s}")
         return {"directory": str(root), "indexed": indexed, "errors": errors}
+
+
+def get_kb_service() -> KnowledgeBaseService:
+    """Return the shared singleton KnowledgeBaseService instance."""
+    return KnowledgeBaseService()

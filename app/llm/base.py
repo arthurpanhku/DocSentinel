@@ -3,13 +3,17 @@ LLM abstraction: unified interface for OpenAI and Ollama.
 PRD §5.2.6; switch provider via config without changing Agent logic.
 """
 
+from functools import lru_cache
+
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from app.core.config import settings
 
 
+@lru_cache(maxsize=1)
 def get_llm() -> BaseChatModel:
+    """Return a cached LLM client instance (one per process lifetime)."""
     if settings.LLM_PROVIDER == "openai":
         from langchain_openai import ChatOpenAI
 
@@ -31,7 +35,7 @@ def get_llm() -> BaseChatModel:
 
 
 async def invoke_llm(system_prompt: str, user_prompt: str) -> str:
-    """Convenience: invoke LLM with system + user message; return content string."""
+    """Invoke LLM with system + user message; return content string."""
     llm = get_llm()
     messages = [
         SystemMessage(content=system_prompt),

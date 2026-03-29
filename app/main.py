@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api import assessments, health, kb, skills
 from app.core.config import settings
-from app.kb.service import KnowledgeBaseService
+from app.kb.service import get_kb_service
 
 
 @asynccontextmanager
@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
 
 async def _kb_auto_sync_loop():
     while True:
-        kb_service = KnowledgeBaseService()
+        kb_service = get_kb_service()
         await kb_service.reindex_directory(settings.KB_AUTO_SYNC_DIR)
         await asyncio.sleep(settings.KB_AUTO_SYNC_INTERVAL_SECONDS)
 
@@ -55,7 +55,6 @@ app.include_router(kb.router, prefix=settings.API_PREFIX)
 app.include_router(skills.router, prefix=f"{settings.API_PREFIX}/skills", tags=["skills"])
 
 # Mount docs directory for demo purposes
-# The directory is mounted at /docs, so files are accessible at /docs/filename
 app.mount("/docs", StaticFiles(directory="docs", html=True), name="docs")
 
 
