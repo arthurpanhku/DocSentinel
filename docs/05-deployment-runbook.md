@@ -3,7 +3,7 @@
 |                 |                                                              |
 | :-------------- | :----------------------------------------------------------- |
 | **Status**      | [ ] Draft \| [ ] In Review \| [ ] Approved                   |
-| **Version**     | 0.1                                                          |
+| **Version**     | 0.3                                                          |
 | **Related PRD** | Section 7 Non-Functional Requirements (Deployment, Security) |
 
 ---
@@ -36,7 +36,7 @@
 
 ### 2.1 One-Click Deployment (Recommended) | 一键部署（推荐）
 
-Suitable for Development, PoC, or Small Teams. Includes API, Dashboard, and optional Ollama.
+Suitable for Development, PoC, or Small Teams. Includes API and optional Ollama.
 
 ```bash
 # Clone repo
@@ -48,7 +48,6 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
-- **Dashboard**: [http://localhost:8501](http://localhost:8501)
 - **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ### 2.2 Docker Manual | 容器化手动部署
@@ -63,13 +62,6 @@ services:
     ports: ["8000:8000"]
     env_file: .env
     volumes: ["./data:/app/data"]
-  
-  frontend:
-    build: 
-      context: .
-      dockerfile: Dockerfile.frontend
-    ports: ["8501:8501"]
-    depends_on: ["agent"]
 ```
 
 ### 2.3 Python Standalone | Python 单机部署
@@ -80,8 +72,6 @@ source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 uvicorn app.main:app --host 0.0.0.0 --port 8000
-# Run frontend separately
-streamlit run frontend/Home.py
 ```
 
 ### 2.3 Air-Gapped / Private Cloud | 内网/私有化
@@ -164,6 +154,20 @@ See `.env.example` for the template.
 | :------------------------ | :---------------- | :------ |
 | `UPLOAD_MAX_FILE_SIZE_MB` | Max file size     | 50      |
 | `UPLOAD_MAX_FILES`        | Max files per req | 10      |
+
+### 3.6 Parser Engine
+
+| Variable        | Description                    | Default |
+| :-------------- | :----------------------------- | :------ |
+| `PARSER_ENGINE` | `auto`, `docling`, or `legacy` | `auto`  |
+
+### 3.7 Graph RAG (LightRAG)
+
+| Variable               | Description                           | Default           |
+| :--------------------- | :------------------------------------ | :---------------- |
+| `ENABLE_GRAPH_RAG`     | Enable graph-based retrieval          | `true`            |
+| `LIGHTRAG_WORKING_DIR`   | LightRAG data directory               | `./data/lightrag` |
+| `GRAPH_RAG_QUERY_MODE`   | Query mode: naive/local/global/hybrid | `hybrid`          |
 
 ---
 

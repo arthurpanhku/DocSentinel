@@ -231,14 +231,15 @@ curl -X POST "http://localhost:8000/api/v1/kb/query" \
 ```text
 DocSentinel/
 ├── app/                  # Application code
-│   ├── api/              # REST routes: assessments, KB, health
-│   ├── agent/            # Orchestration & Assessment pipeline
-│   ├── core/             # Configuration (pydantic-settings)
-│   ├── kb/               # Knowledge Base (Chroma, chunking, RAG)
+│   ├── api/              # REST routes: assessments, KB, health, skills
+│   ├── agent/            # Orchestrator, skills registry & service
+│   ├── core/             # Config, guardrails, security, DB
+│   ├── kb/               # Knowledge Base (Chroma + LightRAG graph RAG)
 │   ├── llm/              # LLM abstraction (OpenAI, Ollama)
-│   ├── parser/           # Document parsing (PDF, Word, Excel, PPT, text)
-│   ├── models/           # Pydantic models
-│   └── main.py
+│   ├── parser/           # Document parsing (Docling + legacy fallback)
+│   ├── models/           # Pydantic / SQLModel models
+│   ├── main.py           # FastAPI app entry point
+│   └── mcp_server.py     # MCP Server for agent integration
 ├── tests/                # Automated tests (pytest)
 ├── examples/             # Sample files (questionnaires, policies)
 ├── docs/                 # Design & Spec documentation
@@ -260,7 +261,6 @@ DocSentinel/
 ├── SECURITY.md
 ├── requirements.txt
 ├── requirements-dev.txt  # Dev dependencies
-├── pytest.ini
 └── .env.example
 ```
 
@@ -268,13 +268,15 @@ DocSentinel/
 
 ## Configuration
 
-| Variable                                       | Description          | Default                             |
-| :--------------------------------------------- | :------------------- | :---------------------------------- |
-| `LLM_PROVIDER`                                 | `ollama` or `openai` | `ollama`                            |
-| `OLLAMA_BASE_URL` / `OLLAMA_MODEL`             | Local LLM            | `http://localhost:11434` / `llama2` |
-| `OPENAI_API_KEY` / `OPENAI_MODEL`              | OpenAI               | —                                   |
-| `CHROMA_PERSIST_DIR`                           | Vector DB path       | `./data/chroma`                     |
-| `UPLOAD_MAX_FILE_SIZE_MB` / `UPLOAD_MAX_FILES` | Upload limits        | `50` / `10`                         |
+| Variable                                       | Description                            | Default                             |
+| :--------------------------------------------- | :------------------------------------- | :---------------------------------- |
+| `LLM_PROVIDER`                                 | `ollama` or `openai`                   | `ollama`                            |
+| `OLLAMA_BASE_URL` / `OLLAMA_MODEL`             | Local LLM                              | `http://localhost:11434` / `llama2` |
+| `OPENAI_API_KEY` / `OPENAI_MODEL`              | OpenAI                                 | —                                   |
+| `CHROMA_PERSIST_DIR`                           | Vector DB path                          | `./data/chroma`                     |
+| `PARSER_ENGINE`                                | Parser: `auto`, `docling`, or `legacy` | `auto`                              |
+| `ENABLE_GRAPH_RAG`                             | Enable LightRAG graph retrieval         | `true`                              |
+| `UPLOAD_MAX_FILE_SIZE_MB` / `UPLOAD_MAX_FILES` | Upload limits                          | `50` / `10`                         |
 
 *See [.env.example](./.env.example) and [docs/05-deployment-runbook.md](./docs/05-deployment-runbook.md) for full options.*
 

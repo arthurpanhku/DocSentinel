@@ -2,8 +2,8 @@
 
 |                 |                                                          |
 | :-------------- | :------------------------------------------------------- |
-| **Status**      | [x] Draft (MVP aligned) \| [ ] In Review \| [ ] Approved |
-| **Version**     | 0.2                                                      |
+| **Status**      | [x] Updated (v3.1 aligned) \| [ ] In Review \| [ ] Approved |
+| **Version**     | 0.4                                                      |
 | **Related PRD** | Section 5 System Architecture, Section 9 Next Steps      |
 
 ---
@@ -30,9 +30,9 @@
 
 | Item                | Choice               | Version | Notes                                       |
 | :------------------ | :------------------- | :------ | :------------------------------------------ |
-| **Orchestrator**    | Custom (`app/agent`) | —       | Pipeline: Parse → KB → Skill → LLM → Report |
+| **Orchestrator**    | Custom (`app/agent`) | —       | Multi-agent: Policy+History → Evidence → Drafter → Reviewer (parallel where possible) |
 | **LLM Abstraction** | LangChain            | Latest  | Unified interface for OpenAI/Ollama         |
-| **Supported LLMs**  | OpenAI, Ollama       | —       | Configurable via env; see PRD 5.2.6         |
+| **Supported LLMs**  | OpenAI, Ollama       | —       | OpenAI (and compatible APIs) + Ollama; LLM client is cached via @lru_cache         |
 
 ### 1.4 Vector Store and RAG | 向量库与 RAG
 
@@ -41,12 +41,14 @@
 | **Vector DB**  | Chroma             | ≥0.4    | Embedded, persisted to `CHROMA_PERSIST_DIR` |
 | **Embeddings** | HuggingFace        | —       | `sentence-transformers/all-MiniLM-L6-v2`    |
 | **Chunking**   | RecursiveCharacter | —       | 1024 chars, 128 overlap (configurable)      |
+| **Graph RAG**  | LightRAG           | —       | Entity-relationship aware retrieval; `ENABLE_GRAPH_RAG` |
 
 ### 1.5 Document Parsing | 文档解析
 
 | Format      | Library        | Version | Notes                                     |
 | :---------- | :------------- | :------ | :---------------------------------------- |
-| **PDF**     | PyMuPDF (fitz) | ≥1.23   | `app/parser/service.py`                   |
+| **All (primary)** | Docling    | Latest  | Table/heading preserving; OCR capable; `PARSER_ENGINE=auto` |
+| **PDF**     | PyMuPDF (fitz) | ≥1.23   | Fallback when Docling unavailable         |
 | **Word**    | python-docx    | ≥1.1    |                                           |
 | **Excel**   | openpyxl       | ≥3.1    |                                           |
 | **PPT**     | python-pptx    | ≥0.6    |                                           |
@@ -65,7 +67,7 @@
 
 | Item             | Choice      | Notes                                              |
 | :--------------- | :---------- | :------------------------------------------------- |
-| **Task State**   | Memory dict | MVP only; replace with Redis/DB for production     |
+| **Task State**   | Memory dict | MVP only; assessments run as background tasks; replace with Redis/DB for production     |
 | **Vector Store** | Local disk  | Persisted to `CHROMA_PERSIST_DIR`                  |
 | **Files**        | Transient   | Stream processing; parsed content goes to KB/Agent |
 
@@ -126,12 +128,16 @@ DocSentinel/
 │   ├── api/                # FastAPI routes: health, assessments, kb
 │   ├── core/               # Configuration (pydantic-settings)
 │   ├── agent/              # Orchestrator: run_assessment logic
+│   │   ├── skills_registry.py
+│   │   └── skills_service.py
 │   ├── kb/                 # KnowledgeBaseService (Chroma + chunking)
+│   │   └── graph_rag.py    # LightRAG integration
 │   ├── llm/                # LLM factory and invocation
 │   ├── parser/             # Parsers for PDF, docx, xlsx, pptx, txt
 │   ├── integrations/       # Placeholders: AAD, ServiceNow
 │   ├── models/             # Pydantic models for API and internal data
-│   └── main.py             # App entry point
+│   ├── main.py             # App entry point
+│   └── mcp_server.py       # MCP Server
 ├── docs/                   # Design docs and schemas
 ├── tests/                  # Pytest suite
 ├── requirements.txt        # Production dependencies
@@ -175,5 +181,6 @@ python-multipart
 
 | Version | Date    | Changes                                        |
 | :------ | :------ | :--------------------------------------------- |
+| **0.4** | 2026-03 | Added Graph RAG, Docling parser, MCP Server, singleton KB, async assessment. |
 | **0.2** | 2025-03 | Updated tech stack versions and module layout. |
 | **0.1** | Initial | Draft selection.                               |

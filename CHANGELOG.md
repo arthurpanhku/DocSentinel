@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [3.1.0] — 2026-03-29
+
+### Added
+- **Graph RAG (LightRAG)**: Hybrid retrieval combining vector similarity and entity-relationship graph for enriched context.
+- **Docling Parser**: Primary document parsing engine with table/heading preservation and OCR support; legacy parsers as fallback.
+- **Input Guardrails**: Prompt injection detection with regex patterns, input length limits, and automatic rejection.
+- **Smart Truncation**: Text truncation at sentence/paragraph boundaries instead of arbitrary character cuts.
+
+### Changed
+- **Async Assessment Pipeline**: `POST /assessments` now returns immediately with `task_id`; processing runs as a background task.
+- **Parallel Orchestration**: Policy/History KB lookup and Evidence extraction run in parallel via `asyncio.gather`.
+- **Singleton KnowledgeBaseService**: Single instance shared across the application lifecycle (was re-created per request).
+- **Cached LLM Client**: `get_llm()` uses `@lru_cache` — one client instance per process instead of per-call.
+
+### Removed
+- **Dead code**: Removed unused `_estimate_confidence()` function (confidence is returned by Reviewer agent).
+
+### Fixed
+- **MCP Server bug**: Removed `await` on synchronous `kb.query()` call that would throw `TypeError` at runtime.
+- **`datetime.utcnow()` deprecation**: Replaced with `datetime.now(UTC)` across all modules (Python 3.12+ compatible).
+
+---
+
 ## [3.0.0] — 2026-03-12
 
 ### Major Change
@@ -113,6 +136,7 @@ This release marks a significant milestone with **Skill Management**, **Template
 - **CI/CD**: Updated GitHub Actions workflow to include linting steps.
 - **Project Structure**: Migrated `pytest.ini` to `pyproject.toml`.
 
+[3.1.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v3.1.0
 [3.0.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v3.0.0
 [2.0.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v2.0.0
 [0.3.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v0.3.0

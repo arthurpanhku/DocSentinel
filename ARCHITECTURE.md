@@ -8,9 +8,9 @@
 
 |                  |                                                                           |
 | :--------------- | :------------------------------------------------------------------------ |
-| **Version**      | 1.0                                                                       |
+| **Version**      | 3.1                                                                       |
 | **Author**       | PAN CHAO                                                                  |
-| **Last updated** | 2025-03                                                                   |
+| **Last updated** | 2026-03                                                                   |
 | **Related**      | [Product Requirements (PRD)](./SPEC.md) · [Design docs](./docs/README.md) |
 
 ---
@@ -86,47 +86,52 @@ flowchart TB
 
 ### 1. Access Layer | 接入层
 
--   **REST API** (FastAPI): authentication (AAD/API Key), request validation, rate limiting, routing to assessment / KB / health.
--   **MCP Server** (Model Context Protocol): Standard interface for autonomous agents (Claude Desktop, OpenClaw) to discover and call tools.
--   **Streamlit Frontend**: Interactive web UI for human users.
--   **Optional**: CLI; future: webhooks for events.
+-   **REST API** (FastAPI): Request validation, routing to assessment / KB / health / skills endpoints.
+-   **MCP Server** (Model Context Protocol): Standard stdio interface for autonomous agents (Claude Desktop, Cursor, OpenClaw) to discover and call tools (`assess_document`, `query_knowledge_base`).
+-   **Note**: v3.0 removed the Streamlit frontend; DocSentinel is now a **headless API + MCP service**. Authentication (AAD/JWT) and rate limiting are defined but not yet wired into endpoints.
 
 ### 2. Orchestrator | 任务编排
 
--   Accepts assessment tasks (files + optional scenario/project ID).
--   Coordinates: Parser → Knowledge Base retrieval → Skill(s) → LLM → report assembly.
--   Can run multi-step reasoning and read/write Memory.
--   **Security**: Enforces RBAC checks and Audit Logging for all operations.
+-   Accepts assessment tasks (files + optional scenario/project/skill ID).
+-   Multi-agent pipeline: Policy+History Agent → Evidence Agent → Drafter Agent → Reviewer Agent.
+-   Policy and Evidence stages run **in parallel** via `asyncio.gather`.
+-   Assessment submission is **non-blocking** — returns task_id immediately, processes in background.
+-   Singleton `KnowledgeBaseService` and cached LLM client shared across requests.
 
 ### 3. Memory | 记忆体
 
--   **Working memory**: current task and session context.
--   **Episodic** (optional): session summaries for “compare with last assessment”.
--   **Implementation**: in-memory / Redis; optional vector store for semantic recall.
+-   **Working memory**: Task state stored in-memory (`_tasks` dict). Not persisted across restarts.
+-   **History reuse**: Past assessment reports are indexed into a dedicated Chroma collection and retrieved as context for new assessments.
+-   **Status**: Redis / DB persistence is planned but not yet implemented. SQLModel models (`User`, `AuditLog`) are defined but not connected.
 
 ### 4. Skills & Personas | 技能与角色
 
 -   **Persona-based Assessment**: Defines "who" is assessing (e.g. ISO 27001 Auditor vs. AppSec Engineer).
--   **Skill Templates**: JSON-based templates containing system prompts, risk focus areas, and compliance frameworks.
--   **Registry**: Built-in skills (hardcoded) + Custom skills (file/DB backed).
--   **Dynamic Orchestration**: Orchestrator injects skill-specific context into RAG queries and LLM prompts.
+-   **Built-in Skills**: 4 hardcoded personas (ISO 27001 Auditor, AppSec Engineer, GDPR DPO, Cloud Architect) in `skills_registry.py`.
+-   **Custom Skills**: File-backed (`data/skills.json`) CRUD via REST API.
+-   **Dynamic Orchestration**: Orchestrator injects skill-specific `system_prompt`, `risk_focus`, and `compliance_frameworks` into RAG queries and LLM prompts.
 
 ### 5. Knowledge Base (RAG) | 知识库
 
--   **Ingest**: multi-format upload → Parser → chunk → embed → vector store (e.g. Chroma).
--   **Query**: RAG retrieval returns relevant chunks for the orchestrator to inject into LLM context.
--   **History Reuse**: Indexes past assessment responses to answer "how did we answer this last time?".
+-   **Vector Store**: ChromaDB for chunk-level similarity search (sentence-transformers embeddings).
+-   **Graph RAG**: LightRAG for entity-relationship aware retrieval (controls → policies → vulnerabilities). Enabled via `ENABLE_GRAPH_RAG` config.
+-   **Hybrid Query**: When Graph RAG is enabled, results from both vector and graph retrieval are merged and deduplicated.
+-   **History Reuse**: Indexes past assessment responses into a dedicated Chroma collection.
+-   **Singleton**: Single `KnowledgeBaseService` instance shared across the application lifecycle.
 
 ### 6. Parser | 文件解析
 
--   Converts uploaded files (PDF, Word, Excel, PPT, text) into a unified format (Markdown/JSON).
--   Uses open-source libs (e.g. PyMuPDF, python-docx, openpyxl); shared pipeline for assessment input and KB documents.
+-   **Primary engine**: Docling — preserves tables, headings, and supports OCR for scanned PDFs. Outputs structured Markdown.
+-   **Fallback engine**: Legacy parsers (PyMuPDF, python-docx, openpyxl, python-pptx) for when Docling is unavailable.
+-   **Engine selection**: Configurable via `PARSER_ENGINE` (`auto` / `docling` / `legacy`). `auto` tries Docling first, falls back to legacy.
+-   Shared pipeline for both assessment input and KB document ingestion.
 
 ### 7. LLM Abstraction | LLM 抽象层
 
--   Single interface for chat/completion.
--   **Confidence Scoring**: Dedicated step to evaluate evidence strength (0.0-1.0).
--   Plugins: OpenAI, Anthropic, Qwen, **Ollama** (local).
+-   Single interface for chat/completion via LangChain (`ChatOpenAI` / `ChatOllama`).
+-   **Cached client**: LLM instance is `@lru_cache`d — one client per process lifetime.
+-   **Confidence**: Reviewer agent outputs a confidence score (0.0–1.0) as part of its JSON response; no separate LLM call needed.
+-   Supported providers: OpenAI (and compatible APIs), **Ollama** (local).
 
 ```mermaid
 flowchart LR
@@ -138,14 +143,10 @@ flowchart LR
     end
     subgraph Providers["Providers"]
         O["OpenAI"]
-        C["Claude"]
-        Q["Qwen"]
         Ol["Ollama"]
     end
     Orch --> Abst
     Abst --> O
-    Abst --> C
-    Abst --> Q
     Abst --> Ol
 ```
 
