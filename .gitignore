@@ -38,6 +38,9 @@ env/
 *.swp
 *.swo
 
+# AI tooling
+.claude/
+
 # Data and persistence
 data/
 *.db
