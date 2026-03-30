@@ -15,7 +15,7 @@ def _utcnow() -> datetime:
 
 class ParsedDocumentMetadata(BaseModel):
     filename: str
-    type: Literal["pdf", "docx", "xlsx", "pptx", "txt", "md"]
+    type: Literal["pdf", "docx", "xlsx", "pptx", "txt", "md", "mmd", "mermaid"]
     parser_engine: Literal["docling", "legacy"] = "legacy"
     upload_time: datetime = Field(default_factory=_utcnow)
     scenario_id: str | None = None

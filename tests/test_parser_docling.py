@@ -91,7 +91,7 @@ def test_auto_engine_calls_docling_for_pdf():
 
 def test_allowed_extensions_unchanged():
     """ALLOWED_EXTENSIONS still includes all expected types."""
-    expected = {".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".md"}
+    expected = {".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".md", ".mmd", ".mermaid"}
     assert ALLOWED_EXTENSIONS == expected
 
 
