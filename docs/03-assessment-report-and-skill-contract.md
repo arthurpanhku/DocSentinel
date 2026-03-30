@@ -66,6 +66,8 @@ Agent outputs a **structured report** conforming to this schema. It is used for 
         "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
         "description": { "type": "string" },
         "source_ref": { "type": "string", "description": "Reference to source doc/section" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "Finding-level confidence score (0.0–1.0)" },
+        "citation_ids": { "type": "array", "items": { "type": "string" }, "description": "IDs referencing entries in top-level sources[]" },
         "category": { "type": "string" }
       }
     },
@@ -77,6 +79,8 @@ Agent outputs a **structured report** conforming to this schema. It is used for 
         "control_or_clause": { "type": "string" },
         "gap_description": { "type": "string" },
         "evidence_suggestion": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "Gap-level confidence score (0.0–1.0)" },
+        "citation_ids": { "type": "array", "items": { "type": "string" }, "description": "IDs referencing entries in top-level sources[]" },
         "framework": { "type": "string" }
       }
     },
@@ -88,7 +92,8 @@ Agent outputs a **structured report** conforming to this schema. It is used for 
         "action": { "type": "string" },
         "priority": { "type": "string", "enum": ["low", "medium", "high"] },
         "related_risk_ids": { "type": "array", "items": { "type": "string" } },
-        "related_gap_ids": { "type": "array", "items": { "type": "string" } }
+        "related_gap_ids": { "type": "array", "items": { "type": "string" } },
+        "external_ticket": { "type": "string", "description": "Optional external tracking reference (e.g. Jira key or GitHub Issue URL)" }
       }
     },
     "SourceCitation": {
@@ -123,14 +128,14 @@ When `format == "markdown"`, the output should follow:
 {summary}
 
 ## Risk Items | 风险项
-| ID  | Title | Severity | Description |
-| --- | ----- | -------- | ----------- |
-| ... | ...   | ...      | ...         |
+| ID  | Title | Severity | Confidence | Description | Citations |
+| --- | ----- | -------- | ---------- | ----------- | --------- |
+| ... | ...   | ...      | ...        | ...         | ...       |
 
 ## Compliance Gaps | 合规差距
-| Control/Clause | Gap Description | Evidence Suggestion |
-| -------------- | --------------- | ------------------- |
-| ...            | ...             | ...                 |
+| Control/Clause | Gap Description | Confidence | Evidence Suggestion | Citations |
+| -------------- | --------------- | ---------- | ------------------- | --------- |
+| ...            | ...             | ...        | ...                 | ...       |
 
 ## Remediations | 整改建议
 | Priority | Action | Related Risks/Gaps |
@@ -156,7 +161,7 @@ Unified output format for both Assessment Input and Knowledge Base Ingestion.
       "required": ["filename", "type"],
       "properties": {
         "filename": { "type": "string" },
-        "type": { "type": "string", "enum": ["pdf", "docx", "xlsx", "pptx", "txt", "md"] },
+        "type": { "type": "string", "enum": ["pdf", "docx", "xlsx", "pptx", "txt", "md", "mmd", "mermaid"] },
         "parser_engine": { "type": "string", "enum": ["docling", "legacy"], "default": "legacy" },
         "upload_time": { "type": "string", "format": "date-time" },
         "scenario_id": { "type": "string", "description": "Optional scenario context" },
