@@ -156,11 +156,26 @@ def _parse_plain(content: bytes, filename: str, content_type: str) -> ParsedDocu
     )
 
 
+def _parse_mermaid(content: bytes, filename: str, content_type: str) -> ParsedDocument:
+    doc = _parse_plain(content, filename, content_type)
+    doc.content = f"```mermaid\n{doc.content}\n```"
+    return doc
+
+
 # ---------------------------------------------------------------------------
 # Extension whitelist and dispatch
 # ---------------------------------------------------------------------------
 
-ALLOWED_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".md"}
+ALLOWED_EXTENSIONS = {
+    ".pdf",
+    ".docx",
+    ".xlsx",
+    ".pptx",
+    ".txt",
+    ".md",
+    ".mmd",
+    ".mermaid",
+}
 
 # Extensions that Docling can handle natively
 _DOCLING_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".pptx"}
@@ -172,6 +187,8 @@ _LEGACY_PARSERS = {
     ".pptx": _parse_pptx,
     ".txt": lambda c, f: _parse_plain(c, f, "txt"),
     ".md": lambda c, f: _parse_plain(c, f, "md"),
+    ".mmd": lambda c, f: _parse_mermaid(c, f, "mmd"),
+    ".mermaid": lambda c, f: _parse_mermaid(c, f, "mermaid"),
 }
 
 
@@ -195,8 +212,8 @@ def parse_file(content: bytes, filename: str) -> ParsedDocument:
 
     engine = settings.PARSER_ENGINE
 
-    # Plain text/markdown always use legacy (no benefit from Docling)
-    if suffix in {".txt", ".md"}:
+    # Text-like formats always use legacy (no benefit from Docling)
+    if suffix in {".txt", ".md", ".mmd", ".mermaid"}:
         return _LEGACY_PARSERS[suffix](content, filename)
 
     # Docling-capable formats
