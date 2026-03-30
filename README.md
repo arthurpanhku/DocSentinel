@@ -243,6 +243,10 @@ curl -X POST "http://localhost:8000/api/v1/kb/query" \
 
 ---
 
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/arthurpanhku-docsentinel).
+
 ## Project layout
 
 ```text
