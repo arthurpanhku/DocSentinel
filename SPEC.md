@@ -230,11 +230,15 @@ The system uses a layered design: **Access** (REST API / MCP Server) → **Core*
 | :----------------- | :---------------------------------------------------------------------- | :------- |
 | **Parser**         | Upload Word / PDF / Excel / PPT and convert to JSON/Markdown.           | P0       |
 | **Parser**         | OCR / Vision support for images.                                        | P1       |
+| **Parser**         | Ingest architecture diagrams as text inputs (e.g. Mermaid.js `.mmd`) for Design-stage reviews. | P1       |
 | **Knowledge Base** | Upload multi-format docs, parse, chunk, embed, and retrieve (RAG).      | P0       |
 | **Knowledge Base** | Metadata filtering (e.g. by framework, customer).                       | P1       |
+| **Knowledge Base** | **Graph RAG**: Map relationships across internal policies and controls (e.g., Cloud Policy ↔ Data Privacy Policy) for deeper compliance insights. | P1       |
 | **Assessment**     | Select scenario, upload files, trigger assessment.                      | P0       |
 | **Assessment**     | Output structured report (Risks, Gaps, Remediation, **Confidence**).    | P0       |
 | **Assessment**     | **Human-in-the-Loop**: Review, approve, reject, comment workflow.       | P0       |
+| **Assessment**     | HITL feedback learning: allow auditors to **correct** findings and feed accepted corrections back into history/KB to reduce future false positives. | P1       |
+| **Assessment**     | Per-finding **Confidence Scores** + evidence links (page/paragraph citations) to speed up manual verification and benchmarking. | P1       |
 | **LLM**            | Configurable commercial LLMs (OpenAI, Claude, etc.).                    | P0       |
 | **LLM**            | Configurable local models (Ollama).                                     | P0       |
 | **Skill**          | **Skill/Persona Management**: Create custom roles and import templates. | P0       |
@@ -242,6 +246,7 @@ The system uses a layered design: **Access** (REST API / MCP Server) → **Core*
 | **Orchestrator**   | **LangGraph**: Stateful graph-based agent orchestration with conditional branching. | P0       |
 | **SSDLC**          | **Requirements Stage**: Security requirements, compliance mapping, threat modeling inputs. | P0       |
 | **SSDLC**          | **Design Stage**: Security architecture review, STRIDE/DREAD, encryption/permission design, SDR. | P0       |
+| **SSDLC**          | Design-stage threat modeling integration: support PyTM exports and Mermaid.js diagrams to help the agent “see” architecture, data flows, and trust boundaries. | P1       |
 | **SSDLC**          | **Development Stage**: Secure coding standards, built-in controls (anti-injection, XSS). | P0       |
 | **SSDLC**          | **Testing Stage**: SAST/DAST report review, penetration test findings, vulnerability verification. | P0       |
 | **SSDLC**          | **Deployment Stage**: Release readiness review, config security, key management, hardening. | P0       |
@@ -251,6 +256,7 @@ The system uses a layered design: **Access** (REST API / MCP Server) → **Core*
 | **Access**         | REST API + MCP Server.                                                  | P0       |
 | **Integrations**   | ServiceNow: Read project metadata.                                      | P0       |
 | **Integrations**   | ServiceNow: Write back results / Webhook trigger.                       | P1       |
+| **Integrations**   | Automated remediation tracking: create and sync remediation items to Jira or GitHub Issues (ticket links in report). | P1       |
 | **IAM**            | AAD (Azure AD) Login & SSO.                                             | P0       |
 | **IAM**            | RBAC (Analyst, Lead, Project Owner, Admin, API Consumer).               | P0       |
 | **IAM**            | API Authentication (Bearer Token / API Key).                            | P0       |
