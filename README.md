@@ -10,7 +10,7 @@
 
 <p align="center">
   <strong>DocSentinel</strong><br/>
-  <em>Automated security assessment for documents and questionnaires</em>
+  <em>AI-powered SSDLC security assessment for documents and questionnaires</em>
 </p>
 
 <p align="center">
@@ -32,16 +32,18 @@
 
 ## What is DocSentinel?
 
-**DocSentinel** is an AI-powered assistant for security teams. It automates the review of security-related **documents, forms, and reports** (e.g. Security Questionnaires, design docs, compliance evidence), compares them against your policy and knowledge base, and produces **structured assessment reports** with risks, compliance gaps, and remediation suggestions.
+**DocSentinel** is an AI-powered assistant for security teams. It automates the review of security-related **documents, forms, and reports** across the **entire Secure Software Development Lifecycle (SSDLC)** — from requirements and design through development, testing, deployment, and operations. It compares inputs against your policy and knowledge base, and produces **structured assessment reports** with risks, compliance gaps, and remediation suggestions.
 
 🚀 **Agent Ready**: Supports **Model Context Protocol (MCP)** to be used as a "skill" by OpenClaw, Claude Desktop, and other autonomous agents.
 
+- **SSDLC lifecycle coverage**: 6 stages (Requirements, Design, Development, Testing, Deployment, Operations) with stage-specific skills and checklists.
+- **LangGraph orchestration**: Stateful, graph-based agent workflows with conditional branching per SSDLC stage.
 - **Multi-format input**: PDF, Word, Excel, PPT, text — parsed into a unified format for the LLM.
 - **Knowledge base (RAG)**: Upload policy and compliance documents; the agent uses them as reference when assessing.
 - **Multiple LLMs**: Use OpenAI, Claude, Qwen, or **Ollama** (local) via a single interface.
 - **Structured output**: JSON/Markdown reports with risk items, compliance gaps, and actionable remediations.
 
-Ideal for enterprises that need to scale security assessments across many projects without proportionally scaling headcount.
+Ideal for enterprises that need to scale security assessments across many projects and SSDLC stages without proportionally scaling headcount.
 
 ---
 
@@ -53,6 +55,7 @@ Ideal for enterprises that need to scale security assessments across many projec
 | **Heavy questionnaire workflow**<br>Business fills form → Security reviews → Business adds evidence → Security reviews again. | **Automated first-pass** and gap analysis reduces manual back-and-forth rounds.              |
 | **Pre-release review pressure**<br>Security needs to review and sign off on technical docs before launch.                     | **Structured reports** help reviewers focus on decision-making, not line-by-line reading.    |
 | **Scale vs. consistency**<br>Many projects and standards lead to inconsistent or delayed manual reviews.                      | **Unified pipeline** with configurable scenarios keeps assessments consistent and auditable. |
+| **SSDLC coverage gaps**<br>Security involvement is uneven across lifecycle stages; early stages get less scrutiny.            | **Stage-aware assessment** covers all 6 SSDLC stages with dedicated skills and checklists.  |
 
 *See the full problem statement and product goals in [SPEC.md](./SPEC.md).*
 
@@ -60,7 +63,7 @@ Ideal for enterprises that need to scale security assessments across many projec
 
 ## Architecture
 
-DocSentinel is built around an **orchestrator** that coordinates parsing, the knowledge base (RAG), skills, and the LLM. You can use cloud or local LLMs and optional integrations (e.g. AAD, ServiceNow) as your environment requires.
+DocSentinel is built around a **LangGraph orchestrator** that coordinates parsing, SSDLC stage routing, the knowledge base (RAG), skills, and the LLM. You can use cloud or local LLMs and optional integrations (e.g. AAD, ServiceNow) as your environment requires.
 
 ```mermaid
 flowchart TB
@@ -70,14 +73,15 @@ flowchart TB
         API["REST API / MCP"]
     end
     subgraph Core["DocSentinel Core"]
-        Orch["Orchestrator"]
+        Orch["LangGraph\nOrchestrator"]
+        SSDLC["SSDLC Pipeline\n(6 stages)"]
         Mem["Memory"]
         Skill["Skills"]
         KB["Knowledge Base (RAG)"]
         Parser["Parser"]
     end
     subgraph LLM["LLM Layer"]
-        Abst["LLM Abstraction"]
+        Abst["LLM Abstraction\n(LangChain)"]
     end
     subgraph Backends["LLM Backends"]
         Cloud["OpenAI / Claude / Qwen"]
@@ -86,8 +90,9 @@ flowchart TB
 
     User --> API
     API --> Orch
+    Orch --> SSDLC
+    SSDLC --> Skill
     Orch <--> Mem
-    Orch --> Skill
     Orch --> KB
     Orch --> Parser
     Orch --> Abst
@@ -97,17 +102,26 @@ flowchart TB
 
 **Data flow (simplified):**
 
-1.  User uploads documents and selects scenario.
+1.  User uploads documents and optionally specifies SSDLC stage.
 2.  **Parser** converts files (PDF, Word, Excel, PPT, etc.) to text/Markdown.
-3.  **Orchestrator** loads **KB** chunks (RAG) and invokes **Skills**.
-4.  **LLM** (OpenAI, Ollama, etc.) produces structured findings.
-5.  Returns **assessment report** (risks, gaps, remediations).
+3.  **SSDLC Router** determines lifecycle stage and loads stage-specific skill + checklist.
+4.  **LangGraph** runs the agent graph: Policy+Evidence in parallel, then Drafter+Reviewer.
+5.  Returns **assessment report** (risks, gaps, remediations, confidence, SSDLC stage).
 
 *Detailed architecture: [ARCHITECTURE.md](./ARCHITECTURE.md) and [docs/01-architecture-and-tech-stack.md](./docs/01-architecture-and-tech-stack.md).*
 
 ---
 
 ## ✨ Core Capabilities
+
+### 🔄 Full SSDLC Lifecycle Coverage
+Assess documents at every stage of the Secure Software Development Lifecycle:
+- **Requirements**: Security requirements, compliance mapping, initial risk analysis.
+- **Design**: Architecture review, STRIDE/DREAD threat modeling, SDR.
+- **Development**: Secure coding standards, code review findings.
+- **Testing**: SAST/DAST report triage, pen-test evaluation.
+- **Deployment**: Release readiness, config security, hardening.
+- **Operations**: Incident response, vulnerability monitoring, log audit.
 
 ### 🛡️ Automated Security Assessment
 Submit security questionnaires, design documents, or audit reports. DocSentinel analyzes them using configured LLMs and identifies:
@@ -117,6 +131,9 @@ Submit security questionnaires, design documents, or audit reports. DocSentinel 
 
 ### 🧠 RAG-Powered Knowledge Base
 Upload your organization's internal security policies, standards, and past audits. The agent indexes these documents to provide **context-aware assessments**, citing specific policy clauses in its findings.
+
+### 🔗 LangGraph Agent Orchestration
+Powered by **LangChain + LangGraph** — stateful, graph-based agent workflows with conditional routing per SSDLC stage. Parallel execution of Policy and Evidence agents, followed by Drafter and Reviewer agents.
 
 ### 🔌 API-First & MCP Ready
 Designed as a headless service. Integrate it into your CI/CD pipelines via REST API, or use it as a **super-tool** within AI agents (like Claude Desktop, OpenClaw) using the Model Context Protocol (MCP).
@@ -232,7 +249,8 @@ curl -X POST "http://localhost:8000/api/v1/kb/query" \
 DocSentinel/
 ├── app/                  # Application code
 │   ├── api/              # REST routes: assessments, KB, health, skills
-│   ├── agent/            # Orchestrator, skills registry & service
+│   ├── agent/            # LangGraph orchestrator, skills registry & service
+│   │   └── ssdlc/        # SSDLC pipeline: stage router, stage skills, checklists
 │   ├── core/             # Config, guardrails, security, DB
 │   ├── kb/               # Knowledge Base (Chroma + LightRAG graph RAG)
 │   ├── llm/              # LLM abstraction (OpenAI, Ollama)
@@ -276,6 +294,7 @@ DocSentinel/
 | `CHROMA_PERSIST_DIR`                           | Vector DB path                          | `./data/chroma`                     |
 | `PARSER_ENGINE`                                | Parser: `auto`, `docling`, or `legacy` | `auto`                              |
 | `ENABLE_GRAPH_RAG`                             | Enable LightRAG graph retrieval         | `true`                              |
+| `SSDLC_DEFAULT_STAGE`                          | Default SSDLC stage if not specified    | `auto`                              |
 | `UPLOAD_MAX_FILE_SIZE_MB` / `UPLOAD_MAX_FILES` | Upload limits                          | `50` / `10`                         |
 
 *See [.env.example](./.env.example) and [docs/05-deployment-runbook.md](./docs/05-deployment-runbook.md) for full options.*

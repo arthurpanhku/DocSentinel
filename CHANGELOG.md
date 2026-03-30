@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [4.0.0] — 2026-03-29
+
+### Added
+- **SSDLC Pipeline**: Full Secure Software Development Lifecycle support with 6 stage-specific assessment flows:
+  - **Requirements**: Security requirements completeness, compliance mapping, risk analysis.
+  - **Design**: Architecture security review, STRIDE/DREAD threat modeling, encryption/permission design.
+  - **Development**: Secure coding standards, anti-injection/XSS controls verification.
+  - **Testing**: SAST/DAST report triage, penetration test findings evaluation, vulnerability verification.
+  - **Deployment**: Release readiness review, configuration security, key management, hardening.
+  - **Operations**: Vulnerability monitoring, incident response evaluation, patch management, log audit.
+- **SSDLC Stage Skills**: 6 built-in stage-specific skills with tailored system prompts, risk focus areas, and compliance framework mappings.
+- **SSDLC Auto-detection**: Router node can auto-detect the SSDLC stage from document content when not explicitly specified.
+
+### Changed
+- **LangGraph Orchestrator**: Replaced custom `asyncio.gather` orchestration with **LangChain + LangGraph** stateful graph-based agent workflows. Graph nodes: Parser → SSDLC Router → Policy+Evidence (parallel fan-out) → Drafter → Reviewer.
+- **Assessment API**: `POST /assessments` now accepts optional `ssdlc_stage` parameter.
+- **MCP Tools**: `assess_document` tool now accepts optional `ssdlc_stage` parameter.
+- **Report Schema**: Added `ssdlc_stage` field to `AssessmentReport.metadata`.
+
+---
+
 ## [3.1.0] — 2026-03-29
 
 ### Added
@@ -24,7 +45,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Dead code**: Removed unused `_estimate_confidence()` function (confidence is returned by Reviewer agent).
 
 ### Fixed
-- **MCP Server bug**: Removed `await` on synchronous `kb.query()` call that would throw `TypeError` at runtime.
+- **MCP Server bug**: Fixed `await` usage on `kb.query()` call — aligned with the async KB service interface after Graph RAG integration.
 - **`datetime.utcnow()` deprecation**: Replaced with `datetime.now(UTC)` across all modules (Python 3.12+ compatible).
 
 ---
@@ -136,6 +157,7 @@ This release marks a significant milestone with **Skill Management**, **Template
 - **CI/CD**: Updated GitHub Actions workflow to include linting steps.
 - **Project Structure**: Migrated `pytest.ini` to `pyproject.toml`.
 
+[4.0.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v4.0.0
 [3.1.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v3.1.0
 [3.0.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v3.0.0
 [2.0.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v2.0.0

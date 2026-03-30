@@ -2,8 +2,8 @@
 
 |             |                         |
 | :---------- | :---------------------- |
-| **Version** | v1.4                    |
-| **Date**    | 2025-03-06              |
+| **Version** | v4.0                    |
+| **Date**    | 2026-03-29              |
 | **Author**  | PAN CHAO                |
 | **Contact** | u3638376@connect.hku.hk |
 
@@ -19,6 +19,12 @@
 
 **History | 版本历史**
 
+-   **v4.0**: SSDLC + LangGraph. Full SSDLC lifecycle support (6 stages), LangChain/LangGraph as orchestration engine, stage-specific skills and assessment flows.
+    SSDLC + LangGraph。完整 SSDLC 生命周期支持（6 阶段），引入 LangChain/LangGraph 作为编排引擎，阶段专属 Skill 与评估流程。
+-   **v3.1**: Performance & quality. Graph RAG, Docling parser, async pipeline, parallel orchestration, guardrails, singleton KB, cached LLM.
+    性能与质量优化。Graph RAG、Docling 解析器、异步流水线、并行编排、输入防护、单例 KB、缓存 LLM。
+-   **v3.0**: Headless pivot. Removed Streamlit frontend; pure API + MCP service.
+    无前端化转型。移除 Streamlit 前端，纯 API + MCP 服务。
 -   **v2.0**: Major upgrade. Added Multi-Agent Orchestration, Human-in-the-Loop Workflow, Skill/Persona Management, and One-Click Deployment.
     重大更新。新增多代理编排、人机协作流、技能/角色管理及一键部署。
 -   **v1.4**: PRD and System Architecture doc split.
@@ -36,11 +42,11 @@
 
 **English**
 
-This PRD is for the open-source "DocSentinel" project. It defines business pain points, solution approach, system architecture, and product scope to serve as a single source of truth for subsequent design and development. The project aims to use an AI Agent to automate the review of and recommendations for security-related documents, forms, and reports, reduce the burden on enterprise security teams, and support integration with mainstream and local LLMs, multi-format file parsing, and extensible Skills and knowledge bases.
+This PRD is for the open-source "DocSentinel" project. It defines business pain points, solution approach, system architecture, and product scope to serve as a single source of truth for subsequent design and development. The project aims to use an AI Agent to automate the review of and recommendations for security-related documents, forms, and reports, reduce the burden on enterprise security teams, and support integration with mainstream and local LLMs, multi-format file parsing, and extensible Skills and knowledge bases. Starting from v4.0, DocSentinel provides **full SSDLC (Secure Software Development Lifecycle) coverage**, supporting automated assessment at every stage — from requirements and design through development, testing, deployment, and operations — powered by **LangChain and LangGraph** as the agent orchestration framework.
 
 **中文**
 
-本 PRD 面向「DocSentinel」开源项目，用于明确业务痛点、解决方案、系统架构与产品范围，为后续设计与开发提供统一依据。项目目标是通过 AI Agent 自动化完成安全评估相关文档/表格/报告的审阅与建议，减轻企业安全团队负担，并支持对接主流与本地大模型、多格式文件解析及可扩展的 Skill 与知识库。
+本 PRD 面向「DocSentinel」开源项目，用于明确业务痛点、解决方案、系统架构与产品范围，为后续设计与开发提供统一依据。项目目标是通过 AI Agent 自动化完成安全评估相关文档/表格/报告的审阅与建议，减轻企业安全团队负担，并支持对接主流与本地大模型、多格式文件解析及可扩展的 Skill 与知识库。自 v4.0 起，DocSentinel 提供**完整的 SSDLC（安全软件开发生命周期）覆盖**，支持从需求、设计、开发、测试、部署到运维每个阶段的自动化评估，并引入 **LangChain 与 LangGraph** 作为 Agent 编排框架。
 
 ---
 
@@ -77,12 +83,14 @@ In agile and DevOps environments, enterprises ship dozens to hundreds of project
 | **Development-phase control relies on people**<br>Policy definition, result interpretation, and exception approval still depend on security staff and are hard to scale. | **开发阶段管控依赖人工**<br>策略制定、结果解读、例外审批仍依赖安全人员，难以规模化。   |
 | **Pre-release review pressure**<br>Security must review every file and sign off. Technical documents are hard for non-technical staff to interpret.                      | **上线前集中审阅压力大**<br>需 Review 全部文件并 Sign-off；技术文档阅读与理解成本高。  |
 | **Scale vs. consistency**<br>Manual assessment tends to be inconsistent, incomplete, or delayed; reusable patterns are hard to institutionalize.                         | **规模与一致性矛盾**<br>人工评估易出现不一致、遗漏或延迟，且难以沉淀可复用的评估模式。 |
+| **SSDLC coverage gaps**<br>Security involvement is unevenly distributed across the SSDLC; requirements and design phases often get less scrutiny than pre-release review, leaving risks to accumulate. | **SSDLC 覆盖断层**<br>安全介入在 SSDLC 各阶段分布不均；需求与设计阶段审查不足，风险层层积累到上线前集中爆发。 |
 
 ### 2.3 Desired Change | 期望改变
 
 -   **Automation / 自动化**: Automate analysis and initial assessment of forms, documents, and reports to reduce repetitive manual reading.
 -   **Consistency / 一致性**: Produce consistent assessment conclusions and remediation recommendations based on a unified knowledge base and policies.
 -   **Extensibility / 可扩展**: Support assessment scenarios for different compliance frameworks and customer/project types.
+-   **SSDLC coverage / 全生命周期覆盖**: Provide stage-aware assessment across the entire SSDLC — requirements, design, development, testing, deployment, and operations — with stage-specific skills and checklists.
 
 ---
 
@@ -92,21 +100,23 @@ In agile and DevOps environments, enterprises ship dozens to hundreds of project
 
 **English**
 
-Build a **dedicated AI Agent for security teams**, with the primary focus on **automating the assessment of all forms, documents, and reports that require security team review**. After security staff submit project-related files to the Agent, the Agent will:
+Build a **dedicated AI Agent for security teams**, with the primary focus on **automating the assessment of all forms, documents, and reports that require security team review across the entire Secure Software Development Lifecycle (SSDLC)**. After security staff submit project-related files to the Agent, the Agent will:
 
 1.  **Parse multi-format files**: Convert Word, PDF, Excel, PPT, images, etc. into an intermediate format (e.g. JSON/Markdown).
 2.  **Use knowledge base and policy**: Rely on built-in or configurable compliance and policy knowledge to understand "what standards must be met."
-3.  **Perform risk assessment and recommendations**: Identify security/compliance risks and provide security advice and actionable remediation.
-4.  **Produce structured output**: Enable security staff to quickly review, sign off, or hand off to business/development for remediation.
+3.  **SSDLC-aware assessment**: Automatically determine or accept the SSDLC stage (Requirements, Design, Development, Testing, Deployment, Operations) and apply stage-specific assessment logic, checklists, and risk focus.
+4.  **Perform risk assessment and recommendations**: Identify security/compliance risks and provide security advice and actionable remediation.
+5.  **Produce structured output**: Enable security staff to quickly review, sign off, or hand off to business/development for remediation.
 
 **中文**
 
-构建**安全团队专用 AI Agent**，首要方向为：**自动化评估所有需要安全团队审阅的表格、文档与报告**。安全人员将项目相关文件提交给 Agent 后，Agent 能够：
+构建**安全团队专用 AI Agent**，首要方向为：**自动化评估所有需要安全团队审阅的表格、文档与报告，覆盖完整的安全软件开发生命周期（SSDLC）**。安全人员将项目相关文件提交给 Agent 后，Agent 能够：
 
 1.  **解析多格式文件**：将 Word、PDF、Excel、PPT、图片等转为可被模型理解的中间格式（如 JSON/Markdown）。
 2.  **结合知识库与策略**：基于内置/可配置的合规与策略知识库，理解「应该满足什么标准」。
-3.  **执行风险评估与建议**：识别与安全/合规相关的风险点，给出安全建议与可操作的整改方案。
-4.  **输出结构化结果**：便于安全人员快速复核、签字或转交业务/开发团队整改。
+3.  **SSDLC 阶段感知评估**：自动识别或接受 SSDLC 阶段（需求、设计、开发、测试、部署、运维），应用阶段专属评估逻辑、检查清单和风险关注点。
+4.  **执行风险评估与建议**：识别与安全/合规相关的风险点，给出安全建议与可操作的整改方案。
+5.  **输出结构化结果**：便于安全人员快速复核、签字或转交业务/开发团队整改。
 
 ### 3.2 Solution Value | 方案价值
 
@@ -127,6 +137,7 @@ Build a **dedicated AI Agent for security teams**, with the primary focus on **a
 | **Configurable scenarios**<br>可配置评估场景 | Use the knowledge base and Skills to configure different assessment criteria and check items by compliance framework, customer type, or project type.  |
 | **Multi-model support**<br>多模型支持        | Support mainstream commercial LLMs (e.g. ChatGPT, Qwen, Claude) and local/on-prem models (e.g. Ollama) through a unified interface.                    |
 | **Actionable results**<br>结果可操作         | Output risk items, compliance gaps, concrete remediation suggestions, and (optionally) priority.                                                       |
+| **SSDLC lifecycle**<br>SSDLC 全生命周期     | Cover all 6 SSDLC stages (Requirements, Design, Development, Testing, Deployment, Operations) with stage-specific skills, checklists, and flows.       |
 
 ### 4.2 Success Metrics (Suggested) | 成功指标（建议）
 
@@ -150,11 +161,11 @@ Build a **dedicated AI Agent for security teams**, with the primary focus on **a
 
 **English**
 
-The system uses a layered design: **Access** (REST API / Web / CLI) → **Core** (Orchestrator, Memory, Skills, Knowledge Base RAG, Parser) → **LLM abstraction** → **Cloud/local LLMs**. Optional integrations: **AAD** (identity/SSO) and **ServiceNow** (project metadata).
+The system uses a layered design: **Access** (REST API / MCP Server) → **Core** (Orchestrator, SSDLC Pipeline, Memory, Skills, Knowledge Base RAG, Parser) → **LLM abstraction** → **Cloud/local LLMs**. The orchestrator is built on **LangChain + LangGraph**, enabling stateful, graph-based agent workflows with conditional branching per SSDLC stage. Optional integrations: **AAD** (identity/SSO) and **ServiceNow** (project metadata).
 
 **中文**
 
-系统采用分层设计：**接入层**（REST API / Web / CLI）→ **核心**（任务编排、记忆体、Skill 层、知识库 RAG、文件解析）→ **LLM 抽象层** → **商用/本地 LLM**。可选对接 **AAD**（身份/SSO）与 **ServiceNow**（项目元数据）。
+系统采用分层设计：**接入层**（REST API / MCP Server）→ **核心**（任务编排、SSDLC 流水线、记忆体、Skill 层、知识库 RAG、文件解析）→ **LLM 抽象层** → **商用/本地 LLM**。编排引擎基于 **LangChain + LangGraph** 构建，支持有状态、图驱动的 Agent 工作流与 SSDLC 阶段条件分支。可选对接 **AAD**（身份/SSO）与 **ServiceNow**（项目元数据）。
 
 **High-Level Diagram | 架构图**
 
@@ -164,7 +175,7 @@ The system uses a layered design: **Access** (REST API / Web / CLI) → **Core**
                     └───────────────────────────┬─────────────────────────────┘
                                                 │
                     ┌───────────────────────────▼─────────────────────────────┐
-                    │                Access Layer | 接入层 (API / Web)         │
+                    │             Access Layer | 接入层 (API / MCP)           │
                     └───────────────────────────┬─────────────────────────────┘
                                                 │
     ┌───────────────────────────────────────────▼───────────────────────────────────────────┐
@@ -191,9 +202,10 @@ The system uses a layered design: **Access** (REST API / Web / CLI) → **Core**
 
 | Component           | Role                                                      | Details                              |
 | :------------------ | :-------------------------------------------------------- | :----------------------------------- |
-| **Orchestrator**    | Coordinates Parser, KB, Skills, LLM to execute tasks.     | ARCHITECTURE.md § Component Design   |
+| **Orchestrator**    | LangGraph-based stateful agent graph; coordinates Parser, KB, Skills, LLM. | ARCHITECTURE.md § Component Design   |
+| **SSDLC Pipeline**  | Stage-aware routing (6 stages); selects stage-specific skills and checklists. | ARCHITECTURE.md § SSDLC Pipeline     |
 | **Memory**          | Manages working, episodic, and semantic memory.           | ARCHITECTURE.md § Component Design   |
-| **Skills**          | Reusable assessment capabilities (e.g. policy check).     | ARCHITECTURE.md § Component Design   |
+| **Skills**          | Reusable assessment capabilities (e.g. policy check, SSDLC stage skills). | ARCHITECTURE.md § Component Design   |
 | **Knowledge Base**  | Multi-format ingestion, chunking, embedding, RAG.         | ARCHITECTURE.md § Component Design   |
 | **Parser**          | Converts files (PDF, Word, Excel, etc.) to Markdown/JSON. | ARCHITECTURE.md § Component Design   |
 | **LLM Abstraction** | Unified interface for model switching.                    | ARCHITECTURE.md § Component Design   |
@@ -201,12 +213,12 @@ The system uses a layered design: **Access** (REST API / Web / CLI) → **Core**
 
 ### 5.3 Data Flow (Summary) | 数据流（简要）
 
-1.  User submits **assessment task** (files + optional project/scenario) via API/Web.
-2.  (Optional) Fetch **project metadata** from ServiceNow.
-3.  **Parser** converts files to intermediate format.
-4.  **Orchestrator** loads **Knowledge Base** chunks (RAG) and **Skills**.
-5.  **Agent** calls **LLM** with context (multi-turn reasoning if needed).
-6.  Generate structured **assessment report** (risks, gaps, remediations).
+1.  User submits **assessment task** (files + optional SSDLC stage / skill ID) via API or MCP. API returns `task_id` immediately (non-blocking).
+2.  **Parser** converts files to intermediate Markdown/text format (Docling or legacy).
+3.  **SSDLC Router** determines the lifecycle stage (auto-detect or user-specified) and selects stage-specific skill + checklist.
+4.  **LangGraph Orchestrator** executes the agent graph: Policy+History and Evidence nodes run **in parallel**, followed by Drafter and Reviewer nodes.
+5.  Structured **assessment report** (risks, gaps, remediations, confidence, sources, SSDLC stage) is stored.
+6.  User polls `GET /assessments/{task_id}` to retrieve the completed report.
 
 ---
 
@@ -227,9 +239,16 @@ The system uses a layered design: **Access** (REST API / Web / CLI) → **Core**
 | **LLM**            | Configurable local models (Ollama).                                     | P0       |
 | **Skill**          | **Skill/Persona Management**: Create custom roles and import templates. | P0       |
 | **Skill**          | Built-in personas (e.g. SOC2 Auditor, AppSec Engineer).                 | P0       |
-| **Orchestrator**   | **Multi-Agent**: Policy -> Evidence -> Drafter -> Reviewer flow.        | P1       |
+| **Orchestrator**   | **LangGraph**: Stateful graph-based agent orchestration with conditional branching. | P0       |
+| **SSDLC**          | **Requirements Stage**: Security requirements, compliance mapping, threat modeling inputs. | P0       |
+| **SSDLC**          | **Design Stage**: Security architecture review, STRIDE/DREAD, encryption/permission design, SDR. | P0       |
+| **SSDLC**          | **Development Stage**: Secure coding standards, built-in controls (anti-injection, XSS). | P0       |
+| **SSDLC**          | **Testing Stage**: SAST/DAST report review, penetration test findings, vulnerability verification. | P0       |
+| **SSDLC**          | **Deployment Stage**: Release readiness review, config security, key management, hardening. | P0       |
+| **SSDLC**          | **Operations Stage**: Vulnerability monitoring, incident response, patch management, log audit. | P0       |
+| **SSDLC**          | **Auto-detect stage** from document content or accept explicit stage parameter.   | P1       |
 | **Memory**         | **History Reuse**: Retrieve past similar answers.                       | P1       |
-| **Access**         | REST API; optional Web UI.                                              | P0 / P1  |
+| **Access**         | REST API + MCP Server.                                                  | P0       |
 | **Integrations**   | ServiceNow: Read project metadata.                                      | P0       |
 | **Integrations**   | ServiceNow: Write back results / Webhook trigger.                       | P1       |
 | **IAM**            | AAD (Azure AD) Login & SSO.                                             | P0       |
@@ -243,6 +262,25 @@ The system uses a layered design: **Access** (REST API / Web / CLI) → **Core**
 -   **As a security lead**, I want to select or link a project from ServiceNow when starting an assessment **so that** the system auto-fills project type and compliance scope.
 -   **As enterprise IT**, I want to configure the Agent to use only a local Ollama model **so that** assessment content never leaves the internal network.
 -   **As a developer**, I want to submit documents via REST API and receive assessment results in JSON **so that** the Agent can be integrated into existing ticketing workflows.
+-   **As a security architect**, I want to submit a system design document and specify "Design" as the SSDLC stage **so that** the Agent applies STRIDE/DREAD threat modeling and checks encryption/permission design against our standards.
+-   **As a DevSecOps engineer**, I want to submit SAST/DAST scan results at the "Testing" stage **so that** the Agent triages findings, maps them to compliance requirements, and prioritizes remediation.
+-   **As an operations engineer**, I want to submit incident response logs at the "Operations" stage **so that** the Agent evaluates our response procedures against best practices and identifies process gaps.
+-   **As a project manager**, I want the Agent to auto-detect the SSDLC stage from the uploaded document type **so that** I don't need to manually specify it every time.
+
+### 6.3 SSDLC Stage Definitions | SSDLC 阶段定义
+
+The 6 standard SSDLC stages (aligned with NIST, OWASP, and Microsoft SDL):
+
+| Stage | Name (EN) | 阶段名称 (CN) | Key Activities | Typical Inputs |
+| :---- | :-------- | :------------ | :------------- | :------------- |
+| **1** | **Requirements** | 需求阶段 | Define security requirements, compliance mapping (GDPR, ISO 27001, etc.), initial threat modeling, risk analysis | Requirements docs, compliance checklists, regulatory references |
+| **2** | **Design** | 设计阶段 | Security architecture design, permission/access model, encryption scheme, threat modeling (STRIDE/DREAD), Security Design Review (SDR) | Architecture docs, design specs, threat models, data flow diagrams |
+| **3** | **Development** | 开发阶段 | Secure coding standards compliance, security training verification, built-in security controls (anti-injection, XSS prevention, input validation) | Source code, coding guidelines, code review reports |
+| **4** | **Testing** | 测试阶段 | SAST (static analysis), DAST (dynamic scanning), penetration testing, vulnerability fix & verification | SAST/DAST reports, pen-test findings, vulnerability scan results |
+| **5** | **Deployment** | 部署阶段 | Security release readiness review, configuration security (key management, least privilege), hardening checklist | Deployment configs, infrastructure-as-code, release checklists |
+| **6** | **Operations** | 运维阶段 | Vulnerability monitoring, incident response evaluation, patch management, log audit, ongoing compliance | Monitoring alerts, incident reports, audit logs, patch records |
+
+Each stage maps to one or more **built-in SSDLC Skills** that define stage-specific `system_prompt`, `risk_focus`, `compliance_frameworks`, and assessment checklists. Users can also create custom SSDLC skills.
 
 ---
 

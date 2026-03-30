@@ -17,18 +17,20 @@ This directory holds **executable design and specification** artifacts that acco
 | **03** | [Assessment Report and Skill Contract](./03-assessment-report-and-skill-contract.md) | JSON Schemas for Reports and Skills.                                | Pre-Development      |
 | **04** | [Integration Guide](./04-integration-guide.md)                                       | AAD, ServiceNow configuration and mapping.                          | Integration Phase    |
 | **05** | [Deployment Runbook](./05-deployment-runbook.md)                                     | Deployment, config reference, ops.                                  | Pre-Release          |
+| **06** | [Agent Integration (MCP)](./06-agent-integration.md)                                 | MCP setup for Claude Desktop, Cursor, OpenClaw.                     | Integration Phase    |
 
 ---
 
 ## Default Tech Stack | 技术栈默认假设
 
-Aligned with PRD:
+Aligned with PRD and current implementation:
 
 -   **Language**: Python 3.10+
--   **Web/API**: FastAPI
--   **Agent**: LangChain / LangGraph
--   **Vector DB**: Chroma / Qdrant
--   **Parsing**: PyMuPDF, python-docx, openpyxl
+-   **Web/API**: FastAPI + MCP Server (stdio)
+-   **Agent**: LangChain + LangGraph (stateful graph-based orchestration with SSDLC routing)
+-   **SSDLC**: 6-stage pipeline (Requirements → Design → Development → Testing → Deployment → Operations)
+-   **Vector DB**: Chroma (+ LightRAG for Graph RAG)
+-   **Parsing**: Docling (primary) + PyMuPDF, python-docx, openpyxl (legacy fallback)
 -   **LLM**: LangChain Abstraction (OpenAI / Ollama)
 
 *See [01-architecture-and-tech-stack.md](./01-architecture-and-tech-stack.md) for details.*
@@ -52,6 +54,7 @@ docs/
 ├── 03-assessment-report-and-skill-contract.md
 ├── 04-integration-guide.md
 ├── 05-deployment-runbook.md
+├── 06-agent-integration.md
 └── schemas/
     └── assessment-report.json
 ```

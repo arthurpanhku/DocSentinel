@@ -16,7 +16,7 @@ DocSentinel 将其核心能力（文档评估和知识库检索）作为 MCP Ser
 
 | Tool Name              | Description (English)                                              | 说明 (Chinese)                           | Inputs                                           |
 | :--------------------- | :----------------------------------------------------------------- | :--------------------------------------- | :----------------------------------------------- |
-| `assess_document`      | Analyze a security document (PDF/Word) and generate a risk report. | 分析安全文档（PDF/Word）并生成风险报告。 | `file_path` (str), `scenario_id` (str, optional) |
+| `assess_document`      | Analyze a security document (PDF/Word) and generate a risk report. Supports SSDLC stage selection. | 分析安全文档并生成风险报告。支持 SSDLC 阶段选择。 | `file_path` (str), `scenario_id` (str, optional), `ssdlc_stage` (str, optional) |
 | `query_knowledge_base` | Search the internal security policy database.                      | 检索内部安全策略数据库。                 | `query` (str), `top_k` (int, optional)           |
 
 ### 🚀 How to Use with Claude Desktop | 在 Claude Desktop 中使用
@@ -52,10 +52,14 @@ DocSentinel 将其核心能力（文档评估和知识库检索）作为 MCP Ser
     ```
 
 3.  **Restart Claude Desktop**. You can now ask Claude:
-    > "Check the security design document at `/Users/me/docs/design.pdf` for compliance risks using DocSentinel."
+    > "Check the security design document at `/Users/me/docs/design.pdf` for compliance risks using DocSentinel at the Design stage."
+    >
+    > "Assess this SAST report against our testing standards — use the Testing SSDLC stage."
 
     **重启 Claude Desktop**。现在你可以问 Claude：
-    > "Check the security design document at `/Users/me/docs/design.pdf` for compliance risks using DocSentinel."
+    > "使用 DocSentinel 的设计阶段检查 `/Users/me/docs/design.pdf` 的安全合规风险。"
+    >
+    > "评估这份 SAST 报告——使用测试阶段的 SSDLC 技能。"
 
 ### 🤖 How to Use with OpenClaw / LangChain | 在 OpenClaw / LangChain 中使用
 

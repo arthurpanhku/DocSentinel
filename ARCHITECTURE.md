@@ -8,7 +8,7 @@
 
 |                  |                                                                           |
 | :--------------- | :------------------------------------------------------------------------ |
-| **Version**      | 3.1                                                                       |
+| **Version**      | 4.0                                                                       |
 | **Author**       | PAN CHAO                                                                  |
 | **Last updated** | 2026-03                                                                   |
 | **Related**      | [Product Requirements (PRD)](./SPEC.md) · [Design docs](./docs/README.md) |
@@ -17,20 +17,20 @@
 
 ## Overview | 概述
 
-DocSentinel is an AI-powered system that automates security assessment of documents, questionnaires, and reports. This document describes the **system architecture**: high-level design, components, data flow, integrations, and deployment. For product goals and requirements, see [SPEC.md](./SPEC.md).
+DocSentinel is an AI-powered system that automates security assessment of documents, questionnaires, and reports **across the entire Secure Software Development Lifecycle (SSDLC)**. The system is orchestrated by **LangChain + LangGraph**, providing stateful, graph-based agent workflows with stage-aware routing. This document describes the **system architecture**: high-level design, components, data flow, integrations, and deployment. For product goals and requirements, see [SPEC.md](./SPEC.md).
 
 ---
 
 ## Goals & Context | 目标与背景
 
--   **Goal**: Reduce manual effort for security teams by automating first-pass assessment of security-related documents (questionnaires, design docs, compliance evidence) and producing structured reports (risks, compliance gaps, remediations).
--   **Context**: Enterprise security teams must align with policies, standards, and frameworks (e.g. NIST, OWASP, SOC2) while reviewing many projects per year; the system provides a unified knowledge base (RAG), multi-format parsing, and pluggable LLMs (cloud or local).
+-   **Goal**: Reduce manual effort for security teams by automating first-pass assessment of security-related documents (questionnaires, design docs, compliance evidence) and producing structured reports (risks, compliance gaps, remediations) — covering all 6 SSDLC stages.
+-   **Context**: Enterprise security teams must align with policies, standards, and frameworks (e.g. NIST, OWASP, SOC2) while reviewing many projects per year; the system provides a unified knowledge base (RAG), multi-format parsing, pluggable LLMs (cloud or local), and **SSDLC-aware assessment pipelines** powered by LangGraph.
 
 ---
 
 ## High-Level Architecture | 高层架构
 
-The system is organized in layers: **Access** → **Core (Orchestrator, Memory, Skills, Knowledge Base, Parser)** → **LLM abstraction** → **LLM backends**. External integrations (AAD, ServiceNow) connect at the access and orchestration boundaries.
+The system is organized in layers: **Access** → **Core (LangGraph Orchestrator, SSDLC Pipeline, Memory, Skills, Knowledge Base, Parser)** → **LLM abstraction** → **LLM backends**. External integrations (AAD, ServiceNow) connect at the access and orchestration boundaries.
 
 ![Architecture overview](https://github.com/arthurpanhku/DocSentinel/raw/main/docs/images/architecture-overview.png)
 
@@ -46,16 +46,18 @@ flowchart TB
     end
     subgraph Access["Access Layer"]
         API["REST API\n(FastAPI)"]
+        MCP["MCP Server\n(stdio)"]
     end
     subgraph Core["DocSentinel Core"]
-        Orch["Orchestrator"]
+        Orch["LangGraph\nOrchestrator"]
+        SSDLC["SSDLC Pipeline\n(6 stages)"]
         Mem["Memory"]
         Skill["Skills"]
         KB["Knowledge Base\n(RAG)"]
         Parser["Parser"]
     end
     subgraph LLM["LLM Layer"]
-        Abst["LLM Abstraction"]
+        Abst["LLM Abstraction\n(LangChain)"]
     end
     subgraph Backends["LLM Backends"]
         Cloud["OpenAI / Claude / Qwen"]
@@ -68,9 +70,12 @@ flowchart TB
 
     Staff --> API
     APIUser --> API
+    APIUser --> MCP
     API --> Orch
+    MCP --> Orch
+    Orch --> SSDLC
+    SSDLC --> Skill
     Orch <--> Mem
-    Orch --> Skill
     Orch --> KB
     Orch --> Parser
     Orch --> Abst
@@ -90,11 +95,13 @@ flowchart TB
 -   **MCP Server** (Model Context Protocol): Standard stdio interface for autonomous agents (Claude Desktop, Cursor, OpenClaw) to discover and call tools (`assess_document`, `query_knowledge_base`).
 -   **Note**: v3.0 removed the Streamlit frontend; DocSentinel is now a **headless API + MCP service**. Authentication (AAD/JWT) and rate limiting are defined but not yet wired into endpoints.
 
-### 2. Orchestrator | 任务编排
+### 2. Orchestrator (LangGraph) | 任务编排
 
--   Accepts assessment tasks (files + optional scenario/project/skill ID).
--   Multi-agent pipeline: Policy+History Agent → Evidence Agent → Drafter Agent → Reviewer Agent.
--   Policy and Evidence stages run **in parallel** via `asyncio.gather`.
+-   Built on **LangChain + LangGraph**: stateful, graph-based agent workflow with conditional edges.
+-   Accepts assessment tasks (files + optional SSDLC stage / skill ID).
+-   **Graph nodes**: Parser → SSDLC Router → Policy+History Agent ∥ Evidence Agent → Drafter Agent → Reviewer Agent.
+-   Policy and Evidence nodes run **in parallel** (LangGraph fan-out/fan-in).
+-   SSDLC Router node determines the lifecycle stage and injects stage-specific skill + checklist.
 -   Assessment submission is **non-blocking** — returns task_id immediately, processes in background.
 -   Singleton `KnowledgeBaseService` and cached LLM client shared across requests.
 
@@ -107,9 +114,10 @@ flowchart TB
 ### 4. Skills & Personas | 技能与角色
 
 -   **Persona-based Assessment**: Defines "who" is assessing (e.g. ISO 27001 Auditor vs. AppSec Engineer).
--   **Built-in Skills**: 4 hardcoded personas (ISO 27001 Auditor, AppSec Engineer, GDPR DPO, Cloud Architect) in `skills_registry.py`.
+-   **Built-in Persona Skills**: 4 hardcoded personas (ISO 27001 Auditor, AppSec Engineer, GDPR DPO, Cloud Architect) in `skills_registry.py`.
+-   **Built-in SSDLC Skills**: 6 stage-specific skills (one per SSDLC stage) with tailored `system_prompt`, `risk_focus`, checklists, and `compliance_frameworks`.
 -   **Custom Skills**: File-backed (`data/skills.json`) CRUD via REST API.
--   **Dynamic Orchestration**: Orchestrator injects skill-specific `system_prompt`, `risk_focus`, and `compliance_frameworks` into RAG queries and LLM prompts.
+-   **Dynamic Orchestration**: LangGraph injects skill-specific context into RAG queries and LLM prompts based on the selected persona and SSDLC stage.
 
 ### 5. Knowledge Base (RAG) | 知识库
 
@@ -126,9 +134,10 @@ flowchart TB
 -   **Engine selection**: Configurable via `PARSER_ENGINE` (`auto` / `docling` / `legacy`). `auto` tries Docling first, falls back to legacy.
 -   Shared pipeline for both assessment input and KB document ingestion.
 
-### 7. LLM Abstraction | LLM 抽象层
+### 7. LLM Abstraction (LangChain) | LLM 抽象层
 
--   Single interface for chat/completion via LangChain (`ChatOpenAI` / `ChatOllama`).
+-   Single interface for chat/completion via **LangChain** (`ChatOpenAI` / `ChatOllama`).
+-   LangChain is also the foundation for LangGraph agent nodes — each node uses LangChain's `Runnable` interface.
 -   **Cached client**: LLM instance is `@lru_cache`d — one client per process lifetime.
 -   **Confidence**: Reviewer agent outputs a confidence score (0.0–1.0) as part of its JSON response; no separate LLM call needed.
 -   Supported providers: OpenAI (and compatible APIs), **Ollama** (local).
@@ -152,6 +161,55 @@ flowchart LR
 
 ---
 
+## SSDLC Pipeline | SSDLC 流水线
+
+DocSentinel supports all 6 SSDLC stages defined by NIST, OWASP, and Microsoft SDL. Each stage has a dedicated skill with stage-specific prompts, checklists, and risk focus areas.
+
+```mermaid
+flowchart LR
+    subgraph SSDLC["SSDLC Stages"]
+        S1["1. Requirements\n需求"]
+        S2["2. Design\n设计"]
+        S3["3. Development\n开发"]
+        S4["4. Testing\n测试"]
+        S5["5. Deployment\n部署"]
+        S6["6. Operations\n运维"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+```
+
+| Stage | Key Assessment Focus | Example Inputs |
+| :---- | :------------------- | :------------- |
+| **Requirements** | Security requirements completeness, compliance mapping (GDPR, ISO 27001), risk analysis | Requirements docs, compliance checklists |
+| **Design** | Security architecture, STRIDE/DREAD threat model, encryption/permission design, SDR | Architecture docs, threat models, data flow diagrams |
+| **Development** | Secure coding standards, built-in controls (anti-injection, XSS), code review findings | Code review reports, coding guidelines |
+| **Testing** | SAST/DAST triage, penetration test evaluation, vulnerability fix verification | Scan reports, pen-test findings |
+| **Deployment** | Release readiness, config security, key management, least privilege, hardening | Deployment configs, release checklists |
+| **Operations** | Vulnerability monitoring, incident response, patch management, log audit | Incident reports, audit logs, monitoring alerts |
+
+### LangGraph Agent Flow
+
+```mermaid
+stateDiagram-v2
+    [*] --> Parse: files received
+    Parse --> SSDLCRouter: parsed docs
+    SSDLCRouter --> PolicyAgent: stage + skill loaded
+    SSDLCRouter --> EvidenceAgent: stage + skill loaded
+    state fork_state <<fork>>
+    PolicyAgent --> fork_state
+    EvidenceAgent --> fork_state
+    fork_state --> DrafterAgent: policy_chunks + evidence
+    DrafterAgent --> ReviewerAgent: draft report
+    ReviewerAgent --> [*]: final report + confidence
+```
+
+The **SSDLC Router** is a LangGraph node that:
+1. Accepts an explicit `ssdlc_stage` parameter, or auto-detects the stage from document content.
+2. Loads the corresponding stage skill (system prompt, risk focus, checklist).
+3. Routes to the parallel Policy+Evidence fan-out, then sequentially to Drafter and Reviewer.
+
+---
+
 ## Data Flow | 数据流
 
 End-to-end flow for an assessment:
@@ -160,32 +218,47 @@ End-to-end flow for an assessment:
 sequenceDiagram
     participant U as User
     participant API as REST API
-    participant Orch as Orchestrator
+    participant Graph as LangGraph
     participant Parser as Parser
+    participant Router as SSDLC Router
     participant KB as Knowledge Base
-    participant Skill as Skill
     participant LLM as LLM
 
-    U->>API: POST /assessments (files, scenario_id)
-    API->>Orch: task
-    Orch->>Parser: parse(files)
-    Parser-->>Orch: parsed docs
-    Orch->>KB: query(relevant policy)
-    KB-->>Orch: chunks
-    Orch->>Skill: run(parsed, chunks)
-    Skill->>LLM: prompt + context
-    LLM-->>Skill: structured findings
-    Skill-->>Orch: findings
-    Orch->>Orch: build report
-    Orch-->>API: report
-    API-->>U: task_id / report
+    U->>API: POST /assessments (files, ssdlc_stage?)
+    API-->>U: 202 Accepted (task_id)
+    API->>Graph: background task
+
+    Graph->>Parser: parse(files)
+    Parser-->>Graph: parsed docs
+
+    Graph->>Router: detect/validate stage
+    Router-->>Graph: stage skill + checklist
+
+    par Policy+History Agent
+        Graph->>KB: query(policy + history + stage)
+        KB-->>Graph: policy_chunks, history_chunks
+    and Evidence Agent
+        Graph->>Graph: extract evidence from docs
+    end
+
+    Graph->>LLM: Drafter Agent (context + evidence + checklist)
+    LLM-->>Graph: draft report
+
+    Graph->>LLM: Reviewer Agent (validate + confidence)
+    LLM-->>Graph: final report + confidence score
+
+    Graph-->>API: store result
+    U->>API: GET /assessments/{task_id}
+    API-->>U: report
 ```
 
-1.  User submits files (and optional scenario/project ID).
-2.  **Optional**: Fetch project metadata from ServiceNow for scenario selection and access.
-3.  **Parser** converts files to a unified format.
-4.  **Orchestrator** retrieves relevant KB chunks (RAG), invokes **Skill(s)**, calls **LLM** with context.
-5.  Report (risks, compliance gaps, remediations) is returned or stored for sign-off.
+1.  User submits files (and optional `ssdlc_stage` / skill ID). API returns `task_id` immediately (non-blocking).
+2.  **Parser** converts files to unified Markdown/text format (Docling or legacy).
+3.  **SSDLC Router** determines the lifecycle stage and loads stage-specific skill + checklist.
+4.  **Policy+History Agent** queries KB (vector + graph RAG) and **Evidence Agent** scans documents — these run **in parallel** via LangGraph fan-out.
+5.  **Drafter Agent** synthesizes findings into a structured report via LLM, guided by the stage checklist.
+6.  **Reviewer Agent** validates and scores the report (confidence 0.0–1.0).
+7.  User polls `GET /assessments/{task_id}` to retrieve the completed report.
 
 ---
 
@@ -235,7 +308,7 @@ Security is designed along five areas (detailed in [PRD §7.2](./SPEC.md)):
 ```mermaid
 flowchart TB
     subgraph Client["Client"]
-        Browser["Browser / CLI"]
+        Browser["API Client / MCP Agent"]
     end
     subgraph Server["Server / Container"]
         App["DocSentinel\n(FastAPI)"]

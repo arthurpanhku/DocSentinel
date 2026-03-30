@@ -2,8 +2,8 @@
 
 |                 |                                                          |
 | :-------------- | :------------------------------------------------------- |
-| **Status**      | [x] Updated (v3.1 aligned) \| [ ] In Review \| [ ] Approved |
-| **Version**     | 0.4                                                      |
+| **Status**      | [x] Updated (v4.0 aligned) \| [ ] In Review \| [ ] Approved |
+| **Version**     | 0.5                                                      |
 | **Related PRD** | Section 5 System Architecture, Section 9 Next Steps      |
 
 ---
@@ -30,7 +30,8 @@
 
 | Item                | Choice               | Version | Notes                                       |
 | :------------------ | :------------------- | :------ | :------------------------------------------ |
-| **Orchestrator**    | Custom (`app/agent`) | —       | Multi-agent: Policy+History → Evidence → Drafter → Reviewer (parallel where possible) |
+| **Orchestrator**    | LangGraph (`app/agent`) | Latest  | Stateful graph-based agent workflow; SSDLC-aware routing with conditional edges |
+| **Agent Framework** | LangChain            | Latest  | Foundation for LangGraph nodes; Runnable interface for LLM calls |
 | **LLM Abstraction** | LangChain            | Latest  | Unified interface for OpenAI/Ollama         |
 | **Supported LLMs**  | OpenAI, Ollama       | —       | OpenAI (and compatible APIs) + Ollama; LLM client is cached via @lru_cache         |
 
@@ -80,19 +81,20 @@
 Aligned with PRD Section 5.1.
 
 ```text
-[ Access Layer ]  API (FastAPI) / Web UI / CLI
+[ Access Layer ]  API (FastAPI) / MCP Server (stdio)
        |
-[ Core Layer ]    Orchestrator (LangGraph/Custom)
-       |          ├── Memory
-       |          ├── Skills
-       |          ├── Knowledge Base (RAG)
-       |          └── Parser
+[ Core Layer ]    LangGraph Orchestrator
+       |          ├── SSDLC Pipeline (6-stage router)
+       |          ├── Memory (in-memory dict)
+       |          ├── Skills (persona + SSDLC stage skills)
+       |          ├── Knowledge Base (Vector + Graph RAG)
+       |          └── Parser (Docling / legacy)
        |
 [ LLM Layer ]     Abstraction (LangChain)
-       |          ├── OpenAI / Claude / Qwen (Cloud)
-       |          └── Ollama / vLLM (Local)
+       |          ├── OpenAI (and compatible APIs)
+       |          └── Ollama (Local)
        |
-[ Integrations ]  AAD (Auth) | ServiceNow (Metadata)
+[ Integrations ]  AAD (Auth, placeholder) | ServiceNow (Metadata, placeholder)
 ```
 
 ### 2.2 Components and Interfaces | 组件职责与接口
@@ -127,7 +129,9 @@ DocSentinel/
 ├── app/
 │   ├── api/                # FastAPI routes: health, assessments, kb
 │   ├── core/               # Configuration (pydantic-settings)
-│   ├── agent/              # Orchestrator: run_assessment logic
+│   ├── agent/              # LangGraph orchestrator
+│   │   ├── orchestrator.py     # LangGraph graph definition
+│   │   ├── ssdlc/             # SSDLC pipeline: router, stage skills, checklists
 │   │   ├── skills_registry.py
 │   │   └── skills_service.py
 │   ├── kb/                 # KnowledgeBaseService (Chroma + chunking)
@@ -159,15 +163,21 @@ uvicorn[standard]>=0.27.0
 langchain>=0.1.0
 langchain-community
 langchain-openai
+langgraph              # Graph-based agent orchestration
 
-# Vector Store
+# Vector Store & Graph RAG
 chromadb
+lightrag-hku          # Graph RAG (entity-relationship retrieval)
 
 # Parsing
-pymupdf         # PDF
-python-docx     # Word
-openpyxl        # Excel
-python-pptx     # PPT
+docling               # Primary parser (table/heading/OCR)
+pymupdf               # PDF fallback
+python-docx           # Word
+openpyxl              # Excel
+python-pptx           # PPT
+
+# MCP
+mcp[cli]              # Model Context Protocol server
 
 # Utils
 httpx
@@ -181,6 +191,7 @@ python-multipart
 
 | Version | Date    | Changes                                        |
 | :------ | :------ | :--------------------------------------------- |
+| **0.5** | 2026-03 | SSDLC pipeline (6 stages), LangGraph orchestrator, SSDLC stage skills. |
 | **0.4** | 2026-03 | Added Graph RAG, Docling parser, MCP Server, singleton KB, async assessment. |
 | **0.2** | 2025-03 | Updated tech stack versions and module layout. |
 | **0.1** | Initial | Draft selection.                               |
