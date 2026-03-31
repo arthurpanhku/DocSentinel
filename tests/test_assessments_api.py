@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, patch
 
-from app.models.assessment import AssessmentReport, ReportMetadata, SourceCitation
+from app.models.assessment import AssessmentReport, Remediation, ReportMetadata, SourceCitation
 
 
 def _make_report(task_id):
@@ -34,6 +34,20 @@ def _make_report(task_id):
             completed_at=datetime.now(timezone.utc),
         ),
     )
+
+
+def _make_report_with_remediation(task_id):
+    r = _make_report(task_id)
+    r.remediations = [
+        Remediation(
+            id="R1",
+            action="Create GitHub issue for missing MFA policy",
+            priority="high",
+            related_risk_ids=["risk-1"],
+            related_gap_ids=["gap-1"],
+        )
+    ]
+    return r
 
 
 def test_submit_assessment_no_files_422(client):
@@ -159,3 +173,52 @@ def test_get_assessment_not_found_404(client):
     """GET /api/v1/assessments/{id} for unknown id returns 404."""
     r = client.get("/api/v1/assessments/00000000-0000-0000-0000-000000000000")
     assert r.status_code == 404
+
+
+def test_review_console_list_and_remediation_tracking(client):
+    async def mock_run_assessment(
+        task_id, parsed_documents, scenario_id=None, project_id=None, skill_id=None
+    ):
+        return _make_report_with_remediation(task_id)
+
+    with patch(
+        "app.api.assessments.run_assessment",
+        new_callable=AsyncMock,
+        side_effect=mock_run_assessment,
+    ):
+        files = [("files", ("sample.txt", b"Content", "text/plain"))]
+        r = client.post("/api/v1/assessments", files=files)
+        task_id = r.json()["task_id"]
+
+    r_list = client.get("/api/v1/assessments?limit=200")
+    assert r_list.status_code == 200
+    ids = {x["task_id"] for x in r_list.json()}
+    assert task_id in ids
+
+    r_rems = client.get(f"/api/v1/assessments/{task_id}/remediations")
+    assert r_rems.status_code == 200
+    rems = r_rems.json()
+    assert len(rems) == 1
+    assert rems[0]["remediation"]["id"] == "R1"
+    assert rems[0]["tracking"]["status"] == "open"
+
+    r_upd = client.post(
+        f"/api/v1/assessments/{task_id}/remediations/R1",
+        json={
+            "status": "in_progress",
+            "owner": "dev_1",
+            "external_ticket": "https://github.com/org/repo/issues/1",
+            "notes": "Working on it",
+            "evidence_refs": ["pr#123", "policy-link"],
+        },
+    )
+    assert r_upd.status_code == 200
+    upd = r_upd.json()
+    assert upd["remediation_id"] == "R1"
+    assert upd["status"] == "in_progress"
+    assert upd["owner"] == "dev_1"
+
+    r_rems2 = client.get(f"/api/v1/assessments/{task_id}/remediations")
+    rems2 = r_rems2.json()
+    assert rems2[0]["tracking"]["status"] == "in_progress"
+    assert rems2[0]["tracking"]["external_ticket"] == "https://github.com/org/repo/issues/1"

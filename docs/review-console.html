@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DocSentinel Review Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        background-color: #0f172a;
+        color: #e2e8f0;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-6">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <div class="text-xl font-semibold text-white">DocSentinel Review Console</div>
+          <div class="text-sm text-slate-400">HITL review + remediation tracking</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <input
+            id="baseUrl"
+            class="w-80 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-white"
+            placeholder="API Base URL"
+          />
+          <button
+            id="refreshBtn"
+            class="px-3 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white text-sm"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-6 grid grid-cols-12 gap-4">
+        <div class="col-span-4 bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+            <div class="text-sm font-medium text-white">Queue</div>
+            <select
+              id="statusFilter"
+              class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-white"
+            >
+              <option value="">All</option>
+              <option value="review_pending,escalated">Needs Review</option>
+              <option value="approved,rejected,completed,failed">Closed/Done</option>
+            </select>
+          </div>
+          <div id="taskList" class="divide-y divide-slate-800 max-h-[70vh] overflow-auto"></div>
+        </div>
+
+        <div class="col-span-8 bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+            <div class="text-sm font-medium text-white">Details</div>
+            <div id="selectedMeta" class="text-xs text-slate-400"></div>
+          </div>
+          <div id="detailPane" class="p-4 space-y-4">
+            <div class="text-slate-400 text-sm">Select a task from the queue.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const qs = (id) => document.getElementById(id);
+      const state = {
+        baseUrl: "",
+        tasks: [],
+        selectedTaskId: null,
+      };
+
+      const severityRank = (s) => {
+        const m = { critical: 4, high: 3, medium: 2, low: 1 };
+        return m[(s || "").toLowerCase()] || 0;
+      };
+
+      const fmt = (d) => {
+        if (!d) return "";
+        try {
+          return new Date(d).toLocaleString();
+        } catch {
+          return String(d);
+        }
+      };
+
+      const apiBase = () => {
+        const v = (qs("baseUrl").value || "").trim();
+        return v || window.location.origin;
+      };
+
+      const fetchJson = async (url, init) => {
+        const res = await fetch(url, init);
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || res.statusText);
+        }
+        const ct = res.headers.get("content-type") || "";
+        if (ct.includes("application/json")) return res.json();
+        return res.text();
+      };
+
+      const loadTasks = async () => {
+        const base = apiBase().replace(/\/$/, "");
+        const status = qs("statusFilter").value;
+        const q = new URLSearchParams();
+        if (status) q.set("status", status);
+        q.set("limit", "200");
+        const url = `${base}/api/v1/assessments?${q.toString()}`;
+        const tasks = await fetchJson(url);
+        state.tasks = tasks;
+        renderTaskList();
+      };
+
+      const loadTaskDetail = async (taskId) => {
+        const base = apiBase().replace(/\/$/, "");
+        const [task, activity, remediations] = await Promise.all([
+          fetchJson(`${base}/api/v1/assessments/${taskId}`),
+          fetchJson(`${base}/api/v1/assessments/${taskId}/activity`).catch(() => []),
+          fetchJson(`${base}/api/v1/assessments/${taskId}/remediations`).catch(() => []),
+        ]);
+        renderDetail(task, activity, remediations);
+      };
+
+      const renderTaskList = () => {
+        const el = qs("taskList");
+        el.innerHTML = "";
+        const tasks = [...state.tasks];
+        tasks.sort((a, b) => {
+          const ar = severityRank(a.report?.risk_items?.[0]?.severity);
+          const br = severityRank(b.report?.risk_items?.[0]?.severity);
+          if (br !== ar) return br - ar;
+          return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+        });
+
+        for (const t of tasks) {
+          const isSelected = state.selectedTaskId === t.task_id;
+          const status = t.status;
+          const title = t.report?.summary?.slice(0, 80) || "(no summary)";
+          const conf = t.report?.confidence;
+          const badge =
+            status === "review_pending" || status === "escalated"
+              ? "bg-yellow-500/10 text-yellow-300 border-yellow-500/30"
+              : status === "approved"
+                ? "bg-green-500/10 text-green-300 border-green-500/30"
+                : status === "rejected"
+                  ? "bg-red-500/10 text-red-300 border-red-500/30"
+                  : "bg-slate-800 text-slate-300 border-slate-700";
+
+          const item = document.createElement("button");
+          item.className =
+            "w-full text-left px-4 py-3 hover:bg-slate-800/60 transition-colors " +
+            (isSelected ? "bg-slate-800/60" : "");
+          item.onclick = () => {
+            state.selectedTaskId = t.task_id;
+            qs("selectedMeta").textContent = `task_id: ${t.task_id}`;
+            renderTaskList();
+            loadTaskDetail(t.task_id);
+          };
+          item.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <div class="text-sm text-white font-medium truncate">${title}</div>
+              <div class="shrink-0 px-2 py-0.5 text-[10px] border rounded ${badge}">${status}</div>
+            </div>
+            <div class="mt-1 flex items-center justify-between text-xs text-slate-400">
+              <div>${fmt(t.created_at)}</div>
+              <div>${conf !== undefined ? `confidence: ${Number(conf).toFixed(2)}` : ""}</div>
+            </div>
+          `;
+          el.appendChild(item);
+        }
+
+        if (!tasks.length) {
+          const empty = document.createElement("div");
+          empty.className = "p-4 text-sm text-slate-400";
+          empty.textContent = "No tasks found.";
+          el.appendChild(empty);
+        }
+      };
+
+      const postReviewAction = async (taskId, action) => {
+        const base = apiBase().replace(/\/$/, "");
+        const comment = (qs("reviewComment").value || "").trim();
+        const assignee = (qs("reviewAssignee").value || "").trim();
+        await fetchJson(`${base}/api/v1/assessments/${taskId}/review`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action,
+            comment: comment || null,
+            assignee: assignee || null,
+          }),
+        });
+        await loadTasks();
+        await loadTaskDetail(taskId);
+      };
+
+      const saveRemediation = async (taskId, remediationId) => {
+        const base = apiBase().replace(/\/$/, "");
+        const prefix = `rem_${remediationId}_`;
+        const status = (qs(prefix + "status").value || "").trim();
+        const owner = (qs(prefix + "owner").value || "").trim();
+        const externalTicket = (qs(prefix + "ticket").value || "").trim();
+        const notes = (qs(prefix + "notes").value || "").trim();
+        const evidence = (qs(prefix + "evidence").value || "").trim();
+        const evidenceRefs = evidence
+          ? evidence
+              .split("\n")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : undefined;
+
+        await fetchJson(`${base}/api/v1/assessments/${taskId}/remediations/${remediationId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: status || null,
+            owner: owner || null,
+            external_ticket: externalTicket || null,
+            notes: notes || null,
+            evidence_refs: evidenceRefs,
+          }),
+        });
+
+        await loadTaskDetail(taskId);
+      };
+
+      const renderDetail = (task, activity, remediations) => {
+        const el = qs("detailPane");
+        const report = task.report;
+        const status = task.status;
+        const conf = report?.confidence;
+        const summary = report?.summary || "(no summary)";
+        const riskCount = report?.risk_items?.length || 0;
+        const gapCount = report?.compliance_gaps?.length || 0;
+        const remCount = report?.remediations?.length || 0;
+
+        const actionsDisabled = !(status === "review_pending" || status === "escalated");
+
+        const sourcesHtml = (report?.sources || [])
+          .slice(0, 10)
+          .map((s) => {
+            const label = `${s.file}${s.page ? `#p${s.page}` : ""}`;
+            const excerpt = (s.excerpt || "").slice(0, 240);
+            const link = s.evidence_link
+              ? `<a class="text-blue-400 underline" href="${s.evidence_link}" target="_blank">${label}</a>`
+              : `<span>${label}</span>`;
+            return `<div class="border border-slate-800 rounded p-3 bg-slate-950/30">
+              <div class="text-xs text-slate-300">${link}</div>
+              <div class="mt-1 text-xs text-slate-400 whitespace-pre-wrap">${excerpt}</div>
+            </div>`;
+          })
+          .join("");
+
+        const activityHtml = (activity || [])
+          .slice()
+          .reverse()
+          .slice(0, 20)
+          .map((a) => {
+            const at = fmt(a.at);
+            const t = a.type || "event";
+            const msg = a.message || a.comment || "";
+            return `<div class="flex items-start justify-between gap-3 border-b border-slate-800 py-2">
+              <div class="text-xs text-slate-300">${t}${a.action ? ` / ${a.action}` : ""}</div>
+              <div class="text-xs text-slate-500 shrink-0">${at}</div>
+            </div>
+            ${msg ? `<div class="text-xs text-slate-400 pb-2 whitespace-pre-wrap">${msg}</div>` : ""}`;
+          })
+          .join("");
+
+        const remediationHtml = (remediations || [])
+          .map((r) => {
+            const rid = r.remediation?.id;
+            const action = r.remediation?.action || "";
+            const prio = r.remediation?.priority || "";
+            const tr = r.tracking || {};
+            const status = tr.status || "open";
+            const owner = tr.owner || "";
+            const ticket = tr.external_ticket || "";
+            const notes = tr.notes || "";
+            const evidence = (tr.evidence_refs || []).join("\n");
+            const options = ["open", "in_progress", "resolved", "verified", "closed"]
+              .map((s) => `<option value="${s}" ${s === status ? "selected" : ""}>${s}</option>`)
+              .join("");
+            return `<div class="border border-slate-800 rounded p-3 bg-slate-950/30">
+              <div class="flex items-center justify-between gap-3">
+                <div class="text-sm text-white font-medium">${action}</div>
+                <div class="text-xs text-slate-400">${prio}</div>
+              </div>
+              <div class="mt-3 grid grid-cols-2 gap-3">
+                <div>
+                  <div class="text-[11px] text-slate-400 mb-1">Status</div>
+                  <select id="rem_${rid}_status" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-2 text-xs text-white">${options}</select>
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-400 mb-1">Owner</div>
+                  <input id="rem_${rid}_owner" value="${owner}" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-2 text-xs text-white" />
+                </div>
+                <div class="col-span-2">
+                  <div class="text-[11px] text-slate-400 mb-1">External Ticket (Jira key / GitHub issue URL)</div>
+                  <input id="rem_${rid}_ticket" value="${ticket}" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-2 text-xs text-white" />
+                </div>
+                <div class="col-span-2">
+                  <div class="text-[11px] text-slate-400 mb-1">Notes</div>
+                  <textarea id="rem_${rid}_notes" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-2 text-xs text-white" rows="3">${notes}</textarea>
+                </div>
+                <div class="col-span-2">
+                  <div class="text-[11px] text-slate-400 mb-1">Evidence refs (one per line)</div>
+                  <textarea id="rem_${rid}_evidence" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-2 text-xs text-white" rows="3">${evidence}</textarea>
+                </div>
+              </div>
+              <div class="mt-3 flex justify-end">
+                <button class="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700 text-white text-xs" onclick="saveRemediation('${task.task_id}','${rid}')">Save</button>
+              </div>
+            </div>`;
+          })
+          .join("");
+
+        el.innerHTML = `
+          <div class="space-y-3">
+            <div class="flex items-center justify-between gap-3">
+              <div class="text-white font-semibold">Task</div>
+              <div class="text-xs text-slate-400">${task.task_id}</div>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+              <div class="bg-slate-950/30 border border-slate-800 rounded p-3">
+                <div class="text-xs text-slate-400">Status</div>
+                <div class="mt-1 text-sm text-white">${status}</div>
+              </div>
+              <div class="bg-slate-950/30 border border-slate-800 rounded p-3">
+                <div class="text-xs text-slate-400">Confidence</div>
+                <div class="mt-1 text-sm text-white">${conf !== undefined ? Number(conf).toFixed(2) : "-"}</div>
+              </div>
+              <div class="bg-slate-950/30 border border-slate-800 rounded p-3">
+                <div class="text-xs text-slate-400">Counts</div>
+                <div class="mt-1 text-sm text-white">${riskCount} risks · ${gapCount} gaps · ${remCount} remediations</div>
+              </div>
+            </div>
+            <div class="bg-slate-950/30 border border-slate-800 rounded p-3">
+              <div class="text-xs text-slate-400">Summary</div>
+              <div class="mt-1 text-sm text-white whitespace-pre-wrap">${summary}</div>
+            </div>
+
+            <div class="bg-slate-950/30 border border-slate-800 rounded p-3">
+              <div class="flex items-center justify-between">
+                <div class="text-sm text-white font-medium">HITL Actions</div>
+                <div class="text-xs text-slate-400">${actionsDisabled ? "Locked (not in review)" : "Requires human decision"}</div>
+              </div>
+              <div class="mt-3 grid grid-cols-2 gap-3">
+                <div>
+                  <div class="text-[11px] text-slate-400 mb-1">Assignee</div>
+                  <input id="reviewAssignee" value="${task.assignee || ""}" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-2 text-xs text-white" />
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-400 mb-1">Comment</div>
+                  <input id="reviewComment" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-2 text-xs text-white" />
+                </div>
+              </div>
+              <div class="mt-3 flex items-center gap-2">
+                <button class="px-3 py-2 rounded bg-green-600 hover:bg-green-500 text-white text-xs disabled:opacity-50" ${actionsDisabled ? "disabled" : ""} onclick="postReviewAction('${task.task_id}','approve')">Approve</button>
+                <button class="px-3 py-2 rounded bg-red-600 hover:bg-red-500 text-white text-xs disabled:opacity-50" ${actionsDisabled ? "disabled" : ""} onclick="postReviewAction('${task.task_id}','reject')">Reject</button>
+                <button class="px-3 py-2 rounded bg-yellow-600 hover:bg-yellow-500 text-white text-xs disabled:opacity-50" ${actionsDisabled ? "disabled" : ""} onclick="postReviewAction('${task.task_id}','escalate')">Escalate</button>
+                <button class="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700 text-white text-xs disabled:opacity-50" ${actionsDisabled ? "disabled" : ""} onclick="postReviewAction('${task.task_id}','comment')">Comment</button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-slate-950/30 border border-slate-800 rounded p-3">
+                <div class="text-sm text-white font-medium">Evidence (sources)</div>
+                <div class="mt-3 space-y-2">${sourcesHtml || `<div class="text-xs text-slate-400">No sources.</div>`}</div>
+              </div>
+              <div class="bg-slate-950/30 border border-slate-800 rounded p-3">
+                <div class="text-sm text-white font-medium">Activity</div>
+                <div class="mt-2 max-h-64 overflow-auto">${activityHtml || `<div class="text-xs text-slate-400">No activity.</div>`}</div>
+              </div>
+            </div>
+
+            <div class="bg-slate-950/30 border border-slate-800 rounded p-3">
+              <div class="text-sm text-white font-medium">Remediation Tracking</div>
+              <div class="mt-3 space-y-3">${remediationHtml || `<div class="text-xs text-slate-400">No remediations.</div>`}</div>
+            </div>
+          </div>
+        `;
+      };
+
+      window.postReviewAction = postReviewAction;
+      window.saveRemediation = saveRemediation;
+
+      const init = async () => {
+        qs("baseUrl").value = window.location.origin;
+        qs("refreshBtn").onclick = () => loadTasks();
+        qs("statusFilter").onchange = () => loadTasks();
+        await loadTasks();
+      };
+
+      init().catch((e) => {
+        const el = qs("detailPane");
+        el.innerHTML = `<div class="text-red-300 text-sm">Error: ${String(e.message || e)}</div>`;
+      });
+    </script>
+  </body>
+</html>
