@@ -10,7 +10,7 @@
 
 <p align="center">
   <strong>DocSentinel</strong><br/>
-  <em>面向文档与问卷的自动化安全评估</em>
+  <em>AI 驱动的 SSDLC 平台 — 从需求到运维，全生命周期守护软件安全</em>
 </p>
 
 <p align="center">
@@ -19,12 +19,13 @@
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"/></a>
   <a href="https://github.com/arthurpanhku/DocSentinel"><img src="https://img.shields.io/badge/GitHub-arthurpanhku%2FDocSentinel--Agent-24292e?logo=github" alt="GitHub repo"/></a>
   <a href="docs/06-agent-integration.md"><img src="https://img.shields.io/badge/MCP-Ready-green?logo=anthropic" alt="MCP Ready"/></a>
-  <a href="docs/06-agent-integration.md"><img src="https://img.shields.io/badge/Agent-Integration-blueviolet" alt="Agent Integration"/></a>
+  <a href="https://python.langchain.com/"><img src="https://img.shields.io/badge/LangChain-Powered-orange" alt="LangChain"/></a>
+  <a href="https://langchain-ai.github.io/langgraph/"><img src="https://img.shields.io/badge/LangGraph-Orchestrated-blue" alt="LangGraph"/></a>
 </p>
 
 <p align="center">
-  <a href="https://glama.ai/mcp/servers/arthurpanhku/docsentinel">
-    <img width="380" height="200" src="https://glama.ai/mcp/servers/arthurpanhku/docsentinel/badge" />
+  <a href="https://glama.ai/mcp/servers/arthurpanhku/DocSentinel">
+    <img width="380" height="200" src="https://glama.ai/mcp/servers/arthurpanhku/DocSentinel/badge" />
   </a>
 </p>
 
@@ -32,119 +33,122 @@
 
 ## DocSentinel 是什么？
 
-**DocSentinel** 是面向安全团队的 AI 助手。它自动化审阅与安全相关的**文档、表格和报告**（如安全问卷、设计文档、合规证据），结合策略与知识库进行比对，并产出**结构化评估报告**，包含风险项、合规差距与整改建议。
+**DocSentinel** 是面向安全团队的 **AI 驱动 SSDLC（安全软件开发生命周期）平台**。它使用由 **LangGraph** 编排、**LangChain** 驱动的智能 AI Agent，自动化覆盖软件开发生命周期全部六个阶段的安全活动。
 
-🚀 **Agent Ready**: 支持 **Model Context Protocol (MCP)**，可作为“技能”被 OpenClaw、Claude Desktop 等智能体直接调用。
+不再只是上线前审阅文档，DocSentinel 从第一天起就嵌入安全：
 
-- **多格式输入**：PDF、Word、Excel、PPT、文本，解析为统一格式供大模型使用。
-- **知识库（RAG）**：上传策略与合规文档，评估时作为参考检索。
-- **多模型支持**：通过统一接口使用 OpenAI、Claude、千问或 **Ollama**（本地）。
-- **结构化输出**：JSON/Markdown 报告，含风险项、合规差距与可执行整改建议。
+| SSDLC 阶段 | DocSentinel 能力 |
+| :--- | :--- |
+| **需求阶段** | 提取安全需求，识别合规义务（GDPR、PCI DSS、SOC2） |
+| **设计阶段** | 自动化威胁建模（STRIDE/DREAD），安全架构评审，SDR 报告 |
+| **开发阶段** | 安全编码评估，SAST 结果分拣，安全编码指导 |
+| **测试阶段** | SAST/DAST 报告分析，渗透测试审阅，漏洞优先级排序 |
+| **部署阶段** | 配置安全审查，加固评估，发布签字 |
+| **运维阶段** | 漏洞监控，应急响应辅助，日志审计 |
 
-适合需要在大量项目中扩展安全评估、而人力有限的企业。
+以 **Headless API + MCP 服务** 形式构建，可集成到 CI/CD 管道、AI 智能体（Claude Desktop、Cursor、OpenClaw）及现有安全工作流中。
 
 ---
 
-## 为什么用 DocSentinel？
+## 为什么选择 DocSentinel？
 
-| 痛点 (Pain Point)                                                 | DocSentinel 的应对 (Solution)                     |
-| :---------------------------------------------------------------- | :------------------------------------------------- |
-| **评估依据分散**<br>策略、标准与先例散落各处。                    | 统一**知识库**承载策略与控制项，评估一致、可追溯。 |
-| **问卷流程繁重**<br>业务填表 → 安全评估 → 业务补证据 → 安全再审。 | **自动化初评**与差距分析，减少多轮往返。           |
-| **上线前审阅压力**<br>安全需审阅并签批大量技术文档。              | **结构化报告**让审阅聚焦决策，而非逐行阅读。       |
-| **规模与一致性**<br>项目多、标准多，人工易不一致或延迟。          | **可配置场景**与统一流水线，保证一致与可审计。     |
+| 痛点 | DocSentinel 方案 |
+| :--- | :--- |
+| **SSDLC 覆盖碎片化**<br>大多数工具只覆盖测试/部署阶段。 | **全生命周期 Agent** 覆盖 6 个 SSDLC 阶段，配备专属 AI 角色。 |
+| **无自动化威胁建模**<br>威胁模型临时创建，缺乏结构化。 | **设计阶段 Agent** 从架构文档自动生成 STRIDE/DREAD 威胁模型。 |
+| **问卷流程繁重**<br>多轮往返审阅。 | **自动化初评**与差距分析，减少人工审阅轮次。 |
+| **SAST/DAST 报告泛滥**<br>发现太多，上下文太少。 | **测试阶段 Agent** 分拣、排序并关联到威胁模型。 |
+| **上线前集中压力**<br>所有安全审查压到最后。 | **左移**策略在需求和设计阶段就发现问题。 |
+| **规模与一致性矛盾**<br>人工评估因审阅者不同而不一致。 | **LangGraph 工作流**确保跨项目一致、可审计的评估。 |
 
-*完整问题陈述与产品目标见 [SPEC.md](./SPEC.md)（产品需求与规格）。*
+*完整 SSDLC 阶段说明见 [SPEC.md](./SPEC.md)。*
 
 ---
 
 ## 架构
 
-DocSentinel 以**编排器**为核心，协调解析、知识库（RAG）、技能（如问卷与策略比对）与 LLM。可按环境选用云端或本地大模型，以及可选集成（如 AAD、ServiceNow）。
+DocSentinel 基于 **LangGraph** 实现有状态的 Agent 编排，基于 **LangChain** 实现统一 LLM 访问。六个阶段专用 Agent 由图形化状态机协调，支持跨阶段上下文共享。
 
 ```mermaid
 flowchart TB
-    subgraph User["👤 User / Security Staff | 用户"]
+    subgraph User["用户 / 安全团队"]
     end
-    subgraph Access["Access Layer | 接入层"]
+    subgraph Access["接入层"]
         API["REST API / MCP"]
     end
-    subgraph Core["DocSentinel Core | 核心"]
-        Orch["Orchestrator | 编排"]
-        Mem["Memory | 记忆"]
-        Skill["Skills | 技能"]
-        KB["Knowledge Base (RAG) | 知识库"]
-        Parser["Parser | 解析"]
+    subgraph Orchestration["SSDLC 编排层 (LangGraph)"]
+        Router["阶段路由"]
+        A1["需求 Agent"]
+        A2["设计 Agent"]
+        A3["开发 Agent"]
+        A4["测试 Agent"]
+        A5["部署 Agent"]
+        A6["运维 Agent"]
     end
-    subgraph LLM["LLM Layer | 大模型层"]
-        Abst["LLM Abstraction | LLM 抽象"]
+    subgraph Core["核心服务"]
+        KB["知识库 (RAG)"]
+        Parser["解析器"]
+        Skill["技能"]
+        Mem["记忆"]
     end
-    subgraph Backends["LLM Backends | 后端"]
+    subgraph LLM["LLM 层 (LangChain)"]
+        Abst["LLM 抽象"]
+    end
+    subgraph Backends["LLM 后端"]
         Cloud["OpenAI / Claude / Qwen"]
         Local["Ollama / vLLM"]
     end
 
     User --> API
-    API --> Orch
-    Orch <--> Mem
-    Orch --> Skill
-    Orch --> KB
-    Orch --> Parser
-    Orch --> Abst
-    Abst --> Cloud
-    Abst --> Local
+    API --> Router
+    Router --> A1 & A2 & A3 & A4 & A5 & A6
+    A1 & A2 & A3 & A4 & A5 & A6 --> KB & Parser & Skill
+    A1 & A2 & A3 & A4 & A5 & A6 --> Abst
+    Abst --> Cloud & Local
 ```
 
 **数据流（简要）：**
 
-1.  用户上传文档，可选选择场景或项目。
-2.  **Parser 解析器**将文件（PDF、Word、Excel、PPT 等）转为统一文本/Markdown。
-3.  **编排器**从**知识库**（RAG）加载相关片段并调用**技能**。
-4.  **LLM**（OpenAI、Ollama 等）生成结构化结论。
-5.  返回**评估报告**（风险、合规差距、整改建议）。
+1.  用户选择 SSDLC 阶段并上传文档。
+2.  **LangGraph 路由器**分发到对应的**阶段 Agent**。
+3.  **解析器**将文件（PDF、Word、Excel、SAST/DAST 报告等）转为文本/Markdown。
+4.  阶段 Agent 检索**知识库**（阶段专属集合）并应用**技能**。
+5.  **LLM**（通过 LangChain）生成结构化发现，支持跨阶段追溯。
+6.  返回**评估报告**（风险、威胁、差距、整改建议）。
 
-*详细架构与组件说明见 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [docs/01-architecture-and-tech-stack.md](./docs/01-architecture-and-tech-stack.md)。*
-
----
-
-## 功能概览
-
-| 领域           | 能力                                                       |
-| :------------- | :--------------------------------------------------------- |
-| **文档解析**   | Word、PDF、Excel、PPT、文本 → Markdown/JSON。              |
-| **知识库**     | 多格式上传、分块、向量化（Chroma）、RAG 检索。             |
-| **评估**       | 提交文件 → 获得结构化报告（风险项、合规差距、整改建议）。  |
-| **LLM**        | 可配置提供商：**Ollama**（本地）、OpenAI 等。              |
-| **API**        | REST API & **MCP Server** for Agent integration.           |
-| **安全与合规** | 内置 **RBAC**、**审计日志**与 **Prompt Injection** 防护。  |
-| **Agent集成**  | 支持 **MCP**，可被 OpenClaw、Claude Desktop 等智能体调用。 |
-
-路线图（如 AAD/SSO、ServiceNow 集成）见 [SPEC.md](./SPEC.md)。
+*详细架构见 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [docs/01-architecture-and-tech-stack.md](./docs/01-architecture-and-tech-stack.md)。*
 
 ---
 
-## 👀 功能预览
+## 核心能力
 
-### 1. 评估工作台
-上传文档，选择评估角色（如 SOC2 审计员），即刻获取风险分析。
+### SSDLC 全生命周期覆盖
+六个专用 AI Agent，各配备阶段专属技能、提示词和知识库集合。支持单阶段运行或端到端全 SSDLC 评估。
 
-![Assessment Workbench](docs/images/ui-dashboard.png)
+### 智能 Agent 编排 (LangGraph)
+- **有状态工作流**：LangGraph 状态机跨阶段维护上下文
+- **跨阶段追溯**：设计阶段的威胁关联到测试阶段的测试用例和运维阶段的监控规则
+- **条件路由**：Agent 根据项目风险等级、合规要求或用户选择激活
+- **人机协作**：阶段边界设置中断点，供人工审阅
+- **检查点**：长周期评估持久化状态，支持恢复
 
-### 2. 结构化报告
-清晰的风险项、合规差距与整改建议视图。
+### RAG 驱动的知识库
+上传组织内部安全策略、标准和历史审计报告。阶段专属集合确保每个 Agent 检索最相关的上下文：
+- 需求阶段：合规框架、安全策略
+- 设计阶段：威胁目录、安全模式
+- 开发阶段：安全编码标准（OWASP）
+- 测试阶段：漏洞数据库、修复指南
+- 部署阶段：CIS 基线、加固指南
+- 运维阶段：CVE 数据库、应急手册
 
-![Structured Report](docs/images/ui-report.png)
-
-### 3. 知识库管理
-上传策略文档至 RAG 知识库，Agent 将引用其作为评估依据。
-
-![Knowledge Base](docs/images/ui-kb.png)
+### API 优先 & MCP 就绪
+Headless 服务设计。通过 REST API 集成到 CI/CD 管道，或通过 MCP 作为 AI 智能体（Claude Desktop、Cursor、OpenClaw）的技能使用。
 
 ---
 
-## 🤖 Agent 集成 (MCP)
+## Agent 集成 (MCP)
 
-将 DocSentinel 连接到 **Claude Desktop** 或 **Cursor**，作为工具使用。
+将 DocSentinel 连接到 **Claude Desktop**、**Cursor** 或 **OpenClaw**，作为强大的 SSDLC 安全技能使用。
 
 ### Claude Desktop
 编辑 `claude_desktop_config.json`：
@@ -176,8 +180,6 @@ flowchart TB
 
 ### 方式 A: 一键部署（推荐）
 
-运行部署脚本以启动全栈服务（API + 仪表盘 + 向量库 + 可选 Ollama）。
-
 ```bash
 git clone https://github.com/arthurpanhku/DocSentinel.git
 cd DocSentinel
@@ -185,10 +187,9 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
--   **Dashboard**: [http://localhost:8501](http://localhost:8501)
 -   **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### 方式 B: 手动 Docker 部署
+### 方式 B: 手动部署
 
 **前置条件**: **Python 3.10+**. 可选: [Ollama](https://ollama.ai) (`ollama pull llama2`).
 
@@ -206,30 +207,31 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ---
 
-### 示例：提交评估
-
-可使用仓库内 [examples/](examples/) 下的示例文件快速试跑。
+### 示例：提交 SSDLC 评估
 
 ```bash
-# 使用示例文本
+# 运行设计阶段评估（威胁建模）
 curl -X POST "http://localhost:8000/api/v1/assessments" \
-  -F "files=@examples/sample.txt" \
-  -F "scenario_id=default"
+  -F "files=@examples/architecture-doc.pdf" \
+  -F "phase=design" \
+  -F "scenario_id=threat-modeling"
 
-# 响应：{ "task_id": "...", "status": "accepted" } — 用返回的 task_id 查询结果
+# 响应：{ "task_id": "...", "status": "accepted" }
 curl "http://localhost:8000/api/v1/assessments/TASK_ID"
 ```
 
 ### 示例：上传知识库并检索
 
 ```bash
-# 使用示例策略文件
-curl -X POST "http://localhost:8000/api/v1/kb/documents" -F "file=@examples/sample-policy.txt"
+# 上传安全策略到需求阶段知识库集合
+curl -X POST "http://localhost:8000/api/v1/kb/documents" \
+  -F "file=@examples/sample-policy.txt" \
+  -F "collection=kb_requirements"
 
 # 检索（RAG）
 curl -X POST "http://localhost:8000/api/v1/kb/query" \
   -H "Content-Type: application/json" \
-  -d '{"query": "What are the access control requirements?", "top_k": 5}'
+  -d '{"query": "访问控制有哪些要求?", "top_k": 5}'
 ```
 
 ---
@@ -239,36 +241,27 @@ curl -X POST "http://localhost:8000/api/v1/kb/query" \
 ```text
 DocSentinel/
 ├── app/                  # 应用代码
-│   ├── api/              # REST 路由：评估、知识库、健康检查
-│   ├── agent/            # 编排与评估流水线
-│   ├── core/             # 配置 (pydantic-settings)
-│   ├── kb/               # 知识库 (Chroma, 分块, RAG)
-│   ├── llm/              # LLM 抽象 (OpenAI, Ollama)
-│   ├── parser/           # 文档解析 (PDF, Word, Excel, PPT, 文本)
-│   ├── models/           # Pydantic 模型
-│   └── main.py
+│   ├── api/              # REST 路由：评估、知识库、健康检查、技能
+│   ├── agent/            # LangGraph 编排器、阶段 Agent、技能
+│   │   ├── orchestrator.py    # LangGraph 状态机与阶段路由
+│   │   ├── agents/            # 阶段专用 Agent 实现
+│   │   ├── skills_registry.py # 各 SSDLC 阶段内置技能
+│   │   └── skills_service.py  # 技能 CRUD 管理
+│   ├── core/             # 配置、防护栏、安全、DB
+│   ├── kb/               # 知识库 (Chroma + LightRAG 图 RAG)
+│   ├── llm/              # LangChain LLM 抽象 (OpenAI, Ollama)
+│   ├── parser/           # 文档解析 (Docling + SAST/DAST + 后备)
+│   ├── models/           # Pydantic / SQLModel 模型
+│   ├── main.py           # FastAPI 入口
+│   └── mcp_server.py     # MCP Server
 ├── tests/                # 自动化测试 (pytest)
-├── examples/             # 示例文件（问卷、策略样本）
+├── examples/             # 示例文件
 ├── docs/                 # 设计与规格文档
-│   ├── 01-architecture-and-tech-stack.md
-│   ├── 02-api-specification.yaml
-│   ├── 03-assessment-report-and-skill-contract.md
-│   ├── 04-integration-guide.md
-│   ├── 05-deployment-runbook.md
-│   └── schemas/
 ├── .github/              # Issue/PR 模板、CI (Actions)
-├── Dockerfile
-├── docker-compose.yml    # 仅 API
-├── docker-compose.ollama.yml  # API + Ollama 可选
-├── CONTRIBUTING.md       # 贡献指南
-├── CODE_OF_CONDUCT.md    # 行为准则
+├── SPEC.md               # PRD，含 SSDLC 阶段定义
+├── ARCHITECTURE.md        # 系统架构，含 LangGraph 设计
 ├── CHANGELOG.md
-├── SPEC.md
-├── LICENSE
-├── SECURITY.md
 ├── requirements.txt
-├── requirements-dev.txt  # 测试与开发依赖
-├── pytest.ini
 └── .env.example
 ```
 
@@ -276,34 +269,48 @@ DocSentinel/
 
 ## 配置
 
-| 变量                                           | 说明                 | 默认                                |
-| :--------------------------------------------- | :------------------- | :---------------------------------- |
-| `LLM_PROVIDER`                                 | `ollama` 或 `openai` | `ollama`                            |
-| `OLLAMA_BASE_URL` / `OLLAMA_MODEL`             | 本地 LLM             | `http://localhost:11434` / `llama2` |
-| `OPENAI_API_KEY` / `OPENAI_MODEL`              | OpenAI               | —                                   |
-| `CHROMA_PERSIST_DIR`                           | 向量库路径           | `./data/chroma`                     |
-| `UPLOAD_MAX_FILE_SIZE_MB` / `UPLOAD_MAX_FILES` | 上传限制             | `50` / `10`                         |
+| 变量 | 说明 | 默认 |
+| :--- | :--- | :--- |
+| `LLM_PROVIDER` | `ollama` 或 `openai` | `ollama` |
+| `OLLAMA_BASE_URL` / `OLLAMA_MODEL` | 本地 LLM | `http://localhost:11434` / `llama2` |
+| `OPENAI_API_KEY` / `OPENAI_MODEL` | OpenAI | -- |
+| `CHROMA_PERSIST_DIR` | 向量库路径 | `./data/chroma` |
+| `PARSER_ENGINE` | 解析器: `auto`, `docling`, `legacy` | `auto` |
+| `ENABLE_GRAPH_RAG` | 启用 LightRAG 图检索 | `true` |
+| `LANGGRAPH_CHECKPOINT_DIR` | LangGraph 检查点存储 | `./data/checkpoints` |
+| `SSDLC_DEFAULT_PHASES` | 全评估默认阶段 | `requirements,design,development,testing,deployment,operations` |
+| `UPLOAD_MAX_FILE_SIZE_MB` / `UPLOAD_MAX_FILES` | 上传限制 | `50` / `10` |
 
 *完整选项见 [.env.example](./.env.example) 与 [docs/05-deployment-runbook.md](./docs/05-deployment-runbook.md)。*
 
 ---
 
-## 文档与规格
+## 技术栈
 
--   **[ARCHITECTURE.md](./ARCHITECTURE.md)** — 系统架构：高层图、Mermaid 视图（逻辑/组件/时序/集成/部署）、组件设计、数据流、安全架构。
--   **[SPEC.md](./SPEC.md)** — 产品需求与规格：问题陈述、方案、架构摘要、功能、安全控制与开放问题。
--   **[CHANGELOG.md](./CHANGELOG.md)** — 版本历史；发布说明。
--   **设计文档** [docs/](./docs/)：架构与技术栈、API 规范、评估报告与 Skill 契约、集成指南、部署手册。Q1 发布清单：[docs/LAUNCH-CHECKLIST.md](./docs/LAUNCH-CHECKLIST.md)。
+| 层 | 技术 | 用途 |
+| :--- | :--- | :--- |
+| **Agent 编排** | LangGraph | 有状态的图形化 SSDLC 工作流引擎 |
+| **LLM 框架** | LangChain | 统一 LLM 抽象、提示词、工具、RAG |
+| **Web/API** | FastAPI | 异步 REST API，自动 OpenAPI |
+| **向量库** | ChromaDB + LightRAG | 混合向量 + 图 RAG |
+| **解析** | Docling + 后备解析器 | 多格式文档解析 |
+| **LLM 提供商** | OpenAI, Ollama | 云端与本地 LLM |
+| **语言** | Python 3.10+ | 主开发语言 |
+
+---
+
+## 文档与 PRD
+
+-   **[ARCHITECTURE.md](./ARCHITECTURE.md)** — 系统架构：LangGraph 设计、SSDLC Agent、数据流、部署。
+-   **[SPEC.md](./SPEC.md)** — 产品需求：SSDLC 阶段、功能、安全控制。
+-   **[CHANGELOG.md](./CHANGELOG.md)** — 版本历史；[发布](https://github.com/arthurpanhku/DocSentinel/releases)。
+-   **设计文档** [docs/](./docs/)：架构、API 规范、合约、集成指南、部署手册。
 
 ---
 
 ## 开发与测试
 
-如需验证安装或参与开发，请运行测试套件：
-
 ### 方式 A: 一键测试（推荐）
-自动设置测试环境并运行所有检查。
-
 ```bash
 chmod +x test_integration.sh
 ./test_integration.sh
@@ -311,30 +318,25 @@ chmod +x test_integration.sh
 
 ### 方式 B: 手动
 ```bash
-# 1. 安装开发依赖
 pip install -r requirements-dev.txt
-
-# 2. 运行所有测试
 pytest
-
-# 3. 运行特定测试（如 Skills API）
-pytest tests/test_skills_api.py
+pytest tests/test_skills_api.py   # 运行特定测试
 ```
 
 ## 参与贡献
 
 欢迎提交 Issue 与 Pull Request。请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 了解开发环境、测试与提交规范。参与即视为同意 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) 行为准则。
 
-🤖 **AI 辅助贡献**：我们也鼓励使用 AI 工具参与贡献！请查看 [CONTRIBUTING_WITH_AI.md](CONTRIBUTING_WITH_AI.md) 获取最佳实践指南。
+AI 辅助贡献：我们鼓励使用 AI 工具参与贡献！请查看 [CONTRIBUTING_WITH_AI.md](CONTRIBUTING_WITH_AI.md)。
 
-📜 **贡献技能模板**：有好的安全评估角色？欢迎提交 [技能模板 Issue](https://github.com/arthurpanhku/DocSentinel/issues/new?template=new_skill_template.md) 或直接添加到 `examples/templates/`。特别欢迎脱敏后的真实安全问卷样例，帮助我们完善模板！
+贡献技能模板：有适用于某个 SSDLC 阶段的安全角色？提交 [技能模板 Issue](https://github.com/arthurpanhku/DocSentinel/issues/new?template=new_skill_template.md) 或添加到 `examples/templates/`。
 
 ---
 
 ## 安全
 
 -   **漏洞报告**：负责任披露请见 [SECURITY.md](./SECURITY.md)。
--   **安全需求**：项目遵循 [SPEC §7.2](./SPEC.md) 中定义的安全控制（身份、数据保护、应用安全、运维、供应链）。
+-   **安全需求**：项目遵循 [SPEC §7.2](./SPEC.md) 中的安全控制。
 
 ---
 
@@ -354,6 +356,5 @@ pytest tests/test_skills_api.py
 
 -   **作者**: PAN CHAO (Arthur Pan)
 -   **仓库**: [github.com/arthurpanhku/DocSentinel](https://github.com/arthurpanhku/DocSentinel)
--   **规格与设计文档**: 见上文链接。
 
 若你在组织中使用 DocSentinel 或希望参与贡献，欢迎通过 GitHub Discussions 或 Issues 联系我们。

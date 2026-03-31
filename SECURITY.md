@@ -1,8 +1,8 @@
 # Security Policy | 安全策略
 
-This document covers vulnerability disclosure and security-related practices for the **DocSentinel** project. It aligns with [**PRD §7.2 Security Requirements and Controls**](./SPEC.md).
+This document covers vulnerability disclosure and security-related practices for the **DocSentinel** project — an AI-powered SSDLC platform. It aligns with [**PRD §7.2 Security Requirements and Controls**](./SPEC.md).
 
-本文档涵盖 **DocSentinel** 项目的漏洞披露与安全实践，遵循 [**PRD §7.2 安全需求与控制**](./SPEC.md)。
+本文档涵盖 **DocSentinel** 项目（AI 驱动的 SSDLC 平台）的漏洞披露与安全实践，遵循 [**PRD §7.2 安全需求与控制**](./SPEC.md)。
 
 ---
 
@@ -10,7 +10,9 @@ This document covers vulnerability disclosure and security-related practices for
 
 | Version   | Supported          |
 | :-------- | :----------------- |
-| **0.1.x** | :white_check_mark: |
+| **4.0.x** | :white_check_mark: |
+| **3.1.x** | :white_check_mark: |
+| < 3.1     | :x:                |
 
 ---
 
@@ -37,21 +39,27 @@ If you discover a security vulnerability, please report it responsibly:
 ## Security-Related Configuration | 安全相关配置
 
 -   **Secrets**: Do not commit `.env` or any file containing `SECRET_KEY`, API keys, or passwords. Use `.env.example` as a template only.
--   **Input Validation**: File type and size limits are enforced (see `UPLOAD_MAX_FILE_SIZE_MB`, `UPLOAD_MAX_FILES`). Only allowed extensions are parsed (see `app/parser/service.py`).
+-   **Input Validation**: File type and size limits are enforced (see `UPLOAD_MAX_FILE_SIZE_MB`, `UPLOAD_MAX_FILES`). Only allowed extensions are parsed (see `app/parser/service.py`). Prompt injection detection is active via `app/core/guardrails.py`.
 -   **TLS**: In production, use HTTPS and TLS 1.2+ for all endpoints and external calls ([PRD §7.2 DATA-01](./SPEC.md)).
--   **Auth**: API currently does not enforce authentication in the MVP; add AAD/API Key as per [PRD §5.2.8 and §7.2 IAM](./SPEC.md) before exposing externally.
+-   **Auth**: API currently does not enforce authentication in the MVP; add AAD/API Key as per [PRD §7.2 IAM](./SPEC.md) before exposing externally.
+-   **LangGraph State**: Assessment state and checkpoints may contain sensitive document content. Ensure `LANGGRAPH_CHECKPOINT_DIR` is on encrypted storage in production.
+-   **SAST/DAST Integration**: When ingesting scan results from external tools, validate report integrity and source authenticity.
 
 -   **机密信息**：请勿提交 `.env` 或任何包含 `SECRET_KEY`、API Key、密码的文件。`.env.example` 仅作为模板使用。
--   **输入验证**：强制执行文件类型与大小限制（见 `UPLOAD_MAX_FILE_SIZE_MB`、`UPLOAD_MAX_FILES`）。仅解析允许的扩展名（见 `app/parser/service.py`）。
+-   **输入验证**：强制执行文件类型与大小限制（见 `UPLOAD_MAX_FILE_SIZE_MB`、`UPLOAD_MAX_FILES`）。仅解析允许的扩展名。提示注入检测已在 `app/core/guardrails.py` 中启用。
 -   **TLS**：生产环境中，所有端点与外部调用必须使用 HTTPS 和 TLS 1.2+（[PRD §7.2 DATA-01](./SPEC.md)）。
--   **认证**：MVP 阶段 API 暂未强制认证；在对外暴露前，请根据 [PRD §5.2.8 与 §7.2 IAM](./SPEC.md) 添加 AAD/API Key 认证。
+-   **认证**：MVP 阶段 API 暂未强制认证；在对外暴露前，请根据 [PRD §7.2 IAM](./SPEC.md) 添加 AAD/API Key 认证。
+-   **LangGraph 状态**：评估状态和检查点可能包含敏感文档内容。生产环境中请确保 `LANGGRAPH_CHECKPOINT_DIR` 位于加密存储上。
+-   **SAST/DAST 集成**：从外部工具接入扫描结果时，请验证报告完整性和来源真实性。
 
 ---
 
 ## References | 参考
 
 -   [**SPEC.md Section 7.2**](./SPEC.md) — Security Requirements and Controls (identity, data, application, operations, supply chain).
+-   [**ARCHITECTURE.md**](./ARCHITECTURE.md) — System architecture with LangGraph design and security architecture section.
 -   [**docs/05-deployment-runbook.md**](./docs/05-deployment-runbook.md) — Deployment, configuration, and network requirements.
 
 -   [**SPEC.md 第 7.2 节**](./SPEC.md) — 安全需求与控制（身份、数据、应用、运维、供应链）。
+-   [**ARCHITECTURE.md**](./ARCHITECTURE.md) — 系统架构，含 LangGraph 设计与安全架构章节。
 -   [**docs/05-deployment-runbook.md**](./docs/05-deployment-runbook.md) — 部署、配置与网络需求。

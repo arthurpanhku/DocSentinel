@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [4.0.0] — 2026-03-30
+
+### Major Change
+This release pivots DocSentinel into an **AI-powered SSDLC (Secure Software Development Lifecycle) platform**, with full-phase coverage and intelligent agent orchestration.
+
+### Added
+- **SSDLC Full Lifecycle Support**: Six dedicated phase agents — Requirements, Design, Development, Testing, Deployment, and Operations — each with specialized skills, prompts, and knowledge base collections.
+- **LangGraph Orchestration**: Stateful graph-based workflow engine replacing the custom orchestrator. Supports conditional routing, parallel execution, checkpointing, and human-in-the-loop interrupts.
+- **LangChain Integration**: Unified LLM abstraction, prompt templates, tool integration, and RAG chains via LangChain framework.
+- **Threat Modeling (STRIDE/DREAD)**: Design Agent performs automated threat modeling with STRIDE categorization and DREAD risk scoring.
+- **SAST/DAST Report Parsers**: Dedicated parsers for SARIF, SonarQube JSON, Checkmarx XML, Burp Suite XML, and OWASP ZAP reports.
+- **Phase-specific KB Collections**: Separate knowledge base collections per SSDLC phase (`kb_requirements`, `kb_design`, `kb_development`, `kb_testing`, `kb_deployment`, `kb_operations`).
+- **Cross-phase Traceability**: Findings from earlier phases automatically link to later phases (e.g. Design threats → Testing test cases → Operations monitoring rules).
+- **Phase-specific Skills**: 12 built-in personas across 6 SSDLC phases (Compliance Analyst, Threat Modeler, Secure Code Reviewer, Pentest Analyst, Release Reviewer, Vulnerability Monitor, etc.).
+
+### Changed
+- **Orchestrator**: Replaced custom multi-agent pipeline with LangGraph `StateGraph` supporting conditional edges, shared state (`SSDLCState`), and persistent checkpointing.
+- **Assessment Reports**: Extended schema (v2.0) with `phase` field, `ThreatModel` object, `Vulnerability` array, and `CrossPhaseRef` for cross-phase traceability.
+- **PRD (SPEC.md)**: Rewritten as v3.0 with full SSDLC phase definitions, LangGraph/LangChain stack, and phase-specific user stories.
+- **Architecture (ARCHITECTURE.md)**: Rewritten as v4.0 with LangGraph state machine design, phase agent details, and SAST/DAST integration points.
+- **All documentation**: Updated to reflect SSDLC platform positioning, LangGraph orchestration, and LangChain framework.
+
+---
+
 ## [3.1.0] — 2026-03-29
 
 ### Added
@@ -136,6 +160,7 @@ This release marks a significant milestone with **Skill Management**, **Template
 - **CI/CD**: Updated GitHub Actions workflow to include linting steps.
 - **Project Structure**: Migrated `pytest.ini` to `pyproject.toml`.
 
+[4.0.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v4.0.0
 [3.1.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v3.1.0
 [3.0.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v3.0.0
 [2.0.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v2.0.0
