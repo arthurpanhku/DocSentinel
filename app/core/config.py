@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     LIGHTRAG_WORKING_DIR: str = "./data/lightrag"
     GRAPH_RAG_QUERY_MODE: Literal["naive", "local", "global", "hybrid"] = "hybrid"
 
+    # Review Console (optional shared token)
+    REVIEW_CONSOLE_TOKEN: str = ""
+
     @property
     def upload_max_bytes(self) -> int:
         return self.UPLOAD_MAX_FILE_SIZE_MB * 1024 * 1024

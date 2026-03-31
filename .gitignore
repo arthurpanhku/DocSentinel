@@ -40,6 +40,7 @@ env/
 
 # AI tooling
 .claude/
+.trae/
 
 # Data and persistence
 data/

@@ -243,6 +243,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 -   **API docs**: [http://localhost:8000/docs](http://localhost:8000/docs) · **Health**: [http://localhost:8000/health](http://localhost:8000/health)
+-   **Review Console (HITL)**: [http://localhost:8000/docs/review-console.html](http://localhost:8000/docs/review-console.html)
 
 ---
 
