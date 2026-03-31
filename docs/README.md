@@ -23,16 +23,16 @@ This directory holds **executable design and specification** artifacts that acco
 
 ## Default Tech Stack | 技术栈默认假设
 
-Aligned with PRD:
+Aligned with PRD and current implementation:
 
 -   **Language**: Python 3.10+
--   **Web/API**: FastAPI
--   **Agent Orchestration**: LangGraph (stateful graph-based workflows)
+-   **Web/API**: FastAPI + MCP Server (stdio)
+-   **Agent Orchestration**: LangGraph (stateful graph-based workflows with SSDLC routing)
 -   **LLM Framework**: LangChain (unified LLM abstraction, prompts, tools, RAG)
+-   **SSDLC Phases**: 6-stage pipeline (Requirements → Design → Development → Testing → Deployment → Operations)
 -   **Vector DB**: Chroma + LightRAG (hybrid vector/graph retrieval)
--   **Parsing**: Docling (primary) + PyMuPDF, python-docx, openpyxl (fallback)
+-   **Parsing**: Docling (primary) + PyMuPDF, python-docx, openpyxl (legacy fallback)
 -   **LLM Providers**: OpenAI / Ollama (via LangChain)
--   **SSDLC Phases**: Requirements, Design, Development, Testing, Deployment, Operations
 
 *See [01-architecture-and-tech-stack.md](./01-architecture-and-tech-stack.md) for details.*
 

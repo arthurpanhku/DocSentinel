@@ -34,16 +34,15 @@ async def test_orchestrator_uses_skill_prompt():
             mock_invoke.return_value = '{"summary": "Test", "risk_items": []}'
 
             # Mock KB (to avoid actual DB calls)
-            with patch("app.agent.orchestrator.KnowledgeBaseService") as mock_kb_cls:
+            with patch("app.agent.orchestrator.get_kb_service") as mock_get_kb:
                 mock_kb = MagicMock()
                 mock_kb.query = AsyncMock(return_value=[])
                 mock_kb.query_history_responses.return_value = []
-                mock_kb_cls.return_value = mock_kb
+                mock_get_kb.return_value = mock_kb
 
                 # Input
                 parsed_docs = [
                     ParsedDocument(
-                        format="markdown",
                         content="This is a test doc.",
                         metadata=ParsedDocumentMetadata(filename="test.md", type="md")
                     )

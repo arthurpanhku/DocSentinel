@@ -3,7 +3,7 @@
 |                 |                                                              |
 | :-------------- | :----------------------------------------------------------- |
 | **Status**      | [ ] Draft \| [ ] In Review \| [ ] Approved                   |
-| **Version**     | 0.3                                                          |
+| **Version**     | 0.4                                                          |
 | **Related PRD** | Section 7 Non-Functional Requirements (Deployment, Security) |
 
 ---
@@ -74,7 +74,7 @@ cp .env.example .env
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-### 2.3 Air-Gapped / Private Cloud | 内网/私有化
+### 2.4 Air-Gapped / Private Cloud | 内网/私有化
 
 For environments without public internet access:
 1.  **LLM**: Use **Ollama** or **vLLM** deployed internally.
@@ -113,17 +113,16 @@ If you see `PASSED`, the core API and orchestration logic are working correctly.
 
 See `.env.example` for the template.
 
-### 3.1 App & API
+### 4.1 App & API
 
-| Variable          | Description      | Example                  |
-| :---------------- | :--------------- | :----------------------- |
-| `ENV`             | Environment      | `production`             |
-| `LOG_LEVEL`       | Logging level    | `INFO`                   |
-| `API_PREFIX`      | API path prefix  | `/api/v1`                |
-| `SECRET_KEY`      | Session/Sign key | *Random String*          |
-| `ALLOWED_ORIGINS` | CORS origins     | `https://ui.example.com` |
+| Variable     | Description      | Example         |
+| :----------- | :--------------- | :-------------- |
+| `ENV`        | Environment      | `production`    |
+| `LOG_LEVEL`  | Logging level    | `INFO`          |
+| `API_PREFIX` | API path prefix  | `/api/v1`       |
+| `SECRET_KEY` | Session/Sign key | *Random String* |
 
-### 3.2 Authentication (AAD)
+### 4.2 Authentication (AAD)
 
 | Variable            | Description     |
 | :------------------ | :-------------- |
@@ -132,7 +131,7 @@ See `.env.example` for the template.
 | `AAD_CLIENT_SECRET` | Client Secret   |
 | `AAD_REDIRECT_URI`  | OIDC Callback   |
 
-### 3.3 LLM Provider
+### 4.3 LLM Provider
 
 | Variable          | Description    | Example                  |
 | :---------------- | :------------- | :----------------------- |
@@ -141,27 +140,27 @@ See `.env.example` for the template.
 | `OLLAMA_BASE_URL` | Local LLM URL  | `http://localhost:11434` |
 | `OLLAMA_MODEL`    | Model name     | `llama3`                 |
 
-### 3.4 Vector Store
+### 4.4 Vector Store
 
 | Variable             | Description       | Example            |
 | :------------------- | :---------------- | :----------------- |
 | `CHROMA_PERSIST_DIR` | Data path         | `./data/chroma`    |
 | `EMBEDDING_MODEL`    | HuggingFace model | `all-MiniLM-L6-v2` |
 
-### 3.5 Limits
+### 4.5 Limits
 
 | Variable                  | Description       | Default |
 | :------------------------ | :---------------- | :------ |
 | `UPLOAD_MAX_FILE_SIZE_MB` | Max file size     | 50      |
 | `UPLOAD_MAX_FILES`        | Max files per req | 10      |
 
-### 3.6 Parser Engine
+### 4.6 Parser Engine
 
 | Variable        | Description                    | Default |
 | :-------------- | :----------------------------- | :------ |
 | `PARSER_ENGINE` | `auto`, `docling`, or `legacy` | `auto`  |
 
-### 3.7 Graph RAG (LightRAG)
+### 4.7 Graph RAG (LightRAG)
 
 | Variable               | Description                           | Default           |
 | :--------------------- | :------------------------------------ | :---------------- |
@@ -169,34 +168,43 @@ See `.env.example` for the template.
 | `LIGHTRAG_WORKING_DIR`   | LightRAG data directory               | `./data/lightrag` |
 | `GRAPH_RAG_QUERY_MODE`   | Query mode: naive/local/global/hybrid | `hybrid`          |
 
+### 4.8 SSDLC Pipeline
+
+| Variable              | Description                                                          | Default |
+| :-------------------- | :------------------------------------------------------------------- | :------ |
+| `SSDLC_DEFAULT_STAGE` | Default SSDLC stage when not specified: `auto` or a specific stage name | `auto`  |
+
+Valid stage values: `requirements`, `design`, `development`, `testing`, `deployment`, `operations`.
+When set to `auto`, the SSDLC Router attempts to detect the stage from document content.
+
 ---
 
-## 4. Operations and Monitoring | 运维与监控
+## 5. Operations and Monitoring | 运维与监控
 
-### 4.1 Health Checks
+### 5.1 Health Checks
 
--   **Liveness**: `GET /health` (Returns 200 OK)
--   **Readiness**: `GET /health/ready` (Checks DB/Vector connection)
+-   **Liveness**: `GET /health` (Returns 200 OK with version and environment info)
+-   **LLM Config**: `GET /config/llm` (Shows current LLM provider and model)
 
-### 4.2 Logging
+### 5.2 Logging
 
 -   **Format**: JSON or Text (Standard Output).
 -   **Privacy**: **Do not log** sensitive document content or full user tokens.
 -   **Fields**: Request ID, User ID, Task ID, Duration, Error Stack.
 
-### 4.3 Auditing
+### 5.3 Auditing
 
 -   **Scope**: Who initiated assessment? Who accessed reports?
 -   **Retention**: Comply with organization policy (e.g. 90 days).
 
-### 4.4 Backup
+### 5.4 Backup
 
 -   **Vector DB**: Backup the `CHROMA_PERSIST_DIR` regularly.
 -   **Config**: Backup `.env` (securely).
 
 ---
 
-## 5. Troubleshooting | 常见问题排错
+## 6. Troubleshooting | 常见问题排错
 
 | Issue                    | Possible Cause             | Suggestion                                                 |
 | :----------------------- | :------------------------- | :--------------------------------------------------------- |
@@ -207,8 +215,11 @@ See `.env.example` for the template.
 
 ---
 
-## 6. Changelog | 修订记录
+## 7. Changelog | 修订记录
 
 | Version | Date    | Changes                       |
 | :------ | :------ | :---------------------------- |
+| **0.4** | 2026-03 | Added SSDLC Pipeline config section. |
+| **0.3** | 2026-03 | Removed Streamlit references. Added Parser Engine and Graph RAG config sections. Fixed section numbering. Updated health check endpoints. |
+| **0.2** | 2025-03 | Added Docker Compose and standalone deployment options. |
 | **0.1** | Initial | Draft Deployment and Runbook. |

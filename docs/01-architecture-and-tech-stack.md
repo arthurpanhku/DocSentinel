@@ -91,10 +91,11 @@
 Aligned with PRD Section 5.1.
 
 ```text
-[ Access Layer ]    API (FastAPI) / MCP / CLI
+[ Access Layer ]    API (FastAPI) / MCP Server (stdio) / CLI
        |
 [ SSDLC Orchestration ]  LangGraph StateGraph
        |                  ├── Phase Router (conditional edges)
+       |                  ├── SSDLC Pipeline (6-stage router)
        |                  ├── Requirements Agent
        |                  ├── Design Agent
        |                  ├── Development Agent
@@ -103,7 +104,7 @@ Aligned with PRD Section 5.1.
        |                  ├── Operations Agent
        |                  └── Reviewer Agent
        |
-[ Core Services ]    Knowledge Base (RAG) | Parser | Memory | Skills
+[ Core Services ]    Knowledge Base (Vector + Graph RAG) | Parser (Docling / legacy) | Memory | Skills (persona + SSDLC stage skills)
        |
 [ LLM Layer ]        LangChain Abstraction
        |              ├── OpenAI / Claude / Qwen (Cloud)
@@ -150,6 +151,7 @@ DocSentinel/
 │   │   ├── orchestrator.py      # LangGraph StateGraph definition
 │   │   ├── state.py             # SSDLCState TypedDict
 │   │   ├── router.py            # Phase routing logic
+│   │   ├── ssdlc/              # SSDLC pipeline: router, stage skills, checklists
 │   │   ├── agents/              # Phase agent implementations
 │   │   │   ├── requirements.py
 │   │   │   ├── design.py
@@ -190,22 +192,24 @@ langgraph>=0.2.0
 langchain>=0.2.0
 langchain-community
 langchain-openai
+langgraph              # Graph-based agent orchestration
 
-# Vector Store
+# Vector Store & Graph RAG
 chromadb>=0.4.22
-
-# Graph RAG
-lightrag
+lightrag-hku          # Graph RAG (entity-relationship retrieval)
 
 # Parsing
-docling>=2.0.0
-pymupdf>=1.23        # PDF fallback
-python-docx>=1.1     # Word fallback
-openpyxl>=3.1        # Excel fallback
-python-pptx>=0.6     # PPT fallback
+docling>=2.0.0        # Primary parser (table/heading/OCR)
+pymupdf>=1.23         # PDF fallback
+python-docx>=1.1      # Word fallback
+openpyxl>=3.1         # Excel fallback
+python-pptx>=0.6      # PPT fallback
 
 # Embeddings
 sentence-transformers
+
+# MCP
+mcp[cli]              # Model Context Protocol server
 
 # Utils
 httpx
@@ -219,7 +223,7 @@ python-multipart
 
 | Version | Date    | Changes                                        |
 | :------ | :------ | :--------------------------------------------- |
-| **1.0** | 2026-03 | Major rewrite: LangGraph orchestration, SSDLC phase agents, phase-specific KB collections, SAST/DAST parsers. |
+| **1.0** | 2026-03 | Major rewrite: LangGraph orchestration, SSDLC phase agents, phase-specific KB collections, SAST/DAST parsers, SSDLC stage skills. |
 | **0.4** | 2026-03 | Added Graph RAG, Docling parser, MCP Server, singleton KB, async assessment. |
 | **0.2** | 2025-03 | Updated tech stack versions and module layout. |
 | **0.1** | Initial | Draft selection.                               |

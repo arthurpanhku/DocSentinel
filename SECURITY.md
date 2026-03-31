@@ -12,7 +12,9 @@ This document covers vulnerability disclosure and security-related practices for
 | :-------- | :----------------- |
 | **4.0.x** | :white_check_mark: |
 | **3.1.x** | :white_check_mark: |
-| < 3.1     | :x:                |
+| **3.0.x** | :white_check_mark: |
+| **2.0.x** | :warning: Limited  |
+| < 2.0     | :x:                |
 
 ---
 
@@ -39,14 +41,16 @@ If you discover a security vulnerability, please report it responsibly:
 ## Security-Related Configuration | 安全相关配置
 
 -   **Secrets**: Do not commit `.env` or any file containing `SECRET_KEY`, API keys, or passwords. Use `.env.example` as a template only.
--   **Input Validation**: File type and size limits are enforced (see `UPLOAD_MAX_FILE_SIZE_MB`, `UPLOAD_MAX_FILES`). Only allowed extensions are parsed (see `app/parser/service.py`). Prompt injection detection is active via `app/core/guardrails.py`.
+-   **Input Validation**: File type and size limits are enforced (see `UPLOAD_MAX_FILE_SIZE_MB`, `UPLOAD_MAX_FILES`). Only allowed extensions are parsed (see `app/parser/service.py`).
+-   **Prompt Injection Guardrails**: Input sanitization via regex pattern detection and length limits is enforced before content reaches the LLM (see `app/core/guardrails.py`). Malicious inputs are rejected with HTTP 400.
 -   **TLS**: In production, use HTTPS and TLS 1.2+ for all endpoints and external calls ([PRD §7.2 DATA-01](./SPEC.md)).
 -   **Auth**: API currently does not enforce authentication in the MVP; add AAD/API Key as per [PRD §7.2 IAM](./SPEC.md) before exposing externally.
 -   **LangGraph State**: Assessment state and checkpoints may contain sensitive document content. Ensure `LANGGRAPH_CHECKPOINT_DIR` is on encrypted storage in production.
 -   **SAST/DAST Integration**: When ingesting scan results from external tools, validate report integrity and source authenticity.
 
 -   **机密信息**：请勿提交 `.env` 或任何包含 `SECRET_KEY`、API Key、密码的文件。`.env.example` 仅作为模板使用。
--   **输入验证**：强制执行文件类型与大小限制（见 `UPLOAD_MAX_FILE_SIZE_MB`、`UPLOAD_MAX_FILES`）。仅解析允许的扩展名。提示注入检测已在 `app/core/guardrails.py` 中启用。
+-   **输入验证**：强制执行文件类型与大小限制（见 `UPLOAD_MAX_FILE_SIZE_MB`、`UPLOAD_MAX_FILES`）。仅解析允许的扩展名（见 `app/parser/service.py`）。
+-   **提示注入防护**：通过正则模式检测和长度限制对输入进行清洗，在内容到达 LLM 之前执行（见 `app/core/guardrails.py`）。恶意输入将被 HTTP 400 拒绝。
 -   **TLS**：生产环境中，所有端点与外部调用必须使用 HTTPS 和 TLS 1.2+（[PRD §7.2 DATA-01](./SPEC.md)）。
 -   **认证**：MVP 阶段 API 暂未强制认证；在对外暴露前，请根据 [PRD §7.2 IAM](./SPEC.md) 添加 AAD/API Key 认证。
 -   **LangGraph 状态**：评估状态和检查点可能包含敏感文档内容。生产环境中请确保 `LANGGRAPH_CHECKPOINT_DIR` 位于加密存储上。

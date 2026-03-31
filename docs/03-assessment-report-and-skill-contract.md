@@ -2,7 +2,7 @@
 
 |                 |                                              |
 | :-------------- | :------------------------------------------- |
-| **Status**      | [x] Updated (v2.0) \| [ ] In Review \| [ ] Approved |
+| **Status**      | [x] Updated (v4.0 aligned, v2.0) \| [ ] In Review \| [ ] Approved |
 | **Version**     | 2.0                                          |
 | **Related PRD** | Section 3.2 SSDLC Phases, Section 6 Features |
 
@@ -10,7 +10,7 @@
 
 ## 1. Assessment Report Schema | 评估报告结构
 
-Agent outputs a **structured report** conforming to this schema. It is used for API responses, cross-phase traceability, and sign-off workflows. Each report is tagged with the SSDLC phase that generated it.
+Agent outputs a **structured report** conforming to this schema. It is used for API responses, cross-phase traceability, sign-off workflows, and optional ServiceNow write-back. Each report is tagged with the SSDLC phase that generated it.
 
 ### 1.1 JSON Schema
 
@@ -34,7 +34,7 @@ Agent outputs a **structured report** conforming to this schema. It is used for 
       "enum": ["completed", "partial", "failed", "review_pending", "approved", "rejected", "escalated"]
     },
     "summary": { "type": "string", "description": "Executive summary of findings for this phase" },
-    "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "Overall confidence score" },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "Overall confidence score (0.0–1.0)" },
     "risk_items": {
       "type": "array",
       "items": { "$ref": "#/$defs/RiskItem" }
@@ -62,11 +62,17 @@ Agent outputs a **structured report** conforming to this schema. It is used for 
       "description": "References linking findings across SSDLC phases",
       "items": { "$ref": "#/$defs/CrossPhaseRef" }
     },
+    "sources": {
+      "type": "array",
+      "description": "Citation evidence from parsed documents",
+      "items": { "$ref": "#/$defs/SourceCitation" }
+    },
     "metadata": {
       "type": "object",
       "properties": {
         "scenario_id": { "type": "string" },
         "project_id": { "type": "string" },
+        "ssdlc_stage": { "type": "string", "enum": ["requirements", "design", "development", "testing", "deployment", "operations"], "description": "SSDLC stage this assessment covers" },
         "model_used": { "type": "string" },
         "completed_at": { "type": "string", "format": "date-time" },
         "ssdlc_phase": { "type": "string" },
@@ -85,6 +91,8 @@ Agent outputs a **structured report** conforming to this schema. It is used for 
         "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
         "description": { "type": "string" },
         "source_ref": { "type": "string", "description": "Reference to source doc/section" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "Finding-level confidence score (0.0–1.0)" },
+        "citation_ids": { "type": "array", "items": { "type": "string" }, "description": "IDs referencing entries in top-level sources[]" },
         "category": { "type": "string" },
         "phase": { "type": "string", "description": "SSDLC phase where this risk was identified" }
       }
@@ -97,6 +105,8 @@ Agent outputs a **structured report** conforming to this schema. It is used for 
         "control_or_clause": { "type": "string" },
         "gap_description": { "type": "string" },
         "evidence_suggestion": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "Gap-level confidence score (0.0–1.0)" },
+        "citation_ids": { "type": "array", "items": { "type": "string" }, "description": "IDs referencing entries in top-level sources[]" },
         "framework": { "type": "string" },
         "phase": { "type": "string" }
       }
@@ -160,7 +170,8 @@ Agent outputs a **structured report** conforming to this schema. It is used for 
         "related_risk_ids": { "type": "array", "items": { "type": "string" } },
         "related_gap_ids": { "type": "array", "items": { "type": "string" } },
         "related_vuln_ids": { "type": "array", "items": { "type": "string" } },
-        "related_threat_ids": { "type": "array", "items": { "type": "string" } }
+        "related_threat_ids": { "type": "array", "items": { "type": "string" } },
+        "external_ticket": { "type": "string", "description": "Optional external tracking reference (e.g. Jira key or GitHub Issue URL)" }
       }
     },
     "CrossPhaseRef": {
@@ -172,6 +183,19 @@ Agent outputs a **structured report** conforming to this schema. It is used for 
         "target_phase": { "type": "string" },
         "target_id": { "type": "string" },
         "relationship": { "type": "string", "description": "e.g. 'threat_to_test', 'risk_to_remediation'" }
+      }
+    },
+    "SourceCitation": {
+      "type": "object",
+      "required": ["id", "file", "excerpt"],
+      "properties": {
+        "id": { "type": "string" },
+        "file": { "type": "string" },
+        "page": { "type": "integer", "description": "Page number (if applicable)" },
+        "paragraph_id": { "type": "string" },
+        "excerpt": { "type": "string", "description": "Relevant excerpt from source" },
+        "evidence_link": { "type": "string" },
+        "score": { "type": "number", "description": "Relevance score" }
       }
     }
   }
@@ -194,9 +218,9 @@ When `format == "markdown"`, the output should follow:
 {summary}
 
 ## Risk Items | 风险项
-| ID  | Title | Severity | Phase | Description |
-| --- | ----- | -------- | ----- | ----------- |
-| ... | ...   | ...      | ...   | ...         |
+| ID  | Title | Severity | Phase | Confidence | Description | Citations |
+| --- | ----- | -------- | ----- | ---------- | ----------- | --------- |
+| ... | ...   | ...      | ...   | ...        | ...         | ...       |
 
 ## Threat Model | 威胁建模 (Design Phase)
 ### Methodology: {methodology}
@@ -210,9 +234,9 @@ When `format == "markdown"`, the output should follow:
 | ... | ...   | ...      | ...         | ... | ...      | ...    |
 
 ## Compliance Gaps | 合规差距
-| Control/Clause | Gap Description | Framework | Phase |
-| -------------- | --------------- | --------- | ----- |
-| ...            | ...             | ...       | ...   |
+| Control/Clause | Gap Description | Framework | Phase | Confidence | Evidence Suggestion | Citations |
+| -------------- | --------------- | --------- | ----- | ---------- | ------------------- | --------- |
+| ...            | ...             | ...       | ...   | ...        | ...                 | ...       |
 
 ## Remediations | 整改建议
 | Priority | Action | Phase | Related Risks/Threats/Vulns |
@@ -236,26 +260,34 @@ Unified output format for both assessment input and knowledge base ingestion. Ex
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "ParsedDocument",
   "type": "object",
-  "required": ["format", "content", "metadata"],
+  "required": ["metadata", "content"],
   "properties": {
     "format": { "type": "string", "enum": ["markdown", "json", "sarif"] },
-    "content": {
-      "oneOf": [
-        { "type": "string" },
-        { "type": "object", "description": "Structured content (e.g. spreadsheet rows, SAST findings)" }
-      ]
-    },
     "metadata": {
       "type": "object",
       "required": ["filename", "type"],
       "properties": {
         "filename": { "type": "string" },
-        "type": { "type": "string", "description": "MIME type or extension" },
+        "type": { "type": "string", "description": "MIME type or extension (pdf, docx, xlsx, pptx, txt, md, mmd, mermaid, sarif, etc.)" },
+        "parser_engine": { "type": "string", "enum": ["docling", "legacy"], "default": "legacy" },
         "pages": { "type": "integer" },
         "language": { "type": "string" },
+        "upload_time": { "type": "string", "format": "date-time" },
+        "scenario_id": { "type": "string", "description": "Optional scenario context" },
+        "file_hash": { "type": "string", "description": "SHA hash for deduplication" },
         "source_tool": { "type": "string", "description": "For SAST/DAST reports: tool name" },
         "ssdlc_phase_hint": { "type": "string", "description": "Suggested SSDLC phase for this document" }
       }
+    },
+    "content": { "type": "string", "description": "Markdown or plain-text content" },
+    "raw_structure": {
+      "type": "object",
+      "description": "Optional structured JSON for spreadsheets/tables (null for text formats)"
+    },
+    "chunk_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "IDs of chunks created when document is ingested into the KB"
     }
   }
 }
@@ -263,9 +295,37 @@ Unified output format for both assessment input and knowledge base ingestion. Ex
 
 ---
 
-## 3. Skill & Persona Definition | Skill 与角色定义
+## 3. Task Lifecycle Models | 任务生命周期模型
 
-### 3.1 Skill Template Schema
+When `POST /assessments` is called, the API returns an `AssessmentTaskCreated` immediately (non-blocking). The task progresses through statuses tracked by `AssessmentTaskResult`.
+
+### 3.1 AssessmentTaskCreated (returned on submission)
+
+| Field      | Type   | Description                  |
+| :--------- | :----- | :--------------------------- |
+| `task_id`  | UUID   | Unique task identifier       |
+| `status`   | string | `"accepted"` or `"queued"`   |
+| `message`  | string | Optional informational text  |
+
+### 3.2 AssessmentTaskResult (returned on polling)
+
+| Field            | Type               | Description                                                                                         |
+| :--------------- | :----------------- | :-------------------------------------------------------------------------------------------------- |
+| `task_id`        | UUID               | Unique task identifier                                                                              |
+| `status`         | string             | `pending` → `running` → `completed` / `failed` / `review_pending` / `approved` / `rejected` / `escalated` |
+| `report`         | AssessmentReport   | Present when `status == "completed"`                                                                |
+| `error_message`  | string             | Present when `status == "failed"`                                                                   |
+| `created_at`     | datetime           | Task creation time (UTC)                                                                            |
+| `completed_at`   | datetime           | Task completion time (UTC)                                                                          |
+| `version`        | int                | Report version (incremented on revisions)                                                           |
+| `assignee`       | string             | Optional human assignee for review                                                                  |
+| `comments`       | array              | Review comments (for human-in-the-loop workflow)                                                    |
+
+---
+
+## 4. Skill & Persona Definition | Skill 与角色定义
+
+### 4.1 Skill Template Schema
 
 Each skill (or persona) is defined by a JSON template. Skills are now organized by SSDLC phase.
 
@@ -283,7 +343,7 @@ Each skill (or persona) is defined by a JSON template. Skills are now organized 
 }
 ```
 
-### 3.2 Built-in Skills by SSDLC Phase
+### 4.2 Built-in Skills by SSDLC Phase
 
 | SSDLC Phase | Skill ID | Name | Focus |
 | :--- | :--- | :--- | :--- |
@@ -300,18 +360,31 @@ Each skill (or persona) is defined by a JSON template. Skills are now organized 
 | **Operations** | `ops-vuln-monitor` | Vulnerability Monitor | CVE analysis, patch priority assessment |
 | **Operations** | `ops-incident-responder` | Incident Responder | Incident analysis, response recommendations |
 
-### 3.3 Skill Execution Contract
+### 4.3 SSDLC Stage Skills (Built-in)
 
--   **Input**: `parsed_documents` + `kb_chunks` (phase-specific collection) + `history_chunks` + `skill_focus` + `ssdlc_state` (cross-phase context from LangGraph)
+Each SSDLC stage has a dedicated built-in skill:
+
+| Stage | Skill ID | Risk Focus | Example Frameworks |
+| :---- | :------- | :--------- | :----------------- |
+| **Requirements** | `ssdlc-requirements` | Security requirements completeness, compliance mapping, risk analysis | GDPR, ISO 27001, NIST |
+| **Design** | `ssdlc-design` | Architecture security, threat modeling (STRIDE/DREAD), encryption/permission design | OWASP, NIST SP 800-53, CIS |
+| **Development** | `ssdlc-development` | Secure coding standards, anti-injection, XSS prevention, input validation | OWASP Top 10, CWE, CERT |
+| **Testing** | `ssdlc-testing` | SAST/DAST findings triage, penetration test evaluation, vulnerability verification | OWASP ASVS, PCI DSS |
+| **Deployment** | `ssdlc-deployment` | Release readiness, config security, key management, hardening | CIS Benchmarks, DISA STIG |
+| **Operations** | `ssdlc-operations` | Vulnerability monitoring, incident response, patch management, log audit | NIST CSF, SOC2, ISO 27001 |
+
+### 4.4 Skill Execution Contract
+
+-   **Input**: `parsed_documents` + `kb_chunks` (phase-specific collection) + `history_chunks` + `skill_focus` + `ssdlc_stage` (optional) + `ssdlc_state` (cross-phase context from LangGraph)
 -   **Output**: Structured `SSDLCAssessmentReport` fragment (JSON) with phase tag and cross-phase references.
 
-The LangGraph orchestrator injects the `system_prompt`, `risk_focus`, `tools`, and cross-phase state into the LLM context to guide the generation.
+The LangGraph orchestrator injects the `system_prompt`, `risk_focus`, `tools`, `ssdlc_stage`, stage-specific checklist, and cross-phase state into the LLM context to guide the generation.
 
 ---
 
-## 4. Changelog | 修订记录
+## 5. Changelog | 修订记录
 
 | Version | Date    | Changes                                                 |
 | :------ | :------ | :------------------------------------------------------ |
-| **2.0** | 2026-03 | Major rewrite: SSDLC phase-tagged reports, ThreatModel schema, Vulnerability schema, CrossPhaseRef, phase-specific skills, SARIF parser support. |
+| **2.0** | 2026-03 | Major rewrite: SSDLC phase-tagged reports, ThreatModel schema, Vulnerability schema, CrossPhaseRef, SourceCitation, phase-specific skills, SARIF parser support, SSDLC stage skills (6 stages), `ssdlc_stage` field in report metadata, LangGraph execution contract. |
 | **0.1** | Initial | Draft Report Schema, Parser Output, and Skill Contract. |

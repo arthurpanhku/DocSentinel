@@ -13,6 +13,12 @@ This release pivots DocSentinel into an **AI-powered SSDLC (Secure Software Deve
 
 ### Added
 - **SSDLC Full Lifecycle Support**: Six dedicated phase agents — Requirements, Design, Development, Testing, Deployment, and Operations — each with specialized skills, prompts, and knowledge base collections.
+  - **Requirements**: Security requirements completeness, compliance mapping, risk analysis.
+  - **Design**: Architecture security review, STRIDE/DREAD threat modeling, encryption/permission design.
+  - **Development**: Secure coding standards, anti-injection/XSS controls verification.
+  - **Testing**: SAST/DAST report triage, penetration test findings evaluation, vulnerability verification.
+  - **Deployment**: Release readiness review, configuration security, key management, hardening.
+  - **Operations**: Vulnerability monitoring, incident response evaluation, patch management, log audit.
 - **LangGraph Orchestration**: Stateful graph-based workflow engine replacing the custom orchestrator. Supports conditional routing, parallel execution, checkpointing, and human-in-the-loop interrupts.
 - **LangChain Integration**: Unified LLM abstraction, prompt templates, tool integration, and RAG chains via LangChain framework.
 - **Threat Modeling (STRIDE/DREAD)**: Design Agent performs automated threat modeling with STRIDE categorization and DREAD risk scoring.
@@ -20,11 +26,16 @@ This release pivots DocSentinel into an **AI-powered SSDLC (Secure Software Deve
 - **Phase-specific KB Collections**: Separate knowledge base collections per SSDLC phase (`kb_requirements`, `kb_design`, `kb_development`, `kb_testing`, `kb_deployment`, `kb_operations`).
 - **Cross-phase Traceability**: Findings from earlier phases automatically link to later phases (e.g. Design threats → Testing test cases → Operations monitoring rules).
 - **Phase-specific Skills**: 12 built-in personas across 6 SSDLC phases (Compliance Analyst, Threat Modeler, Secure Code Reviewer, Pentest Analyst, Release Reviewer, Vulnerability Monitor, etc.).
+- **SSDLC Stage Skills**: 6 built-in stage-specific skills with tailored system prompts, risk focus areas, and compliance framework mappings.
+- **SSDLC Auto-detection**: Router node can auto-detect the SSDLC stage from document content when not explicitly specified.
 
 ### Changed
-- **Orchestrator**: Replaced custom multi-agent pipeline with LangGraph `StateGraph` supporting conditional edges, shared state (`SSDLCState`), and persistent checkpointing.
+- **Orchestrator**: Replaced custom multi-agent pipeline with LangGraph `StateGraph` supporting conditional edges, shared state (`SSDLCState`), and persistent checkpointing. Graph nodes: Parser → SSDLC Router → Policy+Evidence (parallel fan-out) → Drafter → Reviewer.
 - **Assessment Reports**: Extended schema (v2.0) with `phase` field, `ThreatModel` object, `Vulnerability` array, and `CrossPhaseRef` for cross-phase traceability.
-- **PRD (SPEC.md)**: Rewritten as v3.0 with full SSDLC phase definitions, LangGraph/LangChain stack, and phase-specific user stories.
+- **Assessment API**: `POST /assessments` now accepts optional `ssdlc_stage` parameter.
+- **MCP Tools**: `assess_document` tool now accepts optional `ssdlc_stage` parameter.
+- **Report Schema**: Added `ssdlc_stage` field to `AssessmentReport.metadata`.
+- **PRD (SPEC.md)**: Rewritten as v4.0 with full SSDLC phase definitions, LangGraph/LangChain stack, and phase-specific user stories.
 - **Architecture (ARCHITECTURE.md)**: Rewritten as v4.0 with LangGraph state machine design, phase agent details, and SAST/DAST integration points.
 - **All documentation**: Updated to reflect SSDLC platform positioning, LangGraph orchestration, and LangChain framework.
 
@@ -48,7 +59,7 @@ This release pivots DocSentinel into an **AI-powered SSDLC (Secure Software Deve
 - **Dead code**: Removed unused `_estimate_confidence()` function (confidence is returned by Reviewer agent).
 
 ### Fixed
-- **MCP Server bug**: Removed `await` on synchronous `kb.query()` call that would throw `TypeError` at runtime.
+- **MCP Server bug**: Fixed `await` usage on `kb.query()` call — aligned with the async KB service interface after Graph RAG integration.
 - **`datetime.utcnow()` deprecation**: Replaced with `datetime.now(UTC)` across all modules (Python 3.12+ compatible).
 
 ---

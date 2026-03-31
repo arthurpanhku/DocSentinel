@@ -48,9 +48,20 @@ class KnowledgeBaseService:
         return cls._instance
 
     def __init__(self) -> None:
-        if self._initialized:
+        current_config = (
+            str(settings.CHROMA_PERSIST_DIR),
+            str(settings.EMBEDDING_MODEL),
+            bool(getattr(settings, "ENABLE_GRAPH_RAG", False)),
+        )
+
+        if self._initialized and getattr(self, "_config", None) == current_config:
             return
+
         self._initialized = True
+        self._config = current_config
+
+        if hasattr(_get_embeddings, "_emb"):
+            delattr(_get_embeddings, "_emb")
 
         persist_dir = Path(settings.CHROMA_PERSIST_DIR)
         persist_dir.mkdir(parents=True, exist_ok=True)
@@ -69,7 +80,7 @@ class KnowledgeBaseService:
             chunk_overlap=self.CHUNK_OVERLAP,
             separators=["\n\n", "\n", "。", " ", ""],
         )
-        self._graph_rag_enabled = settings.ENABLE_GRAPH_RAG
+        self._graph_rag_enabled = bool(getattr(settings, "ENABLE_GRAPH_RAG", False))
 
     # ------------------------------------------------------------------
     # Ingest
@@ -104,7 +115,7 @@ class KnowledgeBaseService:
             )
 
         # --- Graph RAG (LightRAG) ---
-        if self._graph_rag_enabled:
+        if bool(getattr(settings, "ENABLE_GRAPH_RAG", False)):
             await self._insert_to_graph(content, parsed, doc_id)
 
         return doc_id
@@ -188,7 +199,7 @@ class KnowledgeBaseService:
         vector_docs = self._vectorstore.similarity_search(query, k=top_k)
 
         # Graph search (when enabled)
-        if self._graph_rag_enabled:
+        if bool(getattr(settings, "ENABLE_GRAPH_RAG", False)):
             graph_docs = await self._query_graph(query, top_k=top_k)
             return self._merge_results(vector_docs, graph_docs, top_k)
 
@@ -236,7 +247,7 @@ class KnowledgeBaseService:
         v_iter = iter(vector_docs)
         g_iter = iter(graph_docs)
 
-        while len(merged) < top_k * 2:  # allow up to 2x for richer context
+        while len(merged) < top_k:
             # Take from vector
             v_doc = next(v_iter, None)
             if v_doc:
@@ -244,6 +255,8 @@ class KnowledgeBaseService:
                 if key not in seen_content:
                     seen_content.add(key)
                     merged.append(v_doc)
+                    if len(merged) >= top_k:
+                        break
 
             # Take from graph
             g_doc = next(g_iter, None)
@@ -252,6 +265,8 @@ class KnowledgeBaseService:
                 if key not in seen_content:
                     seen_content.add(key)
                     merged.append(g_doc)
+                    if len(merged) >= top_k:
+                        break
 
             # Both exhausted
             if v_doc is None and g_doc is None:

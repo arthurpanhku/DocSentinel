@@ -17,14 +17,14 @@
 
 ## Overview | 概述
 
-DocSentinel is an **AI-powered SSDLC (Secure Software Development Lifecycle) platform** that automates security activities across all six phases of the software development lifecycle. Built on **LangChain** and **LangGraph**, the system orchestrates phase-specific AI agents to perform security assessments — from requirements analysis and threat modeling to vulnerability monitoring and incident response. This document describes the **system architecture**: high-level design, components, data flow, integrations, and deployment. For product goals and requirements, see [SPEC.md](./SPEC.md).
+DocSentinel is an **AI-powered SSDLC (Secure Software Development Lifecycle) platform** that automates security activities across all six phases of the software development lifecycle. Built on **LangChain** and **LangGraph**, the system orchestrates phase-specific AI agents to perform security assessments of documents, questionnaires, and reports — from requirements analysis and threat modeling to vulnerability monitoring and incident response — providing stateful, graph-based agent workflows with stage-aware routing. This document describes the **system architecture**: high-level design, components, data flow, integrations, and deployment. For product goals and requirements, see [SPEC.md](./SPEC.md).
 
 ---
 
 ## Goals & Context | 目标与背景
 
--   **Goal**: Provide AI-assisted security coverage across the entire SSDLC — Requirements, Design, Development, Testing, Deployment, and Operations — reducing manual effort for security teams while improving coverage and consistency.
--   **Context**: Enterprise security teams must embed security into every phase of delivery (Shift-Left), aligned with frameworks like NIST SSDF, OWASP SAMM, and Microsoft SDL. The system provides phase-specific agents orchestrated by LangGraph, a unified knowledge base (RAG) with phase-specific collections, multi-format parsing, and pluggable LLMs (cloud or local) via LangChain.
+-   **Goal**: Provide AI-assisted security coverage across the entire SSDLC — Requirements, Design, Development, Testing, Deployment, and Operations — reducing manual effort for security teams while improving coverage and consistency. Automate first-pass assessment of security-related documents (questionnaires, design docs, compliance evidence) and produce structured reports (risks, compliance gaps, remediations).
+-   **Context**: Enterprise security teams must embed security into every phase of delivery (Shift-Left), aligned with frameworks like NIST SSDF, OWASP SAMM, Microsoft SDL, and SOC2. The system provides phase-specific agents orchestrated by LangGraph, a unified knowledge base (RAG) with phase-specific collections, multi-format parsing, pluggable LLMs (cloud or local) via LangChain, and **SSDLC-aware assessment pipelines**.
 
 ---
 
@@ -42,7 +42,7 @@ flowchart TB
     end
     subgraph Access["Access Layer"]
         API["REST API\n(FastAPI)"]
-        MCP["MCP Server"]
+        MCP["MCP Server\n(stdio)"]
     end
     subgraph Orchestration["SSDLC Orchestration (LangGraph)"]
         Router["Phase Router"]
@@ -166,11 +166,14 @@ stateDiagram-v2
 
 ### 2. SSDLC Orchestrator (LangGraph) | SSDLC 编排器
 
--   **Graph Definition**: `StateGraph` with nodes for Router, 6 phase agents, and Reviewer.
+-   Built on **LangChain + LangGraph**: stateful, graph-based agent workflow with conditional edges.
+-   **Graph Definition**: `StateGraph` with nodes for Router, 6 phase agents, and Reviewer. Graph nodes: Parser → SSDLC Router → Policy+History Agent ∥ Evidence Agent → Drafter Agent → Reviewer Agent.
 -   **State Schema**: `SSDLCState` TypedDict containing parsed documents, phase findings, threat models, cross-phase references, and metadata.
--   **Conditional Edges**: Route based on requested phase, project risk level, or full SSDLC mode.
--   **Parallel Execution**: Within phases, sub-tasks (e.g. KB lookup + document parsing) run concurrently via `asyncio.gather`.
+-   **Conditional Edges**: Route based on requested phase, project risk level, or full SSDLC mode. SSDLC Router node determines the lifecycle stage and injects stage-specific skill + checklist.
+-   **Parallel Execution**: Policy and Evidence nodes run **in parallel** (LangGraph fan-out/fan-in). Within phases, sub-tasks (e.g. KB lookup + document parsing) run concurrently via `asyncio.gather`.
 -   **Checkpointing**: Persistent state via LangGraph `MemorySaver` or database-backed checkpointer.
+-   Assessment submission is **non-blocking** — returns task_id immediately, processes in background.
+-   Singleton `KnowledgeBaseService` and cached LLM client shared across requests.
 
 ### 3. Memory | 记忆体
 
@@ -181,6 +184,8 @@ stateDiagram-v2
 
 ### 4. Skills & Personas | 技能与角色
 
+-   **Persona-based Assessment**: Defines "who" is assessing (e.g. ISO 27001 Auditor vs. AppSec Engineer).
+-   **Built-in Persona Skills**: 4 hardcoded personas (ISO 27001 Auditor, AppSec Engineer, GDPR DPO, Cloud Architect) in `skills_registry.py`.
 -   **Phase-specific Personas**: Each SSDLC phase has dedicated personas:
     -   Requirements: Compliance Analyst, Risk Assessor
     -   Design: Threat Modeler, Security Architect
@@ -188,9 +193,9 @@ stateDiagram-v2
     -   Testing: Pentest Analyst, Vulnerability Manager
     -   Deployment: Release Security Reviewer, Hardening Specialist
     -   Operations: Vulnerability Monitor, Incident Responder
--   **Built-in Skills**: Hardcoded in `skills_registry.py` per phase.
+-   **Built-in SSDLC Skills**: 6 stage-specific skills (one per SSDLC stage) with tailored `system_prompt`, `risk_focus`, checklists, and `compliance_frameworks`.
 -   **Custom Skills**: File-backed (`data/skills.json`) CRUD via REST API.
--   **Dynamic Orchestration**: Orchestrator injects skill-specific `system_prompt`, `risk_focus`, and `compliance_frameworks` into RAG queries and LLM prompts.
+-   **Dynamic Orchestration**: LangGraph injects skill-specific context into RAG queries and LLM prompts based on the selected persona and SSDLC stage.
 
 ### 5. Knowledge Base (RAG) | 知识库
 
@@ -217,7 +222,8 @@ stateDiagram-v2
 
 ### 7. LLM Abstraction (LangChain) | LLM 抽象层
 
--   Single interface for chat/completion via LangChain (`ChatOpenAI` / `ChatOllama`).
+-   Single interface for chat/completion via **LangChain** (`ChatOpenAI` / `ChatOllama`).
+-   LangChain is also the foundation for LangGraph agent nodes — each node uses LangChain's `Runnable` interface.
 -   **LangChain Tools**: Phase agents use LangChain tools for structured interactions (KB query, document parsing, report generation).
 -   **Prompt Management**: LangChain `ChatPromptTemplate` with phase-specific system prompts and few-shot examples.
 -   **Cached client**: LLM instance is `@lru_cache`d — one client per process lifetime.
@@ -247,6 +253,55 @@ flowchart LR
 
 ---
 
+## SSDLC Pipeline | SSDLC 流水线
+
+DocSentinel supports all 6 SSDLC stages defined by NIST, OWASP, and Microsoft SDL. Each stage has a dedicated skill with stage-specific prompts, checklists, and risk focus areas.
+
+```mermaid
+flowchart LR
+    subgraph SSDLC["SSDLC Stages"]
+        S1["1. Requirements\n需求"]
+        S2["2. Design\n设计"]
+        S3["3. Development\n开发"]
+        S4["4. Testing\n测试"]
+        S5["5. Deployment\n部署"]
+        S6["6. Operations\n运维"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+```
+
+| Stage | Key Assessment Focus | Example Inputs |
+| :---- | :------------------- | :------------- |
+| **Requirements** | Security requirements completeness, compliance mapping (GDPR, ISO 27001), risk analysis | Requirements docs, compliance checklists |
+| **Design** | Security architecture, STRIDE/DREAD threat model, encryption/permission design, SDR | Architecture docs, threat models, data flow diagrams |
+| **Development** | Secure coding standards, built-in controls (anti-injection, XSS), code review findings | Code review reports, coding guidelines |
+| **Testing** | SAST/DAST triage, penetration test evaluation, vulnerability fix verification | Scan reports, pen-test findings |
+| **Deployment** | Release readiness, config security, key management, least privilege, hardening | Deployment configs, release checklists |
+| **Operations** | Vulnerability monitoring, incident response, patch management, log audit | Incident reports, audit logs, monitoring alerts |
+
+### LangGraph Agent Flow
+
+```mermaid
+stateDiagram-v2
+    [*] --> Parse: files received
+    Parse --> SSDLCRouter: parsed docs
+    SSDLCRouter --> PolicyAgent: stage + skill loaded
+    SSDLCRouter --> EvidenceAgent: stage + skill loaded
+    state fork_state <<fork>>
+    PolicyAgent --> fork_state
+    EvidenceAgent --> fork_state
+    fork_state --> DrafterAgent: policy_chunks + evidence
+    DrafterAgent --> ReviewerAgent: draft report
+    ReviewerAgent --> [*]: final report + confidence
+```
+
+The **SSDLC Router** is a LangGraph node that:
+1. Accepts an explicit `ssdlc_stage` parameter, or auto-detects the stage from document content.
+2. Loads the corresponding stage skill (system prompt, risk focus, checklist).
+3. Routes to the parallel Policy+Evidence fan-out, then sequentially to Drafter and Reviewer.
+
+---
+
 ## Data Flow | 数据流
 
 End-to-end flow for an SSDLC assessment:
@@ -258,13 +313,15 @@ sequenceDiagram
     participant LG as LangGraph Router
     participant Agent as Phase Agent
     participant Parser as Parser
+    participant Router as SSDLC Router
     participant KB as Knowledge Base
     participant Skill as Skill
     participant LLM as LLM (LangChain)
     participant Review as Human Review
 
-    U->>API: POST /assessments (files, phase, scenario_id)
-    API->>LG: route(phase, files, context)
+    U->>API: POST /assessments (files, phase, scenario_id, ssdlc_stage?)
+    API-->>U: 202 Accepted (task_id)
+    API->>LG: background task: route(phase, files, context)
     LG->>Parser: parse(files)
     Parser-->>LG: parsed docs
     LG->>Agent: execute(parsed_docs, state)
@@ -277,18 +334,21 @@ sequenceDiagram
     Agent-->>LG: update state (findings, threats, gaps)
     LG->>LG: checkpoint state
     LG-->>API: assessment report
-    API-->>U: task_id / report
+    U->>API: GET /assessments/{task_id}
+    API-->>U: report
     U->>Review: review & approve/reject
 ```
 
 **Full SSDLC Flow:**
 
-1.  User submits files and selects phase(s) or "full SSDLC" mode.
-2.  **LangGraph Router** determines which phase agent(s) to invoke.
-3.  For full SSDLC, agents execute sequentially (Requirements → Design → Development → Testing → Deployment → Operations), with findings from each phase carried forward in shared state.
-4.  Each **Phase Agent**: parses documents → queries phase-specific KB → applies skill persona → calls LLM → produces structured findings.
-5.  **Reviewer** node validates completeness, assigns confidence, cross-references findings across phases.
-6.  Report with cross-phase traceability is returned for **human-in-the-loop** review.
+1.  User submits files and selects phase(s) or "full SSDLC" mode (and optional `ssdlc_stage` / skill ID). API returns `task_id` immediately (non-blocking).
+2.  **Parser** converts files to unified Markdown/text format (Docling or legacy).
+3.  **LangGraph Router** determines which phase agent(s) to invoke and loads stage-specific skill + checklist.
+4.  For full SSDLC, agents execute sequentially (Requirements → Design → Development → Testing → Deployment → Operations), with findings from each phase carried forward in shared state. **Policy+History Agent** queries KB (vector + graph RAG) and **Evidence Agent** scans documents — these run **in parallel** via LangGraph fan-out.
+5.  Each **Phase Agent**: parses documents → queries phase-specific KB → applies skill persona → calls LLM → produces structured findings.
+6.  **Drafter Agent** synthesizes findings into a structured report via LLM, guided by the stage checklist.
+7.  **Reviewer** node validates completeness, assigns confidence (0.0-1.0), cross-references findings across phases.
+8.  Report with cross-phase traceability is returned for **human-in-the-loop** review. User polls `GET /assessments/{task_id}` to retrieve the completed report.
 
 ---
 
@@ -348,7 +408,7 @@ Security is designed along five areas (detailed in [PRD §7.2](./SPEC.md)):
 ```mermaid
 flowchart TB
     subgraph Client["Client"]
-        Browser["Browser / CLI / CI-CD"]
+        Browser["Browser / CLI / CI-CD / MCP Agent"]
     end
     subgraph Server["Server / Container"]
         App["DocSentinel\n(FastAPI + LangGraph)"]

@@ -34,7 +34,7 @@
 
 ## What is DocSentinel?
 
-**DocSentinel** is an AI-powered **SSDLC (Secure Software Development Lifecycle) platform** for security teams. It automates security activities across all six phases of the software development lifecycle using intelligent AI agents orchestrated by **LangGraph** and powered by **LangChain**.
+**DocSentinel** is an AI-powered **SSDLC (Secure Software Development Lifecycle) platform** for security teams. It automates security activities across all six phases of the software development lifecycle using intelligent AI agents orchestrated by **LangGraph** and powered by **LangChain**. It automates the review of security-related **documents, forms, and reports** — from requirements and design through development, testing, deployment, and operations — comparing inputs against your policy and knowledge base to produce **structured assessment reports** with risks, compliance gaps, and remediation suggestions.
 
 Instead of only reviewing documents at the pre-release stage, DocSentinel embeds security from day one:
 
@@ -49,6 +49,14 @@ Instead of only reviewing documents at the pre-release stage, DocSentinel embeds
 
 Built as a **headless API + MCP service**, DocSentinel integrates into your CI/CD pipelines, AI agents (Claude Desktop, Cursor, OpenClaw), and existing security workflows.
 
+- **LangGraph orchestration**: Stateful, graph-based agent workflows with conditional branching per SSDLC stage.
+- **Multi-format input**: PDF, Word, Excel, PPT, text — parsed into a unified format for the LLM.
+- **Knowledge base (RAG)**: Upload policy and compliance documents; the agent uses them as reference when assessing.
+- **Multiple LLMs**: Use OpenAI, Claude, Qwen, or **Ollama** (local) via a single interface.
+- **Structured output**: JSON/Markdown reports with risk items, compliance gaps, and actionable remediations.
+
+Ideal for enterprises that need to scale security assessments across many projects and SSDLC stages without proportionally scaling headcount.
+
 ---
 
 ## Why DocSentinel?
@@ -56,11 +64,13 @@ Built as a **headless API + MCP service**, DocSentinel integrates into your CI/C
 | Pain Point | DocSentinel Solution |
 | :--- | :--- |
 | **Fragmented SSDLC coverage**<br>Most tools only address testing/deployment. | **Full lifecycle agents** cover all 6 SSDLC phases with dedicated AI personas. |
+| **Fragmented criteria**<br>Policies, standards, and precedents are scattered. | Single **knowledge base** ensures consistent findings and traceability. |
 | **No automated threat modeling**<br>Threat models are created ad-hoc. | **Design Agent** generates STRIDE/DREAD threat models from architecture docs. |
-| **Heavy questionnaire workflow**<br>Endless review cycles. | **Automated first-pass** and gap analysis reduces manual rounds. |
+| **Heavy questionnaire workflow**<br>Endless review cycles. | **Automated first-pass** and gap analysis reduces manual back-and-forth rounds. |
 | **SAST/DAST report overload**<br>Too many findings, too little context. | **Testing Agent** triages, prioritizes, and maps findings to threat models. |
-| **Pre-release review pressure**<br>Everything lands on security at the end. | **Shift-left** approach catches issues early in requirements and design. |
-| **Scale vs. consistency**<br>Manual reviews vary by reviewer. | **LangGraph workflows** ensure consistent, auditable assessment across projects. |
+| **Pre-release review pressure**<br>Everything lands on security at the end. | **Shift-left** approach catches issues early in requirements and design. **Structured reports** help reviewers focus on decision-making. |
+| **Scale vs. consistency**<br>Manual reviews vary by reviewer. | **LangGraph workflows** and **unified pipeline** ensure consistent, auditable assessment across projects. |
+| **SSDLC coverage gaps**<br>Security involvement is uneven across lifecycle stages; early stages get less scrutiny. | **Stage-aware assessment** covers all 6 SSDLC stages with dedicated skills and checklists. |
 
 *See the full problem statement and SSDLC phase details in [SPEC.md](./SPEC.md).*
 
@@ -68,7 +78,7 @@ Built as a **headless API + MCP service**, DocSentinel integrates into your CI/C
 
 ## Architecture
 
-DocSentinel is built on **LangGraph** for stateful agent orchestration and **LangChain** for unified LLM access. Six phase-specific agents are coordinated by a graph-based state machine with cross-phase context sharing.
+DocSentinel is built on **LangGraph** for stateful agent orchestration and **LangChain** for unified LLM access. Six phase-specific agents are coordinated by a graph-based state machine with cross-phase context sharing. The orchestrator coordinates parsing, SSDLC stage routing, the knowledge base (RAG), skills, and the LLM. You can use cloud or local LLMs and optional integrations (e.g. AAD, ServiceNow) as your environment requires.
 
 ```mermaid
 flowchart TB
@@ -110,12 +120,12 @@ flowchart TB
 
 **Data flow (simplified):**
 
-1.  User selects SSDLC phase(s) and uploads documents.
-2.  **LangGraph Router** dispatches to the appropriate **Phase Agent(s)**.
-3.  **Parser** converts files (PDF, Word, Excel, SAST/DAST reports, etc.) to text/Markdown.
-4.  Phase Agent queries **KB** (phase-specific collections) and applies **Skills**.
+1.  User selects SSDLC phase(s) and uploads documents (or optionally lets the SSDLC Router auto-detect the stage).
+2.  **Parser** converts files (PDF, Word, Excel, PPT, SAST/DAST reports, etc.) to text/Markdown.
+3.  **LangGraph Router** dispatches to the appropriate **Phase Agent(s)**, loading stage-specific skill + checklist.
+4.  Phase Agent queries **KB** (phase-specific collections) and applies **Skills**; Policy+Evidence run in parallel, then Drafter+Reviewer.
 5.  **LLM** (via LangChain) produces structured findings with cross-phase traceability.
-6.  Returns **assessment report** (risks, threats, gaps, remediations).
+6.  Returns **assessment report** (risks, threats, gaps, remediations, confidence, SSDLC stage).
 
 *Detailed architecture: [ARCHITECTURE.md](./ARCHITECTURE.md) and [docs/01-architecture-and-tech-stack.md](./docs/01-architecture-and-tech-stack.md).*
 
@@ -124,7 +134,19 @@ flowchart TB
 ## Core Capabilities
 
 ### SSDLC Full Lifecycle Coverage
-Six dedicated AI agents, each with phase-specific skills, prompts, and knowledge base collections. Run individual phases or a full end-to-end SSDLC assessment.
+Six dedicated AI agents, each with phase-specific skills, prompts, and knowledge base collections. Run individual phases or a full end-to-end SSDLC assessment:
+- **Requirements**: Security requirements, compliance mapping, initial risk analysis.
+- **Design**: Architecture review, STRIDE/DREAD threat modeling, SDR.
+- **Development**: Secure coding standards, code review findings.
+- **Testing**: SAST/DAST report triage, pen-test evaluation.
+- **Deployment**: Release readiness, config security, hardening.
+- **Operations**: Incident response, vulnerability monitoring, log audit.
+
+### Automated Security Assessment
+Submit security questionnaires, design documents, or audit reports. DocSentinel analyzes them using configured LLMs and identifies:
+- **Security Risks**: Classified by severity (Critical, High, Medium, Low).
+- **Compliance Gaps**: Missing controls against frameworks like ISO 27001, PCI DSS.
+- **Remediation Steps**: Actionable advice to fix identified issues.
 
 ### Intelligent Agent Orchestration (LangGraph)
 - **Stateful workflows**: LangGraph state machine maintains context across phases
@@ -142,8 +164,11 @@ Upload your organization's security policies, standards, and past audits. Phase-
 - Deployment: CIS benchmarks, hardening guides
 - Operations: CVE databases, incident playbooks
 
+### LangGraph Agent Orchestration
+Powered by **LangChain + LangGraph** — stateful, graph-based agent workflows with conditional routing per SSDLC stage. Parallel execution of Policy and Evidence agents, followed by Drafter and Reviewer agents.
+
 ### API-First & MCP Ready
-Designed as a headless service. Integrate into CI/CD pipelines via REST API, or use as a skill within AI agents (Claude Desktop, Cursor, OpenClaw) via MCP.
+Designed as a headless service. Integrate into CI/CD pipelines via REST API, or use as a **super-tool** within AI agents (Claude Desktop, Cursor, OpenClaw) via MCP.
 
 ---
 
@@ -251,6 +276,10 @@ curl -X POST "http://localhost:8000/api/v1/kb/query" \
 
 ---
 
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/arthurpanhku-docsentinel).
+
 ## Project Layout
 
 ```text
@@ -260,6 +289,7 @@ DocSentinel/
 │   ├── agent/            # LangGraph orchestrator, phase agents, skills
 │   │   ├── orchestrator.py    # LangGraph state machine & phase routing
 │   │   ├── agents/            # Phase-specific agent implementations
+│   │   ├── ssdlc/             # SSDLC pipeline: stage router, stage skills, checklists
 │   │   ├── skills_registry.py # Built-in skills per SSDLC phase
 │   │   └── skills_service.py  # Skill CRUD and management
 │   ├── core/             # Config, guardrails, security, DB
@@ -309,6 +339,7 @@ DocSentinel/
 | `ENABLE_GRAPH_RAG` | Enable LightRAG graph retrieval | `true` |
 | `LANGGRAPH_CHECKPOINT_DIR` | LangGraph checkpoint persistence | `./data/checkpoints` |
 | `SSDLC_DEFAULT_PHASES` | Default phases for full assessment | `requirements,design,development,testing,deployment,operations` |
+| `SSDLC_DEFAULT_STAGE` | Default SSDLC stage if not specified | `auto` |
 | `UPLOAD_MAX_FILE_SIZE_MB` / `UPLOAD_MAX_FILES` | Upload limits | `50` / `10` |
 
 *See [.env.example](./.env.example) and [docs/05-deployment-runbook.md](./docs/05-deployment-runbook.md) for full options.*
