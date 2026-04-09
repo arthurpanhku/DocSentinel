@@ -80,6 +80,8 @@ Ideal for enterprises that need to scale security assessments across many projec
 
 DocSentinel is built on **LangGraph** for stateful agent orchestration and **LangChain** for unified LLM access. Six phase-specific agents are coordinated by a graph-based state machine with cross-phase context sharing. The orchestrator coordinates parsing, SSDLC stage routing, the knowledge base (RAG), skills, and the LLM. You can use cloud or local LLMs and optional integrations (e.g. AAD, ServiceNow) as your environment requires.
 
+![DocSentinel Architecture](docsentinel_architecture.png)
+
 ```mermaid
 flowchart TB
     subgraph User["User / Security Staff"]

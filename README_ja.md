@@ -62,6 +62,8 @@
 
 DocSentinel は、解析、ナレッジベース (RAG)、スキル、および LLM を調整する**オーケストレーター**を中心に構築されています。環境に応じて、クラウドまたはローカルの LLM、およびオプションの統合（AAD、ServiceNow など）を使用できます。
 
+![DocSentinel アーキテクチャ図](docsentinel_architecture.png)
+
 ```mermaid
 flowchart TB
     subgraph User["👤 ユーザー / セキュリティスタッフ"]

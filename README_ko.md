@@ -62,6 +62,8 @@
 
 DocSentinel는 파싱, 지식 기반 (RAG), 스킬 및 LLM을 조정하는 **오케스트레이터**를 중심으로 구축되었습니다. 환경에 따라 클라우드 또는 로컬 LLM 및 선택적 통합 (예: AAD, ServiceNow)을 사용할 수 있습니다.
 
+![DocSentinel 아키텍처 다이어그램](docsentinel_architecture.png)
+
 ```mermaid
 flowchart TB
     subgraph User["👤 사용자 / 보안 담당자"]

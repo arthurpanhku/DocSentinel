@@ -62,6 +62,8 @@ Idéal pour les entreprises qui doivent faire évoluer les évaluations de sécu
 
 DocSentinel est construit autour d'un **orchestrateur** qui coordonne l'analyse, la base de connaissances (RAG), les compétences et le LLM. Vous pouvez utiliser des LLM cloud ou locaux et des intégrations optionnelles (ex : AAD, ServiceNow) selon les besoins de votre environnement.
 
+![DocSentinel Architecture](docsentinel_architecture.png)
+
 ```mermaid
 flowchart TB
     subgraph User["👤 Utilisateur / Staff Sécurité"]

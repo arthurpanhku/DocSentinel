@@ -32,6 +32,8 @@ DocSentinel is an **AI-powered SSDLC (Secure Software Development Lifecycle) pla
 
 The system is organized in layers: **Access** → **SSDLC Orchestration (LangGraph)** → **Core Services (KB, Parser, Memory, Skills)** → **LLM Abstraction (LangChain)** → **LLM Backends**. External integrations (AAD, ServiceNow, SAST/DAST tools) connect at the access and orchestration boundaries.
 
+![DocSentinel Architecture Overview](docsentinel_architecture.png)
+
 ### Mermaid: Logical View
 
 ```mermaid

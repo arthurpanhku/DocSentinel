@@ -69,6 +69,8 @@
 
 DocSentinel 基于 **LangGraph** 实现有状态的 Agent 编排，基于 **LangChain** 实现统一 LLM 访问。六个阶段专用 Agent 由图形化状态机协调，支持跨阶段上下文共享。
 
+![DocSentinel 架构图](docsentinel_architecture.png)
+
 ```mermaid
 flowchart TB
     subgraph User["用户 / 安全团队"]

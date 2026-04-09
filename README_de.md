@@ -62,6 +62,8 @@ Ideal für Unternehmen, die Sicherheitsbewertungen über viele Projekte hinweg s
 
 DocSentinel ist um einen **Orchestrator** herum aufgebaut, der das Parsing, die Wissensdatenbank (RAG), Skills und das LLM koordiniert. Sie können je nach Umgebung Cloud- oder lokale LLMs sowie optionale Integrationen (z. B. AAD, ServiceNow) nutzen.
 
+![DocSentinel Architektur-Diagramm](docsentinel_architecture.png)
+
 ```mermaid
 flowchart TB
     subgraph User["👤 Benutzer / Sicherheitspersonal"]
