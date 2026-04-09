@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [4.1.0] — 2026-04-09
+
+### Added
+- **Review Console**: Minimal human-in-the-loop review console for HITL workflows and remediation tracking. Allows reviewers to approve, reject, comment on, and track remediation status of security findings.
+- **Architecture Diagram**: Embedded system architecture diagram across all READMEs, ARCHITECTURE.md, and project documentation for clearer visual overview of the platform.
+
+### Changed
+- **Documentation**: Redesigned architecture diagram for improved clarity; updated all language-specific READMEs (en, zh, ja, ko, fr, de) to include the diagram.
+
+---
+
 ## [4.0.0] — 2026-03-30
 
 ### Major Change
@@ -171,6 +182,7 @@ This release marks a significant milestone with **Skill Management**, **Template
 - **CI/CD**: Updated GitHub Actions workflow to include linting steps.
 - **Project Structure**: Migrated `pytest.ini` to `pyproject.toml`.
 
+[4.1.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v4.1.0
 [4.0.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v4.0.0
 [3.1.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v3.1.0
 [3.0.0]: https://github.com/arthurpanhku/DocSentinel/releases/tag/v3.0.0
