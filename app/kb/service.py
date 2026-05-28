@@ -285,31 +285,72 @@ class KnowledgeBaseService:
         scenario_id: str | None,
         report_json: dict,
     ) -> str:
-        content = (
-            f"task_id={task_id}\nversion={version}\nscenario_id={scenario_id}\n"
-            f"{json.dumps(report_json, ensure_ascii=False)}"
-        )
-        doc_id = hashlib.sha256(content.encode()).hexdigest()[:16]
-        chunks = self._splitter.split_text(content)
-        docs = [
-            Document(
-                page_content=c,
-                metadata={
-                    "source": f"history/{task_id}/v{version}.json",
-                    "document_id": doc_id,
-                    "type": "history_response",
-                    "task_id": task_id,
-                    "version": version,
-                    "scenario_id": scenario_id,
-                    "chunk_id": f"{doc_id}_{i}",
-                },
+        """Store each finding as a separate searchable document.
+
+        Prior implementation chunked the whole report JSON by character count,
+        which split JSON structure mid-object and made retrieval semantically
+        meaningless.  Storing findings individually means a similarity search
+        for "weak authentication" returns a matching RiskItem, not a JSON
+        fragment that happens to contain the words.
+        """
+        doc_id = hashlib.sha256(
+            f"{task_id}-v{version}".encode()
+        ).hexdigest()[:16]
+        source = f"history/{task_id}/v{version}.json"
+        base_meta: dict = {
+            "source": source,
+            "document_id": doc_id,
+            "task_id": task_id,
+            "version": version,
+            "scenario_id": scenario_id,
+        }
+
+        docs: list[Document] = []
+
+        # Summary
+        summary_text = report_json.get("summary", "")
+        if summary_text:
+            chunk_id = f"{doc_id}_summary"
+            docs.append(
+                Document(
+                    page_content=f"SUMMARY: {summary_text}",
+                    metadata={**base_meta, "type": "history_summary", "chunk_id": chunk_id},
+                )
             )
-            for i, c in enumerate(chunks)
-        ]
+
+        # Individual risk items
+        for i, item in enumerate(report_json.get("risk_items", [])):
+            content = (
+                f"RISK [{item.get('severity', 'unknown').upper()}]: "
+                f"{item.get('title', '')}\n"
+                f"{item.get('description', '')}"
+            )
+            chunk_id = f"{doc_id}_risk_{i}"
+            docs.append(
+                Document(
+                    page_content=content,
+                    metadata={**base_meta, "type": "history_risk_item", "chunk_id": chunk_id},
+                )
+            )
+
+        # Individual compliance gaps
+        for i, gap in enumerate(report_json.get("compliance_gaps", [])):
+            content = (
+                f"GAP [{gap.get('framework', '')}]: "
+                f"{gap.get('control_or_clause', '')}\n"
+                f"{gap.get('gap_description', '')}"
+            )
+            chunk_id = f"{doc_id}_gap_{i}"
+            docs.append(
+                Document(
+                    page_content=content,
+                    metadata={**base_meta, "type": "history_compliance_gap", "chunk_id": chunk_id},
+                )
+            )
+
         if docs:
-            self._history_store.add_documents(
-                docs, ids=[f"{doc_id}_{i}" for i in range(len(docs))]
-            )
+            ids = [d.metadata["chunk_id"] for d in docs]
+            self._history_store.add_documents(docs, ids=ids)
         return doc_id
 
     def query_history_responses(self, query: str, top_k: int = 3) -> list[Document]:
