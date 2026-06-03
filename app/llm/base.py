@@ -1,5 +1,5 @@
 """
-LLM abstraction: unified interface for OpenAI and Ollama.
+LLM abstraction: unified interface for hosted and local LLM providers.
 PRD §5.2.6; switch provider via config without changing Agent logic.
 """
 
@@ -21,6 +21,52 @@ def get_llm() -> BaseChatModel:
             model=settings.OPENAI_MODEL,
             api_key=settings.OPENAI_API_KEY or None,
             base_url=settings.OPENAI_BASE_URL or None,
+            temperature=0.2,
+        )
+    if settings.LLM_PROVIDER == "anthropic":
+        from langchain_anthropic import ChatAnthropic
+
+        return ChatAnthropic(
+            model=settings.ANTHROPIC_MODEL,
+            api_key=settings.ANTHROPIC_API_KEY or None,
+            base_url=settings.ANTHROPIC_BASE_URL or None,
+            temperature=0.2,
+        )
+    if settings.LLM_PROVIDER in {
+        "qwen",
+        "deepseek",
+        "openai_compatible",
+        "local_openai",
+    }:
+        from langchain_openai import ChatOpenAI
+
+        provider_config = {
+            "qwen": (
+                settings.QWEN_MODEL,
+                settings.QWEN_API_KEY,
+                settings.QWEN_BASE_URL,
+            ),
+            "deepseek": (
+                settings.DEEPSEEK_MODEL,
+                settings.DEEPSEEK_API_KEY,
+                settings.DEEPSEEK_BASE_URL,
+            ),
+            "openai_compatible": (
+                settings.COMPAT_MODEL,
+                settings.COMPAT_API_KEY,
+                settings.COMPAT_BASE_URL,
+            ),
+            "local_openai": (
+                settings.LOCAL_MODEL,
+                settings.LOCAL_API_KEY,
+                settings.LOCAL_BASE_URL,
+            ),
+        }
+        model, api_key, base_url = provider_config[settings.LLM_PROVIDER]
+        return ChatOpenAI(
+            model=model,
+            api_key=api_key or None,
+            base_url=base_url or None,
             temperature=0.2,
         )
     if settings.LLM_PROVIDER == "ollama":

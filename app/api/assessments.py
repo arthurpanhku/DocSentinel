@@ -59,6 +59,18 @@ class TrackedRemediation(BaseModel):
     tracking: RemediationTracking
 
 
+AssessmentPhase = Literal[
+    "auto",
+    "requirements",
+    "design",
+    "development",
+    "testing",
+    "deployment",
+    "operations",
+    "full_ssdlc",
+]
+
+
 # In-memory task store (MVP — see TODO #9 for persistent storage)
 _tasks: dict = {}
 
@@ -69,6 +81,7 @@ async def _run_assessment_background(
     parsed_list: list,
     scenario_id: str | None,
     project_id: str | None,
+    phase: AssessmentPhase,
     skill_id: str | None,
     collaborative_mode: bool,
 ) -> None:
@@ -86,8 +99,14 @@ async def _run_assessment_background(
             parsed_list,
             scenario_id=scenario_id,
             project_id=project_id,
+            phase=phase,
             skill_id=skill_id,
         )
+        if report.metadata:
+            report.metadata.ssdlc_stage = phase
+            report.metadata.ssdlc_phase = phase
+            report.metadata.skill_id = skill_id
+        report.phase = phase
         target_status = "review_pending" if collaborative_mode else "completed"
         now = datetime.now(timezone.utc)
         remediation_tracking = {}
@@ -148,6 +167,7 @@ async def submit_assessment(
     ),
     scenario_id: str | None = Form(None),
     project_id: str | None = Form(None),
+    phase: AssessmentPhase = Form("auto"),
     skill_id: str | None = Form(None),
     collaborative_mode: bool = Form(True),
 ):
@@ -167,6 +187,7 @@ async def submit_assessment(
         try:
             parsed = parse_file(content, file.filename or "unknown")
             parsed.metadata.scenario_id = scenario_id
+            parsed.metadata.ssdlc_phase_hint = phase
             sanitize_input(parsed.content if isinstance(parsed.content, str) else "")
             parsed_list.append(parsed)
         except ValueError as e:
@@ -180,6 +201,7 @@ async def submit_assessment(
         "status": "pending",
         "created_at": created_at,
         "version": 1,
+        "phase": phase,
         "activity": [
             {
                 "type": "task_created",
@@ -195,7 +217,7 @@ async def submit_assessment(
     asyncio.create_task(
         _run_assessment_background(
             task_id_str, task_id, parsed_list,
-            scenario_id, project_id, skill_id, collaborative_mode,
+            scenario_id, project_id, phase, skill_id, collaborative_mode,
         )
     )
 

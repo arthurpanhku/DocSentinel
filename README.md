@@ -47,7 +47,7 @@ Instead of only reviewing documents at the pre-release stage, DocSentinel embeds
 | **Deployment** | Configuration security review, hardening assessment, release sign-off |
 | **Operations** | Vulnerability monitoring, incident response assistance, log audit |
 
-Built as a **headless API + MCP service**, DocSentinel integrates into your CI/CD pipelines, AI agents (Claude Desktop, Cursor, OpenClaw), and existing security workflows.
+Built as a **React console + headless API + MCP service**, DocSentinel integrates into local security review workflows, CI/CD pipelines, AI agents (Claude Desktop, Cursor, OpenClaw), and existing security operations.
 
 - **LangGraph orchestration**: Stateful, graph-based agent workflows with conditional branching per SSDLC stage.
 - **Multi-format input**: PDF, Word, Excel, PPT, text — parsed into a unified format for the LLM.
@@ -78,7 +78,7 @@ Ideal for enterprises that need to scale security assessments across many projec
 
 ## Architecture
 
-DocSentinel is built on **LangGraph** for stateful agent orchestration and **LangChain** for unified LLM access. Six phase-specific agents are coordinated by a graph-based state machine with cross-phase context sharing. The orchestrator coordinates parsing, SSDLC stage routing, the knowledge base (RAG), skills, and the LLM. You can use cloud or local LLMs and optional integrations (e.g. AAD, ServiceNow) as your environment requires.
+DocSentinel is built on a **React Console** plus **FastAPI/MCP** access layer, with **LangGraph** for stateful agent orchestration and **LangChain** for unified LLM access. Six phase-specific agents are coordinated by a graph-based state machine with cross-phase context sharing. The orchestrator coordinates parsing, SSDLC stage routing, the knowledge base (RAG), skills, and the LLM. You can use cloud or local LLMs and optional integrations (e.g. AAD, ServiceNow) as your environment requires.
 
 ![DocSentinel Architecture](docsentinel_architecture.png)
 
@@ -87,7 +87,9 @@ flowchart TB
     subgraph User["User / Security Staff"]
     end
     subgraph Access["Access Layer"]
-        API["REST API / MCP"]
+        Console["React Console<br/>(Vite + Tailwind)"]
+        API["REST API<br/>(FastAPI)"]
+        MCP["MCP Server<br/>(stdio)"]
     end
     subgraph Orchestration["SSDLC Orchestration (LangGraph)"]
         Router["Phase Router"]
@@ -112,8 +114,12 @@ flowchart TB
         Local["Ollama / vLLM"]
     end
 
+    User --> Console
     User --> API
+    Console --> API
+    User --> MCP
     API --> Router
+    MCP --> Router
     Router --> A1 & A2 & A3 & A4 & A5 & A6
     A1 & A2 & A3 & A4 & A5 & A6 --> KB & Parser & Skill
     A1 & A2 & A3 & A4 & A5 & A6 --> Abst
@@ -245,7 +251,30 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 -   **API docs**: [http://localhost:8000/docs](http://localhost:8000/docs) · **Health**: [http://localhost:8000/health](http://localhost:8000/health)
--   **Review Console (HITL)**: [http://localhost:8000/docs/review-console.html](http://localhost:8000/docs/review-console.html)
+-   **React Console**: [http://localhost:8000/console](http://localhost:8000/console) after building the frontend
+-   **Legacy Review Console (HITL)**: [http://localhost:8000/docs/review-console.html](http://localhost:8000/docs/review-console.html)
+
+### React Console
+
+DocSentinel includes a React + TypeScript + Vite + Tailwind CSS console for assessments, knowledge base operations, skills, and system status.
+
+![DocSentinel React Console](docs/images/react-console-dashboard.png)
+
+```bash
+npm install --prefix frontend
+npm run build --prefix frontend
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Open [http://localhost:8000/console](http://localhost:8000/console). For frontend-only development, run:
+
+```bash
+npm run dev --prefix frontend
+```
+
+The Vite dev server proxies `/api`, `/health`, and `/config` to `http://localhost:8000`.
+
+The **Settings** page can update the running server's LLM provider, model, base URL, and API key. API keys are only returned to the UI as masked previews. For persistent startup defaults, set the matching values in `.env`.
 
 ---
 
@@ -287,6 +316,7 @@ A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/arthur
 
 ```text
 DocSentinel/
+├── frontend/             # React + TypeScript + Vite + Tailwind console
 ├── app/                  # Application code
 │   ├── api/              # REST routes: assessments, KB, health, skills
 │   ├── agent/            # LangGraph orchestrator, phase agents, skills
@@ -337,6 +367,11 @@ DocSentinel/
 | `LLM_PROVIDER` | `ollama` or `openai` | `ollama` |
 | `OLLAMA_BASE_URL` / `OLLAMA_MODEL` | Local LLM | `http://localhost:11434` / `llama2` |
 | `OPENAI_API_KEY` / `OPENAI_MODEL` | OpenAI | -- |
+| `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` | Anthropic Claude | -- / `claude-3-5-sonnet-latest` |
+| `QWEN_API_KEY` / `QWEN_MODEL` | Qwen DashScope OpenAI-compatible API | -- / `qwen-plus` |
+| `DEEPSEEK_API_KEY` / `DEEPSEEK_MODEL` | DeepSeek OpenAI-compatible API | -- / `deepseek-chat` |
+| `COMPAT_API_KEY` / `COMPAT_BASE_URL` / `COMPAT_MODEL` | Any OpenAI-compatible hosted API | -- |
+| `LOCAL_API_KEY` / `LOCAL_BASE_URL` / `LOCAL_MODEL` | Local OpenAI-compatible API | -- / `http://localhost:1234/v1` / `local-model` |
 | `CHROMA_PERSIST_DIR` | Vector DB path | `./data/chroma` |
 | `PARSER_ENGINE` | Parser: `auto`, `docling`, or `legacy` | `auto` |
 | `ENABLE_GRAPH_RAG` | Enable LightRAG graph retrieval | `true` |

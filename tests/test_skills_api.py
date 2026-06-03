@@ -16,6 +16,19 @@ def test_list_skills():
     assert iso_auditor is not None
     assert iso_auditor["is_builtin"] is True
 
+def test_list_ssdlc_builtin_skills():
+    response = client.get("/api/v1/skills/")
+    assert response.status_code == 200
+    ids = {skill["id"] for skill in response.json()}
+    assert {
+        "ssdlc-requirements",
+        "ssdlc-design",
+        "ssdlc-development",
+        "ssdlc-testing",
+        "ssdlc-deployment",
+        "ssdlc-operations",
+    }.issubset(ids)
+
 def test_create_custom_skill():
     from uuid import uuid4
     unique_id = f"custom-pci-{uuid4()}"

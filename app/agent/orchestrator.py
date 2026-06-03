@@ -117,6 +117,7 @@ async def run_assessment(
     parsed_documents: list[ParsedDocument],
     scenario_id: str | None = None,
     project_id: str | None = None,
+    phase: str | None = None,
     skill_id: str | None = None,
 ) -> AssessmentReport:
     skill_service = get_skill_service()
@@ -160,6 +161,8 @@ async def run_assessment(
         history_chunks=history_chunks,
         scenario_id=scenario_id,
         project_id=project_id,
+        phase=phase,
+        skill_id=skill_id,
         chunk_lookup=chunk_lookup,
     )
 
@@ -509,6 +512,8 @@ def _parse_llm_output_to_report(
     history_chunks: list,
     scenario_id: str | None = None,
     project_id: str | None = None,
+    phase: str | None = None,
+    skill_id: str | None = None,
     chunk_lookup: dict | None = None,
 ) -> AssessmentReport:
     parsed: dict = {}
@@ -534,6 +539,7 @@ def _parse_llm_output_to_report(
 
     return AssessmentReport(
         task_id=str(task_id),
+        phase=phase,
         status="completed",
         summary=parsed.get("summary", "No summary provided."),
         risk_items=[
@@ -571,6 +577,9 @@ def _parse_llm_output_to_report(
         metadata=ReportMetadata(
             scenario_id=scenario_id,
             project_id=project_id,
+            ssdlc_stage=phase,
+            ssdlc_phase=phase,
+            skill_id=skill_id,
             model_used=settings.LLM_PROVIDER,
             completed_at=datetime.now(UTC),
         ),
