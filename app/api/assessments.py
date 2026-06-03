@@ -16,7 +16,11 @@ from app.agent.orchestrator import run_assessment
 from app.core.config import settings
 from app.core.guardrails import sanitize_input
 from app.kb.service import get_kb_service
-from app.models.assessment import AssessmentTaskCreated, AssessmentTaskResult, Remediation
+from app.models.assessment import (
+    AssessmentTaskCreated,
+    AssessmentTaskResult,
+    Remediation,
+)
 from app.parser import parse_file
 
 router = APIRouter(prefix="/assessments", tags=["assessments"])
@@ -46,7 +50,9 @@ class RemediationTracking(BaseModel):
 
 
 class RemediationTrackingUpdateRequest(BaseModel):
-    status: Literal["open", "in_progress", "resolved", "verified", "closed"] | None = None
+    status: Literal["open", "in_progress", "resolved", "verified", "closed"] | None = (
+        None
+    )
     owner: str | None = None
     due_at: datetime | None = None
     external_ticket: str | None = None
@@ -87,11 +93,13 @@ async def _run_assessment_background(
 ) -> None:
     """Execute assessment in the background and update the task store."""
     _tasks[task_id_str]["status"] = "running"
-    _tasks[task_id_str]["activity"].append({
-        "type": "assessment_started",
-        "at": datetime.now(timezone.utc).isoformat(),
-        "message": "Assessment processing started",
-    })
+    _tasks[task_id_str]["activity"].append(
+        {
+            "type": "assessment_started",
+            "at": datetime.now(timezone.utc).isoformat(),
+            "message": "Assessment processing started",
+        }
+    )
 
     try:
         report = await run_assessment(
@@ -121,23 +129,29 @@ async def _run_assessment_background(
                 "evidence_refs": [],
                 "updated_at": now,
             }
-        _tasks[task_id_str].update({
-            "status": target_status,
-            "report": report.model_dump(),
-            "completed_at": now,
-            "remediation_tracking": remediation_tracking,
-        })
-        _tasks[task_id_str]["revisions"].append({
-            "version": 1,
-            "status": target_status,
-            "updated_at": now.isoformat(),
-            "report": report.model_dump(),
-        })
-        _tasks[task_id_str]["activity"].append({
-            "type": "draft_generated",
-            "at": now.isoformat(),
-            "message": "AI generated draft report",
-        })
+        _tasks[task_id_str].update(
+            {
+                "status": target_status,
+                "report": report.model_dump(),
+                "completed_at": now,
+                "remediation_tracking": remediation_tracking,
+            }
+        )
+        _tasks[task_id_str]["revisions"].append(
+            {
+                "version": 1,
+                "status": target_status,
+                "updated_at": now.isoformat(),
+                "report": report.model_dump(),
+            }
+        )
+        _tasks[task_id_str]["activity"].append(
+            {
+                "type": "draft_generated",
+                "at": now.isoformat(),
+                "message": "AI generated draft report",
+            }
+        )
 
         try:
             kb = get_kb_service()
@@ -148,11 +162,13 @@ async def _run_assessment_background(
                 report_json=report.model_dump(),
             )
         except Exception:
-            _tasks[task_id_str]["activity"].append({
-                "type": "history_index_skipped",
-                "at": datetime.now(timezone.utc).isoformat(),
-                "message": "History indexing unavailable in current runtime",
-            })
+            _tasks[task_id_str]["activity"].append(
+                {
+                    "type": "history_index_skipped",
+                    "at": datetime.now(timezone.utc).isoformat(),
+                    "message": "History indexing unavailable in current runtime",
+                }
+            )
     except Exception as e:
         logger.exception("Assessment %s failed", task_id_str)
         _tasks[task_id_str]["status"] = "failed"
@@ -167,7 +183,7 @@ async def submit_assessment(
     ),
     scenario_id: str | None = Form(None),
     project_id: str | None = Form(None),
-    phase: AssessmentPhase = Form("auto"),
+    phase: AssessmentPhase = Form("auto"),  # noqa: B008
     skill_id: str | None = Form(None),
     collaborative_mode: bool = Form(True),
 ):
@@ -216,8 +232,14 @@ async def submit_assessment(
 
     asyncio.create_task(
         _run_assessment_background(
-            task_id_str, task_id, parsed_list,
-            scenario_id, project_id, phase, skill_id, collaborative_mode,
+            task_id_str,
+            task_id,
+            parsed_list,
+            scenario_id,
+            project_id,
+            phase,
+            skill_id,
+            collaborative_mode,
         )
     )
 
@@ -254,7 +276,7 @@ async def list_assessments(
     sliced = tasks[offset : offset + limit]
 
     results: list[AssessmentTaskResult] = []
-    for task_id, task in sliced:
+    for _task_id, task in sliced:
         results.append(
             AssessmentTaskResult(
                 task_id=task["task_id"],
@@ -325,7 +347,9 @@ async def list_tracked_remediations(task_id: str):
     return items
 
 
-@router.post("/{task_id}/remediations/{remediation_id}", response_model=RemediationTracking)
+@router.post(
+    "/{task_id}/remediations/{remediation_id}", response_model=RemediationTracking
+)
 async def update_remediation_tracking(
     task_id: str, remediation_id: str, body: RemediationTrackingUpdateRequest
 ):
@@ -402,21 +426,25 @@ async def review_assessment(task_id: str, body: ReviewActionRequest):
         task["assignee"] = body.assignee
 
     # Add activity
-    task["activity"].append({
-        "type": activity_type,
-        "action": body.action,
-        "at": datetime.now(timezone.utc).isoformat(),
-        "comment": body.comment,
-        "assignee": body.assignee
-    })
+    task["activity"].append(
+        {
+            "type": activity_type,
+            "action": body.action,
+            "at": datetime.now(timezone.utc).isoformat(),
+            "comment": body.comment,
+            "assignee": body.assignee,
+        }
+    )
 
     # Add comment if provided
     if body.comment:
-        task["comments"].append({
-            "content": body.comment,
-            "at": datetime.now(timezone.utc).isoformat(),
-            "action": body.action
-        })
+        task["comments"].append(
+            {
+                "content": body.comment,
+                "at": datetime.now(timezone.utc).isoformat(),
+                "action": body.action,
+            }
+        )
 
     return {"status": new_status, "task_id": task_id}
 
@@ -439,11 +467,13 @@ async def add_comment(task_id: str, body: CommentRequest):
         "at": datetime.now(timezone.utc).isoformat(),
     }
     _tasks[task_id]["comments"].append(comment_entry)
-    _tasks[task_id]["activity"].append({
-        "type": "comment_added",
-        "at": datetime.now(timezone.utc).isoformat(),
-        "preview": body.content[:50]
-    })
+    _tasks[task_id]["activity"].append(
+        {
+            "type": "comment_added",
+            "at": datetime.now(timezone.utc).isoformat(),
+            "preview": body.content[:50],
+        }
+    )
     return {"message": "Comment added"}
 
 

@@ -4,7 +4,6 @@ Hybrid retrieval merges vector similarity + entity-relationship graph.
 """
 
 import hashlib
-import json
 import logging
 from pathlib import Path
 
@@ -293,9 +292,7 @@ class KnowledgeBaseService:
         for "weak authentication" returns a matching RiskItem, not a JSON
         fragment that happens to contain the words.
         """
-        doc_id = hashlib.sha256(
-            f"{task_id}-v{version}".encode()
-        ).hexdigest()[:16]
+        doc_id = hashlib.sha256(f"{task_id}-v{version}".encode()).hexdigest()[:16]
         source = f"history/{task_id}/v{version}.json"
         base_meta: dict = {
             "source": source,
@@ -314,7 +311,11 @@ class KnowledgeBaseService:
             docs.append(
                 Document(
                     page_content=f"SUMMARY: {summary_text}",
-                    metadata={**base_meta, "type": "history_summary", "chunk_id": chunk_id},
+                    metadata={
+                        **base_meta,
+                        "type": "history_summary",
+                        "chunk_id": chunk_id,
+                    },
                 )
             )
 
@@ -329,7 +330,11 @@ class KnowledgeBaseService:
             docs.append(
                 Document(
                     page_content=content,
-                    metadata={**base_meta, "type": "history_risk_item", "chunk_id": chunk_id},
+                    metadata={
+                        **base_meta,
+                        "type": "history_risk_item",
+                        "chunk_id": chunk_id,
+                    },
                 )
             )
 
@@ -344,7 +349,11 @@ class KnowledgeBaseService:
             docs.append(
                 Document(
                     page_content=content,
-                    metadata={**base_meta, "type": "history_compliance_gap", "chunk_id": chunk_id},
+                    metadata={
+                        **base_meta,
+                        "type": "history_compliance_gap",
+                        "chunk_id": chunk_id,
+                    },
                 )
             )
 

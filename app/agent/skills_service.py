@@ -1,6 +1,7 @@
 """
 Skills Management Service (InMemory / File based for now).
 """
+
 import json
 from pathlib import Path
 
@@ -56,7 +57,7 @@ class SkillService:
             system_prompt=skill_in.system_prompt,
             risk_focus=skill_in.risk_focus,
             compliance_frameworks=skill_in.compliance_frameworks,
-            is_builtin=False
+            is_builtin=False,
         )
         self.custom_skills[skill.id] = skill
         self._save_custom_skills()
@@ -86,8 +87,10 @@ class SkillService:
         else:
             raise ValueError("Skill not found.")
 
+
 # Singleton
 _skill_service = None
+
 
 def get_skill_service() -> SkillService:
     global _skill_service
