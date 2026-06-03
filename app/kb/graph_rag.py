@@ -95,9 +95,7 @@ class GraphRAGService:
         sys_prompt = system_prompt or "You are a helpful assistant."
         return await invoke_llm(sys_prompt, prompt)
 
-    async def _embedding_adapter(
-        self, texts: list[str], **kwargs
-    ) -> np.ndarray:
+    async def _embedding_adapter(self, texts: list[str], **kwargs) -> np.ndarray:
         """Adapt project embedding model to LightRAG's expected signature."""
         from langchain_community.embeddings import HuggingFaceEmbeddings
 
@@ -159,9 +157,7 @@ class GraphRAGService:
             logger.error("GraphRAG query failed: %s", e)
             return []
 
-    def _split_graph_context(
-        self, context: str, mode: str
-    ) -> list[dict]:
+    def _split_graph_context(self, context: str, mode: str) -> list[dict]:
         """Split LightRAG context string into structured chunk dicts."""
         if not context or not context.strip():
             return []

@@ -3,7 +3,12 @@
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, patch
 
-from app.models.assessment import AssessmentReport, Remediation, ReportMetadata, SourceCitation
+from app.models.assessment import (
+    AssessmentReport,
+    Remediation,
+    ReportMetadata,
+    SourceCitation,
+)
 
 
 def _make_report(task_id):
@@ -62,7 +67,12 @@ def test_submit_assessment_with_txt_file(client):
     """
 
     async def mock_run_assessment(
-        task_id, parsed_documents, scenario_id=None, project_id=None, phase=None, skill_id=None
+        task_id,
+        parsed_documents,
+        scenario_id=None,
+        project_id=None,
+        phase=None,
+        skill_id=None,
     ):
         return _make_report(task_id)
 
@@ -99,8 +109,14 @@ def test_submit_assessment_with_skill(client):
 
     # Mock to capture arguments
     captured_args = {}
+
     async def mock_run_assessment(
-        task_id, parsed_documents, scenario_id=None, project_id=None, phase=None, skill_id=None
+        task_id,
+        parsed_documents,
+        scenario_id=None,
+        project_id=None,
+        phase=None,
+        skill_id=None,
     ):
         captured_args["skill_id"] = skill_id
         return _make_report(task_id)
@@ -112,9 +128,7 @@ def test_submit_assessment_with_skill(client):
     ):
         files = [("files", ("sample.txt", b"Content", "text/plain"))]
         client.post(
-            "/api/v1/assessments",
-            data={"skill_id": "iso-27001-auditor"},
-            files=files
+            "/api/v1/assessments", data={"skill_id": "iso-27001-auditor"}, files=files
         )
 
     assert captured_args.get("skill_id") == "iso-27001-auditor"
@@ -162,7 +176,12 @@ def test_submit_assessment_with_phase_metadata(client):
 
 def test_review_comment_and_activity_flow(client):
     async def mock_run_assessment(
-        task_id, parsed_documents, scenario_id=None, project_id=None, phase=None, skill_id=None
+        task_id,
+        parsed_documents,
+        scenario_id=None,
+        project_id=None,
+        phase=None,
+        skill_id=None,
     ):
         return _make_report(task_id)
 
@@ -173,9 +192,7 @@ def test_review_comment_and_activity_flow(client):
     ):
         files = [("files", ("sample.txt", b"Content", "text/plain"))]
         r = client.post(
-            "/api/v1/assessments",
-            data={"collaborative_mode": True},
-            files=files
+            "/api/v1/assessments", data={"collaborative_mode": True}, files=files
         )
         created = r.json()
         task_id = created["task_id"]
@@ -187,13 +204,13 @@ def test_review_comment_and_activity_flow(client):
     # 2. Add comment
     client.post(
         f"/api/v1/assessments/{task_id}/comments",
-        json={"content": "Looks risky", "user_id": "auditor_1"}
+        json={"content": "Looks risky", "user_id": "auditor_1"},
     )
 
     # 3. Approve
     client.post(
         f"/api/v1/assessments/{task_id}/review",
-        json={"action": "approve", "comment": "LGTM", "assignee": "manager"}
+        json={"action": "approve", "comment": "LGTM", "assignee": "manager"},
     )
 
     # 4. Verify final state
@@ -206,7 +223,9 @@ def test_review_comment_and_activity_flow(client):
     r_act = client.get(f"/api/v1/assessments/{task_id}/activity")
     activity = r_act.json()
     assert any(a["type"] == "comment_added" for a in activity)
-    assert any(a["type"] == "review_action" and a["action"] == "approve" for a in activity)
+    assert any(
+        a["type"] == "review_action" and a["action"] == "approve" for a in activity
+    )
 
 
 def test_get_assessment_not_found_404(client):
@@ -217,7 +236,12 @@ def test_get_assessment_not_found_404(client):
 
 def test_review_console_list_and_remediation_tracking(client):
     async def mock_run_assessment(
-        task_id, parsed_documents, scenario_id=None, project_id=None, phase=None, skill_id=None
+        task_id,
+        parsed_documents,
+        scenario_id=None,
+        project_id=None,
+        phase=None,
+        skill_id=None,
     ):
         return _make_report_with_remediation(task_id)
 
@@ -261,4 +285,7 @@ def test_review_console_list_and_remediation_tracking(client):
     r_rems2 = client.get(f"/api/v1/assessments/{task_id}/remediations")
     rems2 = r_rems2.json()
     assert rems2[0]["tracking"]["status"] == "in_progress"
-    assert rems2[0]["tracking"]["external_ticket"] == "https://github.com/org/repo/issues/1"
+    assert (
+        rems2[0]["tracking"]["external_ticket"]
+        == "https://github.com/org/repo/issues/1"
+    )

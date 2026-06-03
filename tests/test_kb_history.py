@@ -1,6 +1,6 @@
 """Tests for KB history storage granularity (P2 fix)."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 
 def _make_kb():
@@ -34,7 +34,11 @@ def test_history_stores_summary_as_separate_doc():
         task_id="t1",
         version=1,
         scenario_id=None,
-        report_json={"summary": "All controls passed.", "risk_items": [], "compliance_gaps": []},
+        report_json={
+            "summary": "All controls passed.",
+            "risk_items": [],
+            "compliance_gaps": [],
+        },
     )
     texts = [d.page_content for d in kb._stored_docs]
     assert any("All controls passed." in t for t in texts)
@@ -46,7 +50,11 @@ def test_history_stores_each_risk_item_separately():
         "summary": "Two risks found.",
         "risk_items": [
             {"title": "Weak Auth", "severity": "high", "description": "No MFA."},
-            {"title": "Open Port", "severity": "medium", "description": "Port 22 exposed."},
+            {
+                "title": "Open Port",
+                "severity": "medium",
+                "description": "Port 22 exposed.",
+            },
         ],
         "compliance_gaps": [],
     }
@@ -130,7 +138,13 @@ def test_history_severity_included_in_risk_item_content():
     kb = _make_kb()
     report = {
         "summary": "s",
-        "risk_items": [{"title": "SQL Injection", "severity": "critical", "description": "Unsanitized input."}],
+        "risk_items": [
+            {
+                "title": "SQL Injection",
+                "severity": "critical",
+                "description": "Unsanitized input.",
+            }
+        ],
         "compliance_gaps": [],
     }
     kb.add_history_response("t6", 1, None, report)

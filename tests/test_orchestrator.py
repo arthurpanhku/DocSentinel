@@ -1,4 +1,3 @@
-
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -29,7 +28,9 @@ def _make_skill(**kwargs) -> Skill:
     return Skill(**defaults)
 
 
-def _make_doc(content: str = "Test document content.", filename: str = "test.md") -> ParsedDocument:
+def _make_doc(
+    content: str = "Test document content.", filename: str = "test.md"
+) -> ParsedDocument:
     return ParsedDocument(
         content=content,
         metadata=ParsedDocumentMetadata(filename=filename, type="md"),
@@ -48,7 +49,9 @@ def _patch_deps(skill, llm_response='{"summary": "Test", "risk_items": []}'):
             mock_svc_instance.list_skills.return_value = [skill]
             mock_svc.return_value = mock_svc_instance
 
-            with patch("app.agent.orchestrator.invoke_llm", new_callable=AsyncMock) as mock_llm:
+            with patch(
+                "app.agent.orchestrator.invoke_llm", new_callable=AsyncMock
+            ) as mock_llm:
                 mock_llm.return_value = llm_response
 
                 with patch("app.agent.orchestrator.get_kb_service") as mock_kb_svc:
@@ -66,6 +69,7 @@ def _patch_deps(skill, llm_response='{"summary": "Test", "risk_items": []}'):
 # Existing test — skill prompt injection
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_orchestrator_uses_skill_prompt():
     skill = _make_skill()
@@ -80,6 +84,7 @@ async def test_orchestrator_uses_skill_prompt():
 # ---------------------------------------------------------------------------
 # P1: semantic query seed
 # ---------------------------------------------------------------------------
+
 
 def test_extract_query_seed_short_text_returned_unchanged():
     text = "Short text."
@@ -115,6 +120,7 @@ def test_extract_query_seed_respects_max_chars():
 # P0: evidence agent
 # ---------------------------------------------------------------------------
 
+
 def test_evidence_agent_keyword_fallback_finds_matches():
     doc = _make_doc("The password must be at least 12 characters.\nUnrelated line.")
     result = _evidence_agent_keyword_fallback([doc], skill_focus=["Authentication"])
@@ -138,7 +144,9 @@ def test_evidence_agent_keyword_fallback_skill_focus_expands_keywords():
 @pytest.mark.asyncio
 async def test_evidence_agent_uses_llm_extraction():
     skill = _make_skill()
-    with _patch_deps(skill, llm_response="test.md#L1: The password must be rotated") as mock_llm:
+    with _patch_deps(
+        skill, llm_response="test.md#L1: The password must be rotated"
+    ) as mock_llm:
         await run_assessment(uuid4(), [_make_doc()], skill_id="test-skill")
     # LLM should have been called at least once for evidence extraction
     assert mock_llm.call_count >= 1
@@ -146,7 +154,7 @@ async def test_evidence_agent_uses_llm_extraction():
 
 @pytest.mark.asyncio
 async def test_evidence_agent_falls_back_when_llm_raises():
-    """Evidence extraction must not propagate LLM errors — keyword fallback takes over."""
+    """Evidence extraction falls back instead of propagating LLM errors."""
     skill = _make_skill()
 
     call_count = 0
@@ -184,6 +192,7 @@ async def test_evidence_agent_falls_back_when_llm_raises():
 # ---------------------------------------------------------------------------
 # P0: citation traceability
 # ---------------------------------------------------------------------------
+
 
 def test_build_chunk_lookup_maps_pol_and_his_ids():
     from langchain_core.documents import Document
@@ -253,7 +262,7 @@ def test_resolve_citations_history_prefix_in_evidence_link():
 
 @pytest.mark.asyncio
 async def test_citations_from_reviewer_output_used_over_fallback():
-    """When the reviewer returns valid chunk_id sources, those become the report citations."""
+    """Reviewer chunk_id sources become the report citations."""
     from langchain_core.documents import Document
 
     skill = _make_skill()
@@ -265,7 +274,8 @@ async def test_citations_from_reviewer_output_used_over_fallback():
     reviewer_response = (
         '{"summary":"ok","confidence":0.9,"risk_items":[],'
         '"compliance_gaps":[],"remediations":[],'
-        '"sources":[{"chunk_id":"POL-1","quote":"Access tokens must expire within 1 hour."}]}'
+        '"sources":[{"chunk_id":"POL-1",'
+        '"quote":"Access tokens must expire within 1 hour."}]}'
     )
 
     call_num = 0
@@ -273,7 +283,8 @@ async def test_citations_from_reviewer_output_used_over_fallback():
     async def mock_llm(system_prompt, user_prompt):
         nonlocal call_num
         call_num += 1
-        # Drafter and evidence calls get a generic response; reviewer gets the citation-rich one.
+        # Drafter and evidence calls get a generic response; reviewer gets
+        # the citation-rich one.
         if "Reviewer" in system_prompt or "Validate" in system_prompt:
             return reviewer_response
         return '{"summary":"draft","risk_items":[]}'
@@ -304,6 +315,7 @@ async def test_citations_from_reviewer_output_used_over_fallback():
 # P1: large-document map-reduce
 # ---------------------------------------------------------------------------
 
+
 def test_split_text_with_overlap_small_text_unchanged():
     text = "short text"
     chunks = _split_text_with_overlap(text, chunk_size=100, overlap=10)
@@ -331,7 +343,9 @@ async def test_large_document_triggers_map_reduce():
     from app.agent.orchestrator import _LARGE_DOC_THRESHOLD
 
     skill = _make_skill()
-    large_content = "Security controls are critical. " * ((_LARGE_DOC_THRESHOLD // 30) + 10)
+    large_content = "Security controls are critical. " * (
+        (_LARGE_DOC_THRESHOLD // 30) + 10
+    )
 
     merge_called = False
 

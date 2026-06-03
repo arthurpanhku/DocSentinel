@@ -58,10 +58,7 @@ def _extract_query_seed(
         return full_text
 
     focus_terms = {
-        t.lower()
-        for term in (skill_focus or [])
-        for t in term.split()
-        if len(t) > 2
+        t.lower() for term in (skill_focus or []) for t in term.split() if len(t) > 2
     }
 
     if not focus_terms:
@@ -124,33 +121,48 @@ async def run_assessment(
     skill = skill_service.get_skill(skill_id) if skill_id else None
     if not skill:
         logger.warning(
-            "No skill_id provided or skill not found; defaulting to first built-in skill."
+            "No skill_id provided or skill not found; "
+            "defaulting to first built-in skill."
         )
         skill = skill_service.list_skills()[0]
 
-    doc_context = _build_document_context(parsed_documents, skill_focus=skill.risk_focus)
+    doc_context = _build_document_context(
+        parsed_documents, skill_focus=skill.risk_focus
+    )
 
     # KB lookup and evidence extraction are independent — run in parallel.
     policy_future = _policy_and_history_agent(
-        doc_context["query_seed"], skill_focus=skill.risk_focus,
+        doc_context["query_seed"],
+        skill_focus=skill.risk_focus,
     )
     evidence_future = _evidence_agent(parsed_documents, skill.risk_focus)
     (policy_chunks, history_chunks), evidence_context = await asyncio.gather(
-        policy_future, evidence_future,
+        policy_future,
+        evidence_future,
     )
 
     full_text = doc_context["full_text"]
     if len(full_text) > _LARGE_DOC_THRESHOLD:
         draft_raw = await _draft_large_document(
-            full_text, policy_chunks, history_chunks, skill=skill,
+            full_text,
+            policy_chunks,
+            history_chunks,
+            skill=skill,
         )
     else:
         draft_raw = await _drafter_agent(
-            full_text, policy_chunks, history_chunks, skill=skill,
+            full_text,
+            policy_chunks,
+            history_chunks,
+            skill=skill,
         )
 
     reviewed_raw = await _reviewer_agent(
-        draft_raw, evidence_context, policy_chunks, history_chunks, skill=skill,
+        draft_raw,
+        evidence_context,
+        policy_chunks,
+        history_chunks,
+        skill=skill,
     )
 
     chunk_lookup = _build_chunk_lookup(policy_chunks, history_chunks)
@@ -237,7 +249,9 @@ async def _evidence_agent(
         if result.strip():
             return result.strip()
     except Exception as e:
-        logger.warning("LLM evidence extraction failed, falling back to keyword scan: %s", e)
+        logger.warning(
+            "LLM evidence extraction failed, falling back to keyword scan: %s", e
+        )
 
     return _evidence_agent_keyword_fallback(parsed_documents, skill_focus)
 
@@ -289,7 +303,8 @@ async def _drafter_agent(
             f"{skill.system_prompt}\n"
             f"You are acting as {skill.name}. {skill.description}\n"
             f"Focus areas: {', '.join(skill.risk_focus)}.\n"
-            "Output strictly JSON with keys: summary, risk_items, compliance_gaps, remediations."
+            "Output strictly JSON with keys: summary, risk_items, "
+            "compliance_gaps, remediations."
         )
 
     user_prompt = (
@@ -314,10 +329,12 @@ async def _draft_large_document(
         _LARGE_DOC_THRESHOLD,
         len(sections),
     )
-    section_drafts = await asyncio.gather(*[
-        _drafter_agent(section, policy_chunks, history_chunks, skill=skill)
-        for section in sections
-    ])
+    section_drafts = await asyncio.gather(
+        *[
+            _drafter_agent(section, policy_chunks, history_chunks, skill=skill)
+            for section in sections
+        ]
+    )
     return await _merge_drafts(list(section_drafts), skill=skill)
 
 
@@ -342,7 +359,8 @@ async def _merge_drafts(drafts: list[str], skill: object | None = None) -> str:
     )
     user_prompt = (
         f"{_truncate_at_boundary(drafts_text, 14000)}\n\n"
-        "Merge into one unified JSON assessment, deduplicating findings across sections."
+        "Merge into one unified JSON assessment, deduplicating findings "
+        "across sections."
     )
     return await invoke_llm(system_prompt, user_prompt)
 

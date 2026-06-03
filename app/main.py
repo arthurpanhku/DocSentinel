@@ -65,7 +65,9 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(assessments.router, prefix=settings.API_PREFIX)
 app.include_router(kb.router, prefix=settings.API_PREFIX)
-app.include_router(skills.router, prefix=f"{settings.API_PREFIX}/skills", tags=["skills"])
+app.include_router(
+    skills.router, prefix=f"{settings.API_PREFIX}/skills", tags=["skills"]
+)
 
 # Mount docs directory for demo purposes
 app.mount("/docs", StaticFiles(directory="docs", html=True), name="docs")

@@ -147,9 +147,7 @@ def create_fake_mobile_app_project(filename):
 
     # Security Considerations (Intentional Flaws for Testing)
     c.setFont("Helvetica-Bold", 14)
-    c.drawString(
-        1 * inch, height - 7.5 * inch, "4. Security Implementation Details"
-    )
+    c.drawString(1 * inch, height - 7.5 * inch, "4. Security Implementation Details")
     c.setFont("Helvetica", 11)
     text_obj = c.beginText(1 * inch, height - 7.8 * inch)
     text_obj.textLines("""

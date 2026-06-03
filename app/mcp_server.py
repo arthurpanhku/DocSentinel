@@ -61,8 +61,7 @@ async def query_knowledge_base(query: str, top_k: int = 3) -> str:
     results = await kb.query(query, top_k)
 
     serialized_results = [
-        {"content": doc.page_content, "metadata": doc.metadata}
-        for doc in results
+        {"content": doc.page_content, "metadata": doc.metadata} for doc in results
     ]
 
     return json.dumps(serialized_results, indent=2)

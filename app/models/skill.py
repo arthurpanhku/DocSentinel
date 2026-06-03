@@ -3,7 +3,6 @@ Skill / Persona model for assessment.
 Defines the role, focus, and system prompts for the AI agent.
 """
 
-
 from pydantic import BaseModel, Field
 
 
@@ -15,12 +14,15 @@ class Skill(BaseModel):
         ..., description="Base system prompt defining the persona and constraints"
     )
     risk_focus: list[str] = Field(
-        default_factory=list, description="Key areas to focus on (e.g. 'Access Control')"
+        default_factory=list,
+        description="Key areas to focus on (e.g. 'Access Control')",
     )
     compliance_frameworks: list[str] = Field(
         default_factory=list, description="Frameworks to reference (e.g. 'ISO 27001')"
     )
-    is_builtin: bool = Field(default=False, description="Whether this is a system preset")
+    is_builtin: bool = Field(
+        default=False, description="Whether this is a system preset"
+    )
 
 
 class SkillCreate(BaseModel):
