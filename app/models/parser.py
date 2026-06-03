@@ -19,6 +19,7 @@ class ParsedDocumentMetadata(BaseModel):
     parser_engine: Literal["docling", "legacy"] = "legacy"
     upload_time: datetime = Field(default_factory=_utcnow)
     scenario_id: str | None = None
+    ssdlc_phase_hint: str | None = None
     file_hash: str | None = None
 
 

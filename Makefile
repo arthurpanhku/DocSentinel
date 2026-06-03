@@ -1,4 +1,4 @@
-.PHONY: help install dev test lint format clean run-api all
+.PHONY: help install dev test lint format clean run-api frontend-install frontend-dev frontend-build run-console all
 
 help:  ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -27,5 +27,16 @@ clean: ## Clean up build artifacts
 
 run-api: ## Run the FastAPI backend
 	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+frontend-install: ## Install React console dependencies
+	npm install --prefix frontend
+
+frontend-dev: ## Run the React console dev server
+	npm run dev --prefix frontend
+
+frontend-build: ## Build the React console for FastAPI hosting
+	npm run build --prefix frontend
+
+run-console: frontend-build run-api ## Build the console and run FastAPI at /console
 
 all: format lint test ## Run format, lint, and test

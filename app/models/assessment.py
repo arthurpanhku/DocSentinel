@@ -49,6 +49,9 @@ class SourceCitation(BaseModel):
 class ReportMetadata(BaseModel):
     scenario_id: str | None = None
     project_id: str | None = None
+    ssdlc_stage: str | None = None
+    ssdlc_phase: str | None = None
+    skill_id: str | None = None
     model_used: str | None = None
     completed_at: datetime | None = None
 
@@ -56,6 +59,7 @@ class ReportMetadata(BaseModel):
 class AssessmentReport(BaseModel):
     version: str = "1.0"
     task_id: str
+    phase: str | None = None
     status: Literal["completed", "partial", "failed"]
     summary: str
     risk_items: list[RiskItem] = Field(default_factory=list)

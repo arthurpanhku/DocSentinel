@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [4.2.0] — 2026-06-03
+
+### Added
+- **React Console**: Full React + TypeScript + Vite + Tailwind CSS console hosted by FastAPI at `/console`, with Dashboard, Assessments, Knowledge Base, Skills, and Settings views.
+- **LLM Runtime Configuration**: Settings UI and `/config/llm` API for selecting OpenAI, Anthropic Claude, Qwen, DeepSeek, OpenAI-compatible hosted APIs, local OpenAI-compatible APIs, and Ollama.
+- **SSDLC Console Workflow**: Multi-file assessment submission with phase, project, skill, and collaborative review controls; queue filtering; report review; comments; activity; and remediation tracking.
+- **Console Screenshots and Architecture Diagram**: README screenshot asset plus updated architecture diagrams showing the React Console access layer.
+
+### Changed
+- **LLM Abstraction**: Expanded provider routing beyond OpenAI/Ollama and clear cached clients when runtime configuration changes.
+- **Assessment Metadata**: `POST /api/v1/assessments` now accepts optional `phase` and propagates SSDLC phase metadata into reports.
+- **Built-in Skills**: Added six SSDLC stage skills for Requirements, Design, Development, Testing, Deployment, and Operations.
+- **Developer Workflow**: Added Makefile targets and README instructions for installing, building, and serving the React console.
+
+### Security
+- **API Key Masking**: LLM API keys are accepted by the local FastAPI process but returned to the UI only as masked previews.
+
+---
+
 ## [4.1.0] — 2026-04-09
 
 ### Added

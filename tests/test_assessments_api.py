@@ -62,7 +62,7 @@ def test_submit_assessment_with_txt_file(client):
     """
 
     async def mock_run_assessment(
-        task_id, parsed_documents, scenario_id=None, project_id=None, skill_id=None
+        task_id, parsed_documents, scenario_id=None, project_id=None, phase=None, skill_id=None
     ):
         return _make_report(task_id)
 
@@ -100,7 +100,7 @@ def test_submit_assessment_with_skill(client):
     # Mock to capture arguments
     captured_args = {}
     async def mock_run_assessment(
-        task_id, parsed_documents, scenario_id=None, project_id=None, skill_id=None
+        task_id, parsed_documents, scenario_id=None, project_id=None, phase=None, skill_id=None
     ):
         captured_args["skill_id"] = skill_id
         return _make_report(task_id)
@@ -120,9 +120,49 @@ def test_submit_assessment_with_skill(client):
     assert captured_args.get("skill_id") == "iso-27001-auditor"
 
 
+def test_submit_assessment_with_phase_metadata(client):
+    """POST /api/v1/assessments with phase stores SSDLC phase metadata."""
+
+    async def mock_run_assessment(
+        task_id,
+        parsed_documents,
+        scenario_id=None,
+        project_id=None,
+        phase=None,
+        skill_id=None,
+    ):
+        report = _make_report(task_id)
+        report.phase = phase
+        report.metadata.ssdlc_stage = phase
+        report.metadata.ssdlc_phase = phase
+        report.metadata.skill_id = skill_id
+        return report
+
+    with patch(
+        "app.api.assessments.run_assessment",
+        new_callable=AsyncMock,
+        side_effect=mock_run_assessment,
+    ):
+        files = [("files", ("design.txt", b"Architecture content", "text/plain"))]
+        r = client.post(
+            "/api/v1/assessments",
+            data={"phase": "design", "skill_id": "ssdlc-design"},
+            files=files,
+        )
+
+    assert r.status_code == 200
+    task_id = r.json()["task_id"]
+    r2 = client.get(f"/api/v1/assessments/{task_id}")
+    report = r2.json()["report"]
+    assert report["phase"] == "design"
+    assert report["metadata"]["ssdlc_stage"] == "design"
+    assert report["metadata"]["ssdlc_phase"] == "design"
+    assert report["metadata"]["skill_id"] == "ssdlc-design"
+
+
 def test_review_comment_and_activity_flow(client):
     async def mock_run_assessment(
-        task_id, parsed_documents, scenario_id=None, project_id=None, skill_id=None
+        task_id, parsed_documents, scenario_id=None, project_id=None, phase=None, skill_id=None
     ):
         return _make_report(task_id)
 
@@ -177,7 +217,7 @@ def test_get_assessment_not_found_404(client):
 
 def test_review_console_list_and_remediation_tracking(client):
     async def mock_run_assessment(
-        task_id, parsed_documents, scenario_id=None, project_id=None, skill_id=None
+        task_id, parsed_documents, scenario_id=None, project_id=None, phase=None, skill_id=None
     ):
         return _make_report_with_remediation(task_id)
 

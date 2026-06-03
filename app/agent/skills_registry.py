@@ -38,6 +38,42 @@ PROMPT_CLOUD_ARCHITECT = (
     "and container orchestration (Kubernetes)."
 )
 
+PROMPT_SSDLC_REQUIREMENTS = (
+    "You are the DocSentinel Requirements Phase Agent. "
+    "Extract security requirements, identify compliance obligations, classify initial "
+    "project risk, and call out missing requirement-level controls."
+)
+
+PROMPT_SSDLC_DESIGN = (
+    "You are the DocSentinel Design Phase Agent. "
+    "Review architecture and design artifacts for secure patterns, STRIDE/DREAD "
+    "threats, access control, encryption, trust boundaries, and SDR readiness."
+)
+
+PROMPT_SSDLC_DEVELOPMENT = (
+    "You are the DocSentinel Development Phase Agent. "
+    "Assess secure coding practices, SAST findings, input validation, authentication, "
+    "authorization, dependency risk, and implementation-level security controls."
+)
+
+PROMPT_SSDLC_TESTING = (
+    "You are the DocSentinel Testing Phase Agent. "
+    "Analyze SAST, DAST, penetration test, and verification evidence; prioritize "
+    "vulnerabilities and map remediation completeness to risk."
+)
+
+PROMPT_SSDLC_DEPLOYMENT = (
+    "You are the DocSentinel Deployment Phase Agent. "
+    "Review release readiness, deployment configuration, hardening, secrets, "
+    "least privilege, rollback posture, and sign-off risk."
+)
+
+PROMPT_SSDLC_OPERATIONS = (
+    "You are the DocSentinel Operations Phase Agent. "
+    "Review vulnerability monitoring, incident response readiness, patch tracking, "
+    "security logging, and operational control evidence."
+)
+
 # Registry
 BUILTIN_SKILLS = [
     Skill(
@@ -74,6 +110,60 @@ BUILTIN_SKILLS = [
         system_prompt=PROMPT_CLOUD_ARCHITECT,
         risk_focus=["Cloud Configuration", "IAM", "Network Security"],
         compliance_frameworks=["CSA CCM", "CIS Benchmarks"],
+        is_builtin=True,
+    ),
+    Skill(
+        id="ssdlc-requirements",
+        name="SSDLC Requirements Agent",
+        description="Requirements-phase review for security requirements and compliance obligations.",
+        system_prompt=PROMPT_SSDLC_REQUIREMENTS,
+        risk_focus=["Security Requirements", "Compliance Obligations", "Initial Risk"],
+        compliance_frameworks=["NIST SSDF", "ISO 27001", "SOC2", "PCI DSS", "GDPR"],
+        is_builtin=True,
+    ),
+    Skill(
+        id="ssdlc-design",
+        name="SSDLC Design Agent",
+        description="Design-phase review for architecture security and threat modeling.",
+        system_prompt=PROMPT_SSDLC_DESIGN,
+        risk_focus=["Threat Modeling", "Architecture Security", "Access Control", "Encryption"],
+        compliance_frameworks=["OWASP ASVS", "NIST SP 800-53", "CIS Controls"],
+        is_builtin=True,
+    ),
+    Skill(
+        id="ssdlc-development",
+        name="SSDLC Development Agent",
+        description="Development-phase review for secure coding and SAST triage.",
+        system_prompt=PROMPT_SSDLC_DEVELOPMENT,
+        risk_focus=["Secure Coding", "SAST", "Input Validation", "Dependency Risk"],
+        compliance_frameworks=["OWASP Top 10", "CWE", "CERT"],
+        is_builtin=True,
+    ),
+    Skill(
+        id="ssdlc-testing",
+        name="SSDLC Testing Agent",
+        description="Testing-phase review for vulnerability reports and remediation verification.",
+        system_prompt=PROMPT_SSDLC_TESTING,
+        risk_focus=["SAST", "DAST", "Pentest Findings", "Fix Verification"],
+        compliance_frameworks=["OWASP ASVS", "PCI DSS", "NIST SSDF"],
+        is_builtin=True,
+    ),
+    Skill(
+        id="ssdlc-deployment",
+        name="SSDLC Deployment Agent",
+        description="Deployment-phase review for hardening, configuration, and release sign-off.",
+        system_prompt=PROMPT_SSDLC_DEPLOYMENT,
+        risk_focus=["Release Readiness", "Configuration Security", "Secrets", "Hardening"],
+        compliance_frameworks=["CIS Benchmarks", "DISA STIG", "SOC2"],
+        is_builtin=True,
+    ),
+    Skill(
+        id="ssdlc-operations",
+        name="SSDLC Operations Agent",
+        description="Operations-phase review for monitoring, patching, incidents, and logs.",
+        system_prompt=PROMPT_SSDLC_OPERATIONS,
+        risk_focus=["Vulnerability Monitoring", "Incident Response", "Patch Management", "Log Audit"],
+        compliance_frameworks=["NIST CSF", "SOC2", "ISO 27001"],
         is_builtin=True,
     ),
 ]

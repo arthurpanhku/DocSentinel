@@ -30,7 +30,7 @@ DocSentinel is an **AI-powered SSDLC (Secure Software Development Lifecycle) pla
 
 ## High-Level Architecture | 高层架构
 
-The system is organized in layers: **Access** → **SSDLC Orchestration (LangGraph)** → **Core Services (KB, Parser, Memory, Skills)** → **LLM Abstraction (LangChain)** → **LLM Backends**. External integrations (AAD, ServiceNow, SAST/DAST tools) connect at the access and orchestration boundaries.
+The system is organized in layers: **React Console / Access** → **SSDLC Orchestration (LangGraph)** → **Core Services (KB, Parser, Memory, Skills)** → **LLM Abstraction (LangChain)** → **LLM Backends**. External integrations (AAD, ServiceNow, SAST/DAST tools) connect at the access and orchestration boundaries.
 
 ![DocSentinel Architecture Overview](docsentinel_architecture.png)
 
@@ -43,6 +43,7 @@ flowchart TB
         APIUser["API / CI-CD / MCP"]
     end
     subgraph Access["Access Layer"]
+        Console["React Console\n(Vite + Tailwind)"]
         API["REST API\n(FastAPI)"]
         MCP["MCP Server\n(stdio)"]
     end
@@ -77,7 +78,9 @@ flowchart TB
         Tools["SAST / DAST\nTools"]
     end
 
+    Staff --> Console
     Staff --> API
+    Console --> API
     APIUser --> API
     APIUser --> MCP
     API --> Router

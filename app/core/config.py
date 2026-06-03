@@ -28,10 +28,33 @@ class Settings(BaseSettings):
     PARSER_TIMEOUT_SECONDS: int = 120
 
     # LLM
-    LLM_PROVIDER: Literal["openai", "ollama"] = "ollama"
+    LLM_PROVIDER: Literal[
+        "openai",
+        "anthropic",
+        "qwen",
+        "deepseek",
+        "openai_compatible",
+        "local_openai",
+        "ollama",
+    ] = "ollama"
     OPENAI_API_KEY: str = ""
     OPENAI_BASE_URL: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
+    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_BASE_URL: str = ""
+    ANTHROPIC_MODEL: str = "claude-3-5-sonnet-latest"
+    QWEN_API_KEY: str = ""
+    QWEN_BASE_URL: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    QWEN_MODEL: str = "qwen-plus"
+    DEEPSEEK_API_KEY: str = ""
+    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
+    DEEPSEEK_MODEL: str = "deepseek-chat"
+    COMPAT_API_KEY: str = ""
+    COMPAT_BASE_URL: str = ""
+    COMPAT_MODEL: str = ""
+    LOCAL_API_KEY: str = ""
+    LOCAL_BASE_URL: str = "http://localhost:1234/v1"
+    LOCAL_MODEL: str = "local-model"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama2"
 
