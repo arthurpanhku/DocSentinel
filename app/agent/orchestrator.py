@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 from app.agent.skills_service import get_skill_service
@@ -599,6 +599,6 @@ def _parse_llm_output_to_report(
             ssdlc_phase=phase,
             skill_id=skill_id,
             model_used=settings.LLM_PROVIDER,
-            completed_at=datetime.now(UTC),
+            completed_at=datetime.now(timezone.utc),
         ),
     )
