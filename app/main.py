@@ -70,7 +70,8 @@ app.include_router(
 )
 
 # Mount docs directory for demo purposes
-app.mount("/docs", StaticFiles(directory="docs", html=True), name="docs")
+if Path("docs").exists():
+    app.mount("/docs", StaticFiles(directory="docs", html=True), name="docs")
 
 console_dist = Path("frontend/dist")
 if console_dist.exists():
