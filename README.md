@@ -204,12 +204,17 @@ Add to your `claude_desktop_config.json`:
       "args": ["/path/to/DocSentinel/app/mcp_server.py"],
       "env": {
         "OPENAI_API_KEY": "sk-...",
-        "CHROMA_PERSIST_DIR": "/absolute/path/to/data/chroma"
+        "CHROMA_PERSIST_DIR": "/absolute/path/to/data/chroma",
+        "MCP_DOCUMENT_ROOTS": "/absolute/path/to/approved/documents"
       }
     }
   }
 }
 ```
+
+`assess_document` only reads files inside `MCP_DOCUMENT_ROOTS`. Use `:` to
+separate multiple roots on macOS/Linux, or `;` on Windows. If unset, the
+server only allows `./examples`.
 
 #### 2. Cursor
 1. Go to **Settings > Features > MCP**.

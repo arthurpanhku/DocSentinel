@@ -76,6 +76,9 @@ class Settings(BaseSettings):
     # Review Console (optional shared token)
     REVIEW_CONSOLE_TOKEN: str = ""
 
+    # MCP document access. Colon-separated on macOS/Linux, semicolon on Windows.
+    MCP_DOCUMENT_ROOTS: str = "./examples"
+
     @property
     def upload_max_bytes(self) -> int:
         return self.UPLOAD_MAX_FILE_SIZE_MB * 1024 * 1024

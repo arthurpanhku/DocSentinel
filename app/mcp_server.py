@@ -1,10 +1,10 @@
 import json
-import os
 import uuid
 
 from mcp.server.fastmcp import FastMCP
 
 from app.agent.orchestrator import run_assessment
+from app.core.document_access import DocumentAccessError, resolve_document_path
 from app.kb.service import get_kb_service
 from app.parser import parse_file
 
@@ -17,19 +17,21 @@ async def assess_document(file_path: str, scenario_id: str = "default") -> str:
     Assess a security document (PDF, Word, etc.) and return a risk report.
 
     Args:
-        file_path: Absolute path to the file to be assessed.
+        file_path: Path to a file inside MCP_DOCUMENT_ROOTS.
         scenario_id: The assessment scenario ID (default: "default").
 
     Returns:
         JSON string containing the assessment report (risks, gaps, remediations).
     """
-    if not os.path.exists(file_path):
-        return json.dumps({"error": f"File not found: {file_path}"})
+    try:
+        document_path = resolve_document_path(file_path)
+    except (DocumentAccessError, FileNotFoundError) as e:
+        return json.dumps({"error": str(e)})
 
     try:
-        with open(file_path, "rb") as f:
+        with document_path.open("rb") as f:
             raw_content = f.read()
-        parsed_doc = parse_file(raw_content, os.path.basename(file_path))
+        parsed_doc = parse_file(raw_content, document_path.name)
     except Exception as e:
         return json.dumps({"error": f"Failed to parse file: {str(e)}"})
 

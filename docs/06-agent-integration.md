@@ -44,7 +44,8 @@ DocSentinel 将其核心能力（文档评估和知识库检索）作为 MCP Ser
           "args": [],
           "env": {
             "OPENAI_API_KEY": "sk-...",
-            "CHROMA_PERSIST_DIR": "/absolute/path/to/data/chroma"
+            "CHROMA_PERSIST_DIR": "/absolute/path/to/data/chroma",
+            "MCP_DOCUMENT_ROOTS": "/absolute/path/to/approved/documents"
           }
         }
       }
@@ -61,6 +62,15 @@ DocSentinel 将其核心能力（文档评估和知识库检索）作为 MCP Ser
     >
     > "评估这份 SAST 报告——使用测试阶段的 SSDLC 技能。"
 
+    `assess_document` will only read files inside `MCP_DOCUMENT_ROOTS`.
+    Configure this variable to the document folders you want the MCP server to
+    access. Use `:` to separate multiple roots on macOS/Linux, or `;` on Windows.
+    If unset, the server only allows `./examples`.
+
+    `assess_document` 只会读取 `MCP_DOCUMENT_ROOTS` 内的文件。请将该变量配置为
+    允许 MCP server 访问的文档目录。macOS/Linux 使用 `:` 分隔多个目录，Windows 使用
+    `;`。如果未设置，server 默认只允许读取 `./examples`。
+
 ### 🤖 How to Use with OpenClaw / LangChain | 在 OpenClaw / LangChain 中使用
 
 Since DocSentinel implements the standard MCP protocol, any MCP-compliant client can connect to it.
@@ -76,7 +86,10 @@ from mcp.client.stdio import stdio_client
 server_params = StdioServerParameters(
     command="docsentinel-mcp",
     args=[],
-    env={"OPENAI_API_KEY": "sk-..."}
+    env={
+        "OPENAI_API_KEY": "sk-...",
+        "MCP_DOCUMENT_ROOTS": "/absolute/path/to/approved/documents",
+    }
 )
 
 async with stdio_client(server_params) as (read, write):

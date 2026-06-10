@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased]
+
+### Security
+- Constrained MCP `assess_document.file_path` reads to configured `MCP_DOCUMENT_ROOTS`
+  before opening files, including symlink escape protection and pre-read extension
+  validation.
+
+---
+
 ## [4.2.0] — 2026-06-03
 
 ### Added
