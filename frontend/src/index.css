@@ -4,8 +4,18 @@
 
 :root {
   color-scheme: dark;
-  background: #0b0d10;
-  color: #e6edf3;
+  --canvas: 10 12 15;
+  --panel: 16 19 23;
+  --panel-2: 21 25 31;
+  --line: 37 43 51;
+  --muted: 139 149 161;
+  --text: 230 237 243;
+  --accent: 88 166 255;
+  --good: 63 185 80;
+  --warn: 210 153 34;
+  --bad: 248 81 73;
+  background: rgb(var(--canvas));
+  color: rgb(var(--text));
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -20,9 +30,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background:
-    linear-gradient(180deg, rgba(121, 192, 255, 0.05), transparent 260px),
-    #0b0d10;
+  background: rgb(var(--canvas));
 }
 
 button,
@@ -38,8 +46,8 @@ textarea {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2f3741;
-  border-radius: 999px;
+  background: rgb(var(--line));
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -47,5 +55,9 @@ textarea {
 }
 
 .focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-0;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/55 focus-visible:ring-offset-1 focus-visible:ring-offset-canvas;
+}
+
+::selection {
+  background: rgb(var(--accent) / 0.28);
 }

@@ -564,10 +564,13 @@ def _parse_llm_output_to_report(
             RiskItem(
                 id=str(uuid.uuid4())[:8],
                 title=item.get("title", "Untitled Risk"),
-                severity=item.get("severity", "medium"),
+                severity=str(item.get("severity", "medium")).lower(),
                 description=item.get("description"),
                 source_ref=item.get("source_ref"),
                 category=item.get("category"),
+                phase=item.get("phase") or phase,
+                confidence=item.get("confidence"),
+                citation_ids=item.get("citation_ids", []),
             )
             for item in parsed.get("risk_items", [])
         ],
@@ -578,18 +581,29 @@ def _parse_llm_output_to_report(
                 gap_description=gap.get("gap_description", ""),
                 evidence_suggestion=gap.get("evidence_suggestion"),
                 framework=gap.get("framework"),
+                phase=gap.get("phase") or phase,
+                confidence=gap.get("confidence"),
+                citation_ids=gap.get("citation_ids", []),
             )
             for gap in parsed.get("compliance_gaps", [])
         ],
+        threat_model=parsed.get("threat_model"),
+        vulnerabilities=parsed.get("vulnerabilities", []),
         remediations=[
             Remediation(
                 id=str(uuid.uuid4())[:8],
                 action=rem.get("action", "Unknown action"),
-                priority=rem.get("priority", "medium"),
+                priority=str(rem.get("priority", "medium")).lower(),
                 related_risk_ids=rem.get("related_risk_ids", []),
+                related_gap_ids=rem.get("related_gap_ids", []),
+                related_vuln_ids=rem.get("related_vuln_ids", []),
+                related_threat_ids=rem.get("related_threat_ids", []),
+                external_ticket=rem.get("external_ticket"),
+                phase=rem.get("phase") or phase,
             )
             for rem in parsed.get("remediations", [])
         ],
+        cross_phase_refs=parsed.get("cross_phase_refs", []),
         confidence=float(parsed.get("confidence", 0.0)),
         sources=citations,
         metadata=ReportMetadata(

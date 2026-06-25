@@ -176,7 +176,9 @@ Upload your organization's security policies, standards, and past audits. Phase-
 Powered by **LangChain + LangGraph** — stateful, graph-based agent workflows with conditional routing per SSDLC stage. Parallel execution of Policy and Evidence agents, followed by Drafter and Reviewer agents.
 
 ### API-First & MCP Ready
-Designed as a headless service. Integrate into CI/CD pipelines via REST API, or use as a **super-tool** within AI agents (Claude Desktop, Cursor, OpenClaw) via MCP.
+Use the local React console for human review, integrate CI/CD pipelines through the
+REST API, or expose the same assessment capabilities to AI agents (Claude Desktop,
+Cursor, OpenClaw) through MCP.
 
 ---
 
@@ -239,7 +241,8 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
--   **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+-   **React Console**: [http://localhost:8000/console](http://localhost:8000/console)
+-   **API Docs**: [http://localhost:8000/api-docs](http://localhost:8000/api-docs)
 
 ### Option B: Manual Setup
 
@@ -255,7 +258,7 @@ cp .env.example .env        # Edit if needed: LLM_PROVIDER=ollama or openai
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
--   **API docs**: [http://localhost:8000/docs](http://localhost:8000/docs) · **Health**: [http://localhost:8000/health](http://localhost:8000/health)
+-   **API docs**: [http://localhost:8000/api-docs](http://localhost:8000/api-docs) · **Health**: [http://localhost:8000/health](http://localhost:8000/health)
 -   **React Console**: [http://localhost:8000/console](http://localhost:8000/console) after building the frontend
 -   **Legacy Review Console (HITL)**: [http://localhost:8000/docs/review-console.html](http://localhost:8000/docs/review-console.html)
 
@@ -393,6 +396,7 @@ DocSentinel/
 
 | Layer | Technology | Purpose |
 | :--- | :--- | :--- |
+| **Frontend** | React, TypeScript, Vite, Tailwind CSS | Local-first assessment and review console |
 | **Agent Orchestration** | LangGraph | Stateful graph-based SSDLC workflow engine |
 | **LLM Framework** | LangChain | Unified LLM abstraction, prompts, tools, RAG |
 | **Web/API** | FastAPI | Async REST API with auto OpenAPI |

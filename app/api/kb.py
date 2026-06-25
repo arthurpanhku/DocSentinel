@@ -3,6 +3,10 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
+from app.core.document_access import (
+    DocumentAccessError,
+    resolve_kb_reindex_directory,
+)
 from app.core.guardrails import sanitize_input
 from app.kb.service import get_kb_service
 from app.parser import parse_file
@@ -49,5 +53,11 @@ async def query_kb(body: KBQueryRequest):
 
 @router.post("/reindex")
 async def reindex_kb(body: KBReindexRequest):
+    try:
+        directory = resolve_kb_reindex_directory(body.directory)
+    except DocumentAccessError as exc:
+        raise HTTPException(403, str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(404, str(exc)) from exc
     kb = get_kb_service()
-    return await kb.reindex_directory(body.directory)
+    return await kb.reindex_directory(directory)

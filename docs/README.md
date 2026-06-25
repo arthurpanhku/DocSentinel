@@ -13,11 +13,16 @@ This directory holds **executable design and specification** artifacts that acco
 | ID     | Document                                                                             | Purpose                                                                          | Timing               |
 | :----- | :----------------------------------------------------------------------------------- | :------------------------------------------------------------------------------- | :------------------- |
 | **01** | [Architecture and Tech Stack](./01-architecture-and-tech-stack.md)                   | Technology choices (LangGraph, LangChain), architecture, interfaces, data flow. | Start / Design Phase |
-| **02** | [API Specification](./02-api-specification.yaml)                                     | REST API Contract (OpenAPI 3.x) with SSDLC phase endpoints.                    | Parallel with 01     |
+| **02** | [Generated API Contract](./openapi.json)                                               | Authoritative REST API contract exported from FastAPI.                          | Every API change     |
+| **02A** | [Historical API Draft](./02-api-specification.yaml)                                  | Deprecated design draft retained for traceability.                              | Reference only       |
 | **03** | [Assessment Report and Skill Contract](./03-assessment-report-and-skill-contract.md) | JSON Schemas for SSDLC phase reports and phase-specific Skills.                 | Pre-Development      |
 | **04** | [Integration Guide](./04-integration-guide.md)                                       | AAD, ServiceNow, SAST/DAST tool configuration and mapping.                     | Integration Phase    |
 | **05** | [Deployment Runbook](./05-deployment-runbook.md)                                     | Deployment, config reference, ops.                                               | Pre-Release          |
 | **06** | [Agent Integration (MCP)](./06-agent-integration.md)                                 | MCP server setup for Claude Desktop, Cursor, OpenClaw.                          | Integration Phase    |
+| **RFC-001** | [Product Trust Contract](./rfcs/001-product-trust-contract.md)                  | Evidence, human-review, data-boundary, and release guarantees for v5.            | v5 Foundation        |
+| **ADR-001** | [Modular Monolith](./adr/001-modular-monolith.md)                               | Target backend module and persistence architecture.                              | v5 Foundation        |
+| **ADR-002** | [Evidence Model](./adr/002-evidence-model.md)                                   | Control-level conclusions, evidence locators, and review decisions.              | v5 Foundation        |
+| **ADR-003** | [Frontend Design System](./adr/003-frontend-design-system.md)                   | Console layout, interaction, component, and accessibility rules.                 | v5 Foundation        |
 
 ---
 
@@ -41,8 +46,9 @@ Aligned with PRD and current implementation:
 ## How to Use | 使用方式
 
 1.  **Start with 01**: Confirm stack and architecture (LangGraph + LangChain).
-2.  **Sync 02**: Use FastAPI to generate OpenAPI or write YAML first; ensure SSDLC phase endpoints.
-3.  **Validate 03**: Use `schemas/assessment-report.json` for validation; verify phase-specific report fields.
+2.  **Generate contracts**: Run `python scripts/export_contracts.py`; committed
+    `openapi.json` and `schemas/assessment-report.json` are generated artifacts.
+3.  **Generate frontend types**: Run `npm run api:generate --prefix frontend`.
 4.  **Refine 04/05**: Update when integrating with real environments (AAD, ServiceNow, SAST/DAST tools).
 
 ### Directory Structure
@@ -51,7 +57,8 @@ Aligned with PRD and current implementation:
 docs/
 ├── README.md
 ├── 01-architecture-and-tech-stack.md
-├── 02-api-specification.yaml
+├── openapi.json
+├── 02-api-specification.yaml (deprecated)
 ├── 03-assessment-report-and-skill-contract.md
 ├── 04-integration-guide.md
 ├── 05-deployment-runbook.md

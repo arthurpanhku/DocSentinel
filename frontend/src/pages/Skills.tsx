@@ -1,7 +1,19 @@
 import { Edit3, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
-import { Badge, Button, Card, CardHeader, EmptyState, ErrorNote, Field, Input, Textarea } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardHeader,
+  EmptyState,
+  ErrorNote,
+  Field,
+  IconButton,
+  Input,
+  PageHeader,
+  Textarea
+} from "../components/ui";
 import { createSkill, deleteSkill, listSkills, updateSkill } from "../lib/api";
 import { splitLines } from "../lib/utils";
 import type { Skill } from "../types";
@@ -102,17 +114,22 @@ export default function Skills() {
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[360px_1fr]">
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-xl font-semibold text-text">Skills</h1>
-          <p className="mt-1 text-sm text-muted">Personas and SSDLC stage prompts used during assessment.</p>
-        </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Skills"
+        description="Assessment personas and phase prompts. Built-in definitions remain read-only."
+      />
+      <div className="grid gap-4 xl:grid-cols-[360px_1fr]">
+        <div className="space-y-4">
         <ErrorNote message={error} />
         <Card>
           <CardHeader
             title="Registry"
-            action={<Button variant="quiet" onClick={() => void load()}><RefreshCw className="h-4 w-4" /></Button>}
+            action={
+              <IconButton label="Refresh skills" onClick={() => void load()}>
+                <RefreshCw aria-hidden="true" />
+              </IconButton>
+            }
           />
           <div className="divide-y divide-line">
             {skills.map((skill) => (
@@ -137,9 +154,9 @@ export default function Skills() {
           <Plus className="h-4 w-4" />
           New custom skill
         </Button>
-      </div>
+        </div>
 
-      <Card>
+        <Card>
         <CardHeader
           title={selected ? selected.name : "New Skill"}
           meta={selected?.is_builtin ? "Built-in skills are read-only." : "Custom skill editor."}
@@ -178,7 +195,8 @@ export default function Skills() {
             {selected && !selected.is_builtin ? "Save changes" : "Create custom skill"}
           </Button>
         </form>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

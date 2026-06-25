@@ -9,7 +9,7 @@
 #   docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
 #   docker compose exec ollama ollama pull llama2
 #
-# Open http://localhost:8000/docs and http://localhost:8000/health
+# Open http://localhost:8000/console and http://localhost:8000/api-docs
 
 services:
   app:

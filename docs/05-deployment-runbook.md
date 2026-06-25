@@ -48,7 +48,8 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
-- **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **React Console**: [http://localhost:8000/console](http://localhost:8000/console)
+- **API Docs**: [http://localhost:8000/api-docs](http://localhost:8000/api-docs)
 
 ### 2.2 Docker Manual | 容器化手动部署
 
@@ -120,6 +121,7 @@ See `.env.example` for the template.
 | `ENV`        | Environment      | `production`    |
 | `LOG_LEVEL`  | Logging level    | `INFO`          |
 | `API_PREFIX` | API path prefix  | `/api/v1`       |
+| `CORS_ORIGINS` | Comma-separated allowed browser origins | Local console origins |
 | `SECRET_KEY` | Session/Sign key | *Random String* |
 
 ### 4.2 Authentication (AAD)
@@ -153,6 +155,8 @@ See `.env.example` for the template.
 | :------------------------ | :---------------- | :------ |
 | `UPLOAD_MAX_FILE_SIZE_MB` | Max file size     | 50      |
 | `UPLOAD_MAX_FILES`        | Max files per req | 10      |
+| `KB_REINDEX_ROOTS`        | Server directories allowed for KB reindex | `./examples` |
+| `MCP_DOCUMENT_ROOTS`      | Directories accessible to MCP document tools | `./examples` |
 
 ### 4.6 Parser Engine
 

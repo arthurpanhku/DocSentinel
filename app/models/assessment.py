@@ -18,6 +18,9 @@ class RiskItem(BaseModel):
     description: str | None = None
     source_ref: str | None = None
     category: str | None = None
+    phase: str | None = None
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    citation_ids: list[str] = Field(default_factory=list)
 
 
 class ComplianceGap(BaseModel):
@@ -26,14 +29,79 @@ class ComplianceGap(BaseModel):
     gap_description: str
     evidence_suggestion: str | None = None
     framework: str | None = None
+    phase: str | None = None
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    citation_ids: list[str] = Field(default_factory=list)
 
 
 class Remediation(BaseModel):
     id: str
     action: str
-    priority: Literal["low", "medium", "high"] | None = None
+    priority: Literal["low", "medium", "high", "critical"] | None = None
     related_risk_ids: list[str] = Field(default_factory=list)
     related_gap_ids: list[str] = Field(default_factory=list)
+    related_vuln_ids: list[str] = Field(default_factory=list)
+    related_threat_ids: list[str] = Field(default_factory=list)
+    external_ticket: str | None = None
+    phase: str | None = None
+
+
+class DreadScore(BaseModel):
+    damage: int | None = Field(default=None, ge=1, le=10)
+    reproducibility: int | None = Field(default=None, ge=1, le=10)
+    exploitability: int | None = Field(default=None, ge=1, le=10)
+    affected_users: int | None = Field(default=None, ge=1, le=10)
+    discoverability: int | None = Field(default=None, ge=1, le=10)
+    total: float | None = None
+
+
+class Threat(BaseModel):
+    id: str
+    category: Literal[
+        "Spoofing",
+        "Tampering",
+        "Repudiation",
+        "InformationDisclosure",
+        "DenialOfService",
+        "ElevationOfPrivilege",
+    ]
+    description: str
+    affected_component: str | None = None
+    dread_score: DreadScore | None = None
+    mitigations: list[str] = Field(default_factory=list)
+
+
+class ThreatModel(BaseModel):
+    methodology: Literal["STRIDE", "DREAD", "STRIDE_DREAD"] | None = None
+    threats: list[Threat] = Field(default_factory=list)
+
+
+class Vulnerability(BaseModel):
+    id: str
+    title: str
+    severity: Literal["info", "low", "medium", "high", "critical"]
+    source_tool: str | None = None
+    cwe_id: str | None = None
+    cvss_score: float | None = None
+    location: str | None = None
+    description: str | None = None
+    remediation: str | None = None
+    status: Literal[
+        "open",
+        "in_progress",
+        "fixed",
+        "accepted",
+        "false_positive",
+    ] = "open"
+    linked_threat_id: str | None = None
+
+
+class CrossPhaseRef(BaseModel):
+    source_phase: str
+    source_id: str
+    target_phase: str
+    target_id: str
+    relationship: str
 
 
 class SourceCitation(BaseModel):
@@ -57,14 +125,17 @@ class ReportMetadata(BaseModel):
 
 
 class AssessmentReport(BaseModel):
-    version: str = "1.0"
+    version: str = "2.0"
     task_id: str
     phase: str | None = None
     status: Literal["completed", "partial", "failed"]
     summary: str
     risk_items: list[RiskItem] = Field(default_factory=list)
     compliance_gaps: list[ComplianceGap] = Field(default_factory=list)
+    threat_model: ThreatModel | None = None
+    vulnerabilities: list[Vulnerability] = Field(default_factory=list)
     remediations: list[Remediation] = Field(default_factory=list)
+    cross_phase_refs: list[CrossPhaseRef] = Field(default_factory=list)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     sources: list[SourceCitation] = Field(default_factory=list)
     metadata: ReportMetadata | None = None

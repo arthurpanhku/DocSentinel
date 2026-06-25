@@ -15,8 +15,16 @@ def test_root_returns_service_info(client):
     assert r.status_code == 200
     data = r.json()
     assert data.get("service") == "DocSentinel"
+    assert data["console"] == "/console"
     assert "api_docs" in data
     assert "health" in data
+
+
+def test_api_documentation_routes(client):
+    assert client.get("/api-docs").status_code == 200
+    openapi = client.get("/openapi.json")
+    assert openapi.status_code == 200
+    assert openapi.json()["info"]["title"] == "DocSentinel API"
 
 
 def test_config_llm(client):

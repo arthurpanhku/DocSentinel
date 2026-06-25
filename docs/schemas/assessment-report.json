@@ -1,71 +1,893 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://security-ai-agent.example/schemas/assessment-report.json",
-  "title": "AssessmentReport",
-  "type": "object",
-  "required": ["version", "task_id", "status", "summary"],
-  "properties": {
-    "version": { "type": "string", "const": "1.0" },
-    "task_id": { "type": "string", "format": "uuid" },
-    "status": { "type": "string", "enum": ["completed", "partial", "failed"] },
-    "summary": { "type": "string", "description": "评估结论摘要" },
-    "risk_items": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/RiskItem" }
-    },
-    "compliance_gaps": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/ComplianceGap" }
-    },
-    "remediations": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/Remediation" }
-    },
-    "metadata": {
-      "type": "object",
-      "properties": {
-        "scenario_id": { "type": "string" },
-        "project_id": { "type": "string" },
-        "model_used": { "type": "string" },
-        "completed_at": { "type": "string", "format": "date-time" }
-      }
-    },
-    "format": { "type": "string", "enum": ["json", "markdown"], "default": "json" }
-  },
   "$defs": {
-    "RiskItem": {
-      "type": "object",
-      "required": ["id", "title", "severity"],
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
-        "description": { "type": "string" },
-        "source_ref": { "type": "string" },
-        "category": { "type": "string" }
-      }
-    },
     "ComplianceGap": {
-      "type": "object",
-      "required": ["id", "control_or_clause", "gap_description"],
       "properties": {
-        "id": { "type": "string" },
-        "control_or_clause": { "type": "string" },
-        "gap_description": { "type": "string" },
-        "evidence_suggestion": { "type": "string" },
-        "framework": { "type": "string" }
-      }
+        "citation_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Citation Ids",
+          "type": "array"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "control_or_clause": {
+          "title": "Control Or Clause",
+          "type": "string"
+        },
+        "evidence_suggestion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Suggestion"
+        },
+        "framework": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Framework"
+        },
+        "gap_description": {
+          "title": "Gap Description",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "phase": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Phase"
+        }
+      },
+      "required": [
+        "id",
+        "control_or_clause",
+        "gap_description"
+      ],
+      "title": "ComplianceGap",
+      "type": "object"
+    },
+    "CrossPhaseRef": {
+      "properties": {
+        "relationship": {
+          "title": "Relationship",
+          "type": "string"
+        },
+        "source_id": {
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_phase": {
+          "title": "Source Phase",
+          "type": "string"
+        },
+        "target_id": {
+          "title": "Target Id",
+          "type": "string"
+        },
+        "target_phase": {
+          "title": "Target Phase",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_phase",
+        "source_id",
+        "target_phase",
+        "target_id",
+        "relationship"
+      ],
+      "title": "CrossPhaseRef",
+      "type": "object"
+    },
+    "DreadScore": {
+      "properties": {
+        "affected_users": {
+          "anyOf": [
+            {
+              "maximum": 10,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Affected Users"
+        },
+        "damage": {
+          "anyOf": [
+            {
+              "maximum": 10,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Damage"
+        },
+        "discoverability": {
+          "anyOf": [
+            {
+              "maximum": 10,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Discoverability"
+        },
+        "exploitability": {
+          "anyOf": [
+            {
+              "maximum": 10,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exploitability"
+        },
+        "reproducibility": {
+          "anyOf": [
+            {
+              "maximum": 10,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reproducibility"
+        },
+        "total": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total"
+        }
+      },
+      "title": "DreadScore",
+      "type": "object"
     },
     "Remediation": {
-      "type": "object",
-      "required": ["id", "action"],
       "properties": {
-        "id": { "type": "string" },
-        "action": { "type": "string" },
-        "priority": { "type": "string", "enum": ["low", "medium", "high"] },
-        "related_risk_ids": { "type": "array", "items": { "type": "string" } },
-        "related_gap_ids": { "type": "array", "items": { "type": "string" } }
-      }
+        "action": {
+          "title": "Action",
+          "type": "string"
+        },
+        "external_ticket": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "External Ticket"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "phase": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Phase"
+        },
+        "priority": {
+          "anyOf": [
+            {
+              "enum": [
+                "low",
+                "medium",
+                "high",
+                "critical"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Priority"
+        },
+        "related_gap_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Related Gap Ids",
+          "type": "array"
+        },
+        "related_risk_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Related Risk Ids",
+          "type": "array"
+        },
+        "related_threat_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Related Threat Ids",
+          "type": "array"
+        },
+        "related_vuln_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Related Vuln Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "action"
+      ],
+      "title": "Remediation",
+      "type": "object"
+    },
+    "ReportMetadata": {
+      "properties": {
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed At"
+        },
+        "model_used": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Used"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project Id"
+        },
+        "scenario_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scenario Id"
+        },
+        "skill_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Skill Id"
+        },
+        "ssdlc_phase": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ssdlc Phase"
+        },
+        "ssdlc_stage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ssdlc Stage"
+        }
+      },
+      "title": "ReportMetadata",
+      "type": "object"
+    },
+    "RiskItem": {
+      "properties": {
+        "category": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Category"
+        },
+        "citation_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Citation Ids",
+          "type": "array"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "phase": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Phase"
+        },
+        "severity": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "source_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Ref"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "severity"
+      ],
+      "title": "RiskItem",
+      "type": "object"
+    },
+    "SourceCitation": {
+      "properties": {
+        "evidence_link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Link"
+        },
+        "excerpt": {
+          "title": "Excerpt",
+          "type": "string"
+        },
+        "file": {
+          "title": "File",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "page": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page"
+        },
+        "paragraph_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Paragraph Id"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        }
+      },
+      "required": [
+        "id",
+        "file",
+        "excerpt"
+      ],
+      "title": "SourceCitation",
+      "type": "object"
+    },
+    "Threat": {
+      "properties": {
+        "affected_component": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Affected Component"
+        },
+        "category": {
+          "enum": [
+            "Spoofing",
+            "Tampering",
+            "Repudiation",
+            "InformationDisclosure",
+            "DenialOfService",
+            "ElevationOfPrivilege"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "dread_score": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DreadScore"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "mitigations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Mitigations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "category",
+        "description"
+      ],
+      "title": "Threat",
+      "type": "object"
+    },
+    "ThreatModel": {
+      "properties": {
+        "methodology": {
+          "anyOf": [
+            {
+              "enum": [
+                "STRIDE",
+                "DREAD",
+                "STRIDE_DREAD"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Methodology"
+        },
+        "threats": {
+          "items": {
+            "$ref": "#/$defs/Threat"
+          },
+          "title": "Threats",
+          "type": "array"
+        }
+      },
+      "title": "ThreatModel",
+      "type": "object"
+    },
+    "Vulnerability": {
+      "properties": {
+        "cvss_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cvss Score"
+        },
+        "cwe_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cwe Id"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "linked_threat_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Linked Threat Id"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location"
+        },
+        "remediation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Remediation"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "source_tool": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Tool"
+        },
+        "status": {
+          "default": "open",
+          "enum": [
+            "open",
+            "in_progress",
+            "fixed",
+            "accepted",
+            "false_positive"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "severity"
+      ],
+      "title": "Vulnerability",
+      "type": "object"
     }
-  }
+  },
+  "properties": {
+    "compliance_gaps": {
+      "items": {
+        "$ref": "#/$defs/ComplianceGap"
+      },
+      "title": "Compliance Gaps",
+      "type": "array"
+    },
+    "confidence": {
+      "default": 0.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "cross_phase_refs": {
+      "items": {
+        "$ref": "#/$defs/CrossPhaseRef"
+      },
+      "title": "Cross Phase Refs",
+      "type": "array"
+    },
+    "format": {
+      "default": "json",
+      "enum": [
+        "json",
+        "markdown"
+      ],
+      "title": "Format",
+      "type": "string"
+    },
+    "metadata": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReportMetadata"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "phase": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Phase"
+    },
+    "remediations": {
+      "items": {
+        "$ref": "#/$defs/Remediation"
+      },
+      "title": "Remediations",
+      "type": "array"
+    },
+    "risk_items": {
+      "items": {
+        "$ref": "#/$defs/RiskItem"
+      },
+      "title": "Risk Items",
+      "type": "array"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/SourceCitation"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "status": {
+      "enum": [
+        "completed",
+        "partial",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    },
+    "task_id": {
+      "title": "Task Id",
+      "type": "string"
+    },
+    "threat_model": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ThreatModel"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "version": {
+      "default": "2.0",
+      "title": "Version",
+      "type": "string"
+    },
+    "vulnerabilities": {
+      "items": {
+        "$ref": "#/$defs/Vulnerability"
+      },
+      "title": "Vulnerabilities",
+      "type": "array"
+    }
+  },
+  "required": [
+    "task_id",
+    "status",
+    "summary"
+  ],
+  "title": "AssessmentReport",
+  "type": "object"
 }

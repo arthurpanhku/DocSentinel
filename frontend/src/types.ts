@@ -1,121 +1,46 @@
-export type AssessmentPhase =
-  | "auto"
-  | "requirements"
-  | "design"
-  | "development"
-  | "testing"
-  | "deployment"
-  | "operations"
-  | "full_ssdlc";
+import type { components } from "./api/schema";
 
-export type TaskStatus =
-  | "pending"
-  | "running"
-  | "review_pending"
-  | "approved"
-  | "rejected"
-  | "escalated"
-  | "completed"
-  | "failed";
+type Schemas = components["schemas"];
+type SubmitAssessmentBody =
+  Schemas["Body_submit_assessment_api_v1_assessments_post"];
 
-export type Severity = "low" | "medium" | "high" | "critical";
+export type AssessmentPhase = SubmitAssessmentBody["phase"];
+export type TaskStatus = Schemas["AssessmentTaskResult"]["status"];
+export type Severity = Schemas["RiskItem"]["severity"];
 
-export interface RiskItem {
-  id: string;
-  title: string;
-  severity: Severity;
-  description?: string | null;
-  source_ref?: string | null;
-  category?: string | null;
-  phase?: string | null;
-  confidence?: number | null;
-  citation_ids?: string[];
-}
+export type RiskItem = Schemas["RiskItem"];
+export type ComplianceGap = Schemas["ComplianceGap"];
+export type Remediation = Schemas["Remediation"];
+export type SourceCitation = Schemas["SourceCitation"];
+export type ThreatModel = Schemas["ThreatModel"];
+export type Vulnerability = Schemas["Vulnerability"];
+export type CrossPhaseRef = Schemas["CrossPhaseRef"];
 
-export interface ComplianceGap {
-  id: string;
-  control_or_clause: string;
-  gap_description: string;
-  evidence_suggestion?: string | null;
-  framework?: string | null;
-  phase?: string | null;
-}
+type ApiAssessmentReport = Schemas["AssessmentReport"];
 
-export interface Remediation {
-  id: string;
-  action: string;
-  priority?: "low" | "medium" | "high" | "critical" | null;
-  related_risk_ids?: string[];
-  related_gap_ids?: string[];
-  related_vuln_ids?: string[];
-  related_threat_ids?: string[];
-  external_ticket?: string | null;
-  phase?: string | null;
-}
-
-export interface SourceCitation {
-  id: string;
-  file: string;
-  page?: number | null;
-  paragraph_id?: string | null;
-  excerpt: string;
-  evidence_link?: string | null;
-  score?: number | null;
-}
-
-export interface ThreatModel {
-  methodology?: string;
-  threats?: Array<Record<string, unknown>>;
-}
-
-export interface Vulnerability {
-  id: string;
-  title: string;
-  severity: string;
-  source_tool?: string;
-  cwe_id?: string;
-  cvss_score?: number;
-  location?: string;
-  description?: string;
-  remediation?: string;
-  status?: string;
-}
-
-export interface AssessmentReport {
-  version: string;
-  task_id: string;
-  phase?: string | null;
-  status: "completed" | "partial" | "failed";
-  summary: string;
+export interface AssessmentReport
+  extends Omit<
+    ApiAssessmentReport,
+    | "risk_items"
+    | "compliance_gaps"
+    | "remediations"
+    | "sources"
+    | "vulnerabilities"
+    | "cross_phase_refs"
+  > {
   risk_items: RiskItem[];
   compliance_gaps: ComplianceGap[];
   remediations: Remediation[];
-  confidence: number;
   sources: SourceCitation[];
-  threat_model?: ThreatModel | null;
-  vulnerabilities?: Vulnerability[];
-  cross_phase_refs?: Array<Record<string, unknown>>;
-  metadata?: {
-    scenario_id?: string | null;
-    project_id?: string | null;
-    ssdlc_stage?: string | null;
-    ssdlc_phase?: string | null;
-    skill_id?: string | null;
-    model_used?: string | null;
-    completed_at?: string | null;
-  } | null;
-  format: "json" | "markdown";
+  vulnerabilities: Vulnerability[];
+  cross_phase_refs: CrossPhaseRef[];
 }
 
-export interface AssessmentTask {
-  task_id: string;
-  status: TaskStatus;
+type ApiAssessmentTask = Schemas["AssessmentTaskResult"];
+
+export interface AssessmentTask
+  extends Omit<ApiAssessmentTask, "report" | "comments"> {
   report?: AssessmentReport | null;
-  error_message?: string | null;
-  created_at: string;
-  completed_at?: string | null;
-  version: number;
-  assignee?: string | null;
   comments: Array<Record<string, unknown>>;
 }
 
@@ -133,30 +58,24 @@ export interface ActivityEntry {
   preview?: string;
 }
 
-export interface RemediationTracking {
-  remediation_id: string;
-  status: "open" | "in_progress" | "resolved" | "verified" | "closed";
-  owner?: string | null;
-  due_at?: string | null;
-  external_ticket?: string | null;
-  notes?: string | null;
+type ApiRemediationTracking = Schemas["RemediationTracking"];
+
+export interface RemediationTracking
+  extends Omit<ApiRemediationTracking, "evidence_refs"> {
   evidence_refs: string[];
-  updated_at?: string | null;
 }
 
-export interface TrackedRemediation {
-  remediation: Remediation;
+export interface TrackedRemediation
+  extends Omit<Schemas["TrackedRemediation"], "tracking"> {
   tracking: RemediationTracking;
 }
 
-export interface Skill {
-  id: string;
-  name: string;
-  description: string;
-  system_prompt: string;
+type ApiSkill = Schemas["Skill"];
+
+export interface Skill
+  extends Omit<ApiSkill, "risk_focus" | "compliance_frameworks"> {
   risk_focus: string[];
   compliance_frameworks: string[];
-  is_builtin: boolean;
 }
 
 export interface KBChunk {

@@ -1,4 +1,11 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+import type {
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes
+} from "react";
 
 import { cn } from "../lib/utils";
 
@@ -38,6 +45,54 @@ export function Button({
       )}
       {...props}
     />
+  );
+}
+
+export function Tooltip({
+  label,
+  children
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <TooltipPrimitive.Root>
+      <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
+      <TooltipPrimitive.Portal>
+        <TooltipPrimitive.Content
+          sideOffset={6}
+          className="z-50 rounded border border-line bg-panel2 px-2 py-1 text-xs text-text shadow-command"
+        >
+          {label}
+          <TooltipPrimitive.Arrow className="fill-line" />
+        </TooltipPrimitive.Content>
+      </TooltipPrimitive.Portal>
+    </TooltipPrimitive.Root>
+  );
+}
+
+export function IconButton({
+  label,
+  className,
+  children,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <Tooltip label={label}>
+      <button
+        aria-label={label}
+        className={cn(
+          "focus-ring inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line bg-panel text-muted transition hover:bg-panel2 hover:text-text disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:h-4 [&_svg]:w-4",
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </button>
+    </Tooltip>
   );
 }
 
@@ -120,5 +175,34 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 
 export function ErrorNote({ message }: { message?: string | null }) {
   if (!message) return null;
-  return <div className="rounded-md border border-bad/30 bg-bad/10 px-3 py-2 text-sm text-bad">{message}</div>;
+  return (
+    <div
+      role="alert"
+      className="rounded-md border border-bad/30 bg-bad/10 px-3 py-2 text-sm text-bad"
+    >
+      {message}
+    </div>
+  );
+}
+
+export function PageHeader({
+  title,
+  description,
+  actions
+}: {
+  title: string;
+  description?: string;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="flex min-h-14 flex-col justify-between gap-3 border-b border-line pb-4 sm:flex-row sm:items-end">
+      <div className="min-w-0">
+        <h1 className="text-lg font-semibold text-text">{title}</h1>
+        {description ? (
+          <p className="mt-1 max-w-3xl text-sm leading-5 text-muted">{description}</p>
+        ) : null}
+      </div>
+      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+    </div>
+  );
 }

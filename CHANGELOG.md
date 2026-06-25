@@ -8,10 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Generated OpenAPI and assessment JSON Schema contracts with TypeScript client
+  types derived from the FastAPI application.
+- Frontend query provider, accessible mobile navigation, icon tooltips, component
+  tests, and CI checks for type safety, tests, and production builds.
+- v5 product trust RFC and architecture, evidence-model, and frontend-design ADRs.
+
+### Changed
+- Updated the assessment report model to the v2 contract, including finding-level
+  evidence references, threat models, vulnerabilities, and cross-phase references.
+- Moved FastAPI Swagger UI to `/api-docs` and restricted CORS to configured local
+  origins by default.
+- Built the React console inside the Docker image and pinned the container to
+  official CPU-only PyTorch wheels for practical private deployment.
+
 ### Security
 - Constrained MCP `assess_document.file_path` reads to configured `MCP_DOCUMENT_ROOTS`
   before opening files, including symlink escape protection and pre-read extension
   validation.
+- Constrained knowledge-base directory reindexing to `KB_REINDEX_ROOTS` before
+  initializing or reading from the knowledge base.
 
 ---
 

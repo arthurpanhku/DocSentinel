@@ -8,9 +8,9 @@
 
 |                  |                                                                           |
 | :--------------- | :------------------------------------------------------------------------ |
-| **Version**      | 4.0                                                                       |
+| **Version**      | 5.0 Phase 0                                                               |
 | **Author**       | PAN CHAO                                                                  |
-| **Last updated** | 2026-03                                                                   |
+| **Last updated** | 2026-06                                                                   |
 | **Related**      | [Product Requirements (PRD)](./SPEC.md) · [Design docs](./docs/README.md) |
 
 ---
@@ -167,7 +167,10 @@ stateDiagram-v2
 
 -   **REST API** (FastAPI): Request validation, routing to SSDLC assessment / KB / health / skills endpoints. Phase-aware endpoints (e.g. `POST /assessments/{phase}`).
 -   **MCP Server** (Model Context Protocol): Standard stdio interface for autonomous agents (Claude Desktop, Cursor, OpenClaw) to discover and call SSDLC tools.
--   **Note**: v4.0 is a **headless API + MCP service**. Authentication (AAD/JWT) and rate limiting are defined but not yet wired into endpoints.
+-   **React Console**: FastAPI serves the production Vite build at `/console`; the
+    console covers assessment, evidence, knowledge-base, skill, and runtime workflows.
+-   **Current boundary**: Authentication (AAD/JWT), tenant isolation, and rate limiting
+    remain future enterprise controls and are not yet wired into endpoints.
 
 ### 2. SSDLC Orchestrator (LangGraph) | SSDLC 编排器
 
@@ -450,7 +453,7 @@ See [docs/05-deployment-runbook.md](./docs/05-deployment-runbook.md) for environ
 | :--- | :--- |
 | [SPEC.md](./SPEC.md) | Product requirements, SSDLC phases, features, security controls. |
 | [docs/01-architecture-and-tech-stack.md](./docs/01-architecture-and-tech-stack.md) | Technology choices and module layout. |
-| [docs/02-api-specification.yaml](./docs/02-api-specification.yaml) | OpenAPI spec. |
+| [docs/openapi.json](./docs/openapi.json) | Authoritative OpenAPI spec generated from FastAPI. |
 | [docs/03-assessment-report-and-skill-contract.md](./docs/03-assessment-report-and-skill-contract.md) | Report schema and Skill I/O. |
 | [docs/04-integration-guide.md](./docs/04-integration-guide.md) | AAD, ServiceNow, SAST/DAST integration. |
 | [docs/05-deployment-runbook.md](./docs/05-deployment-runbook.md) | Deployment and operations. |

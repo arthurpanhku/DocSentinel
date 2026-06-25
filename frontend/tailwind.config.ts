@@ -5,16 +5,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        canvas: "#0b0d10",
-        panel: "#111418",
-        panel2: "#15191f",
-        line: "#252b33",
-        muted: "#8b95a1",
-        text: "#e6edf3",
-        accent: "#79c0ff",
-        good: "#3fb950",
-        warn: "#d29922",
-        bad: "#f85149"
+        canvas: "rgb(var(--canvas) / <alpha-value>)",
+        panel: "rgb(var(--panel) / <alpha-value>)",
+        panel2: "rgb(var(--panel-2) / <alpha-value>)",
+        line: "rgb(var(--line) / <alpha-value>)",
+        muted: "rgb(var(--muted) / <alpha-value>)",
+        text: "rgb(var(--text) / <alpha-value>)",
+        accent: "rgb(var(--accent) / <alpha-value>)",
+        good: "rgb(var(--good) / <alpha-value>)",
+        warn: "rgb(var(--warn) / <alpha-value>)",
+        bad: "rgb(var(--bad) / <alpha-value>)"
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],

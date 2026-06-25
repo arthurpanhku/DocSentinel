@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     API_PREFIX: str = "/api/v1"
     SECRET_KEY: str = "change-me-in-production"
+    CORS_ORIGINS: str = (
+        "http://localhost:5173,http://127.0.0.1:5173,"
+        "http://localhost:8000,http://127.0.0.1:8000"
+    )
 
     # Upload & parser (PRD §7.2 APP-01)
     UPLOAD_MAX_FILE_SIZE_MB: int = 50
@@ -67,6 +71,7 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     KB_AUTO_SYNC_DIR: str = "./examples"
     KB_AUTO_SYNC_INTERVAL_SECONDS: int = 0
+    KB_REINDEX_ROOTS: str = "./examples"
 
     # Graph RAG (LightRAG)
     ENABLE_GRAPH_RAG: bool = True
@@ -82,6 +87,12 @@ class Settings(BaseSettings):
     @property
     def upload_max_bytes(self) -> int:
         return self.UPLOAD_MAX_FILE_SIZE_MB * 1024 * 1024
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [
+            value.strip() for value in self.CORS_ORIGINS.split(",") if value.strip()
+        ]
 
 
 @lru_cache

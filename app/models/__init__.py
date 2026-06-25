@@ -3,9 +3,14 @@ from .assessment import (
     AssessmentTaskCreated,
     AssessmentTaskResult,
     ComplianceGap,
+    CrossPhaseRef,
+    DreadScore,
     Remediation,
     RiskItem,
     SourceCitation,
+    Threat,
+    ThreatModel,
+    Vulnerability,
 )
 from .parser import ParsedDocument
 
@@ -14,8 +19,13 @@ __all__ = [
     "AssessmentTaskCreated",
     "AssessmentTaskResult",
     "ComplianceGap",
+    "CrossPhaseRef",
+    "DreadScore",
     "ParsedDocument",
     "Remediation",
     "RiskItem",
     "SourceCitation",
+    "Threat",
+    "ThreatModel",
+    "Vulnerability",
 ]

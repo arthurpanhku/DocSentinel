@@ -51,12 +51,15 @@ app = FastAPI(
     title="DocSentinel API",
     version="4.2.0",
     description="Automated Security Assessment with LLMs & RAG",
+    docs_url="/api-docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
 )
 
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -86,6 +89,7 @@ if console_dist.exists():
 async def root():
     return {
         "service": "DocSentinel",
+        "console": "/console",
         "api_docs": "/api-docs",
         "demo": "/docs/demo.html",
         "health": "/health",
