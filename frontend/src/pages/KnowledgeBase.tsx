@@ -1,7 +1,18 @@
 import { Database, FolderSync, Search, Upload } from "lucide-react";
 import { FormEvent, useState } from "react";
 
-import { Badge, Button, Card, CardHeader, EmptyState, ErrorNote, Field, Input, Textarea } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardHeader,
+  EmptyState,
+  ErrorNote,
+  Field,
+  Input,
+  PageHeader,
+  Textarea
+} from "../components/ui";
 import { queryKb, reindexKb, uploadKbDocument } from "../lib/api";
 import type { KBChunk } from "../types";
 
@@ -70,10 +81,10 @@ export default function KnowledgeBase() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-text">Knowledge Base</h1>
-        <p className="mt-1 text-sm text-muted">Upload security references, query RAG context, and reindex local folders.</p>
-      </div>
+      <PageHeader
+        title="Knowledge Base"
+        description="Manage approved security references and inspect the evidence retrieved for assessment."
+      />
       <ErrorNote message={error} />
 
       <div className="grid gap-4 xl:grid-cols-[360px_1fr]">

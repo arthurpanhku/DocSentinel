@@ -2,7 +2,20 @@ import { Check, FileUp, MessageSquare, RefreshCw, Send, Shield, X } from "lucide
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { SeverityBadge, StatusBadge, taskTitle } from "../components/domain";
-import { Badge, Button, Card, CardHeader, EmptyState, ErrorNote, Field, Input, Select, Textarea } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardHeader,
+  EmptyState,
+  ErrorNote,
+  Field,
+  IconButton,
+  Input,
+  PageHeader,
+  Select,
+  Textarea
+} from "../components/ui";
 import {
   addComment,
   getActivity,
@@ -187,8 +200,13 @@ export default function Assessments() {
   }, [selected]);
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[360px_1fr]">
-      <div className="space-y-4">
+    <div className="space-y-5">
+      <PageHeader
+        title="Assessments"
+        description="Submit project material, inspect evidence-backed drafts, and complete human review."
+      />
+      <div className="grid gap-4 xl:grid-cols-[360px_1fr]">
+        <div className="space-y-4">
         <Card>
           <CardHeader title="Submit Assessment" meta="Files, phase, skill, and review mode." />
           <form onSubmit={handleSubmit} className="space-y-3 p-4">
@@ -228,7 +246,15 @@ export default function Assessments() {
         <Card>
           <CardHeader
             title="Queue"
-            action={<Button variant="quiet" onClick={() => void loadTasks()} disabled={loading}><RefreshCw className="h-4 w-4" /></Button>}
+            action={
+              <IconButton
+                label="Refresh assessment queue"
+                onClick={() => void loadTasks()}
+                disabled={loading}
+              >
+                <RefreshCw aria-hidden="true" />
+              </IconButton>
+            }
           />
           <div className="grid gap-2 border-b border-line p-3">
             <Select value={status} onChange={(event) => setStatus(event.target.value)}>
@@ -261,9 +287,9 @@ export default function Assessments() {
             <EmptyState title={loading ? "Loading queue..." : "No tasks found."} />
           )}
         </Card>
-      </div>
+        </div>
 
-      <div className="space-y-4">
+        <div className="space-y-4">
         <ErrorNote message={error} />
         {selected ? (
           <>
@@ -338,7 +364,9 @@ export default function Assessments() {
                 <div className="space-y-3 p-4">
                   <form onSubmit={handleAddComment} className="flex gap-2">
                     <Input name="comment" placeholder="Add comment" />
-                    <Button disabled={busy}><Send className="h-4 w-4" /></Button>
+                    <IconButton label="Add comment" type="submit" disabled={busy}>
+                      <Send aria-hidden="true" />
+                    </IconButton>
                   </form>
                   <div className="divide-y divide-line">
                     {selected.comments?.length ? selected.comments.map((comment, index) => (
@@ -370,6 +398,7 @@ export default function Assessments() {
             <EmptyState title="Select or submit an assessment." />
           </Card>
         )}
+        </div>
       </div>
     </div>
   );

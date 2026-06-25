@@ -19,7 +19,8 @@
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"/></a>
   <a href="https://github.com/arthurpanhku/DocSentinel"><img src="https://img.shields.io/badge/GitHub-arthurpanhku%2FDocSentinel--Agent-24292e?logo=github" alt="GitHub repo"/></a>
   <a href="docs/06-agent-integration.md"><img src="https://img.shields.io/badge/MCP-Ready-green?logo=anthropic" alt="MCP Ready"/></a>
-  <a href="docs/06-agent-integration.md"><img src="https://img.shields.io/badge/Agent-Integration-blueviolet" alt="Agent Integration"/></a>
+  <a href="docs/06-agent-integration.md"><img src="https://img.shields.io/badge/A2A-1.0-blueviolet" alt="A2A 1.0"/></a>
+  <a href="SECURITY.md"><img src="https://img.shields.io/badge/Human_Review-Required-0f766e" alt="Human review required"/></a>
   <a href="https://python.langchain.com/"><img src="https://img.shields.io/badge/LangChain-Powered-orange" alt="LangChain"/></a>
   <a href="https://langchain-ai.github.io/langgraph/"><img src="https://img.shields.io/badge/LangGraph-Orchestrated-blue" alt="LangGraph"/></a>
 </p>
@@ -47,7 +48,10 @@ Instead of only reviewing documents at the pre-release stage, DocSentinel embeds
 | **Deployment** | Configuration security review, hardening assessment, release sign-off |
 | **Operations** | Vulnerability monitoring, incident response assistance, log audit |
 
-Built as a **React console + headless API + MCP service**, DocSentinel integrates into local security review workflows, CI/CD pipelines, AI agents (Claude Desktop, Cursor, OpenClaw), and existing security operations.
+Built as a **React console + FastAPI service + MCP/A2A agent gateway**,
+DocSentinel integrates into local security review workflows, CI/CD pipelines,
+AI agents, and multi-agent platforms without giving external agents approval
+authority.
 
 - **LangGraph orchestration**: Stateful, graph-based agent workflows with conditional branching per SSDLC stage.
 - **Multi-format input**: PDF, Word, Excel, PPT, text — parsed into a unified format for the LLM.
@@ -78,7 +82,10 @@ Ideal for enterprises that need to scale security assessments across many projec
 
 ## Architecture
 
-DocSentinel is built on a **React Console** plus **FastAPI/MCP** access layer, with **LangGraph** for stateful agent orchestration and **LangChain** for unified LLM access. Six phase-specific agents are coordinated by a graph-based state machine with cross-phase context sharing. The orchestrator coordinates parsing, SSDLC stage routing, the knowledge base (RAG), skills, and the LLM. You can use cloud or local LLMs and optional integrations (e.g. AAD, ServiceNow) as your environment requires.
+DocSentinel is built on a **React Console** plus **FastAPI, MCP, and A2A**
+access layer, with **LangGraph** for stateful agent orchestration and
+**LangChain** for unified LLM access. REST and agent protocols share one task
+lifecycle; MCP and A2A submissions always enter the human-review workflow.
 
 ![DocSentinel Architecture](docsentinel_architecture.png)
 
@@ -89,7 +96,10 @@ flowchart TB
     subgraph Access["Access Layer"]
         Console["React Console<br/>(Vite + Tailwind)"]
         API["REST API<br/>(FastAPI)"]
-        MCP["MCP Server<br/>(stdio)"]
+        Gateway["Agent Gateway"]
+        MCP["MCP<br/>(stdio + HTTP)"]
+        A2A["A2A 1.0<br/>(JSON-RPC)"]
+        Tasks["Shared Assessment Service"]
     end
     subgraph Orchestration["SSDLC Orchestration (LangGraph)"]
         Router["Phase Router"]
@@ -117,9 +127,10 @@ flowchart TB
     User --> Console
     User --> API
     Console --> API
-    User --> MCP
-    API --> Router
-    MCP --> Router
+    User --> MCP & A2A
+    MCP & A2A --> Gateway
+    API & Gateway --> Tasks
+    Tasks --> Router
     Router --> A1 & A2 & A3 & A4 & A5 & A6
     A1 & A2 & A3 & A4 & A5 & A6 --> KB & Parser & Skill
     A1 & A2 & A3 & A4 & A5 & A6 --> Abst
@@ -175,14 +186,41 @@ Upload your organization's security policies, standards, and past audits. Phase-
 ### LangGraph Agent Orchestration
 Powered by **LangChain + LangGraph** — stateful, graph-based agent workflows with conditional routing per SSDLC stage. Parallel execution of Policy and Evidence agents, followed by Drafter and Reviewer agents.
 
-### API-First & MCP Ready
-Designed as a headless service. Integrate into CI/CD pipelines via REST API, or use as a **super-tool** within AI agents (Claude Desktop, Cursor, OpenClaw) via MCP.
+### API-First, MCP & A2A Ready
+Use the local React console for human review, integrate CI/CD pipelines through the
+REST API, or expose the same assessment capabilities to AI agents (Claude Desktop,
+Cursor, OpenClaw) through MCP. A2A-compatible platforms can delegate assessment
+tasks to DocSentinel as a specialist security agent.
 
 ---
 
-## Agent Integration (MCP)
+## Agent Integration (MCP + A2A)
 
-Connect DocSentinel to **Claude Desktop**, **Cursor**, or **OpenClaw** to use it as a powerful SSDLC security skill.
+Use MCP to expose bounded tools to Claude Desktop, Cursor, coding agents, and
+workflow platforms. Use A2A to expose DocSentinel as a remote specialist agent.
+REST, MCP, and A2A submissions share the same task lifecycle and activity log.
+Agent-created assessments always remain drafts until a human reviewer approves
+them in the console.
+
+| Interface | Endpoint | Purpose |
+| :--- | :--- | :--- |
+| **MCP stdio** | `python app/mcp_server.py` | Local desktop and coding-agent integration |
+| **MCP Streamable HTTP** | `POST /mcp/` | Remote tool discovery and invocation |
+| **A2A Agent Card** | `GET /.well-known/agent-card.json` | Standards-based agent discovery |
+| **A2A JSON-RPC** | `POST /a2a` | Remote task delegation |
+| **Integration status** | `GET /api/v1/integrations/agents/status` | Non-secret protocol and capability status |
+| **Console** | `/console/integrations` | Human-readable integration state |
+
+MCP exposes five governed tools:
+
+- `submit_document_assessment`
+- `get_assessment_status`
+- `assess_document` (compatibility tool)
+- `query_knowledge_base`
+- `get_agent_gateway_status`
+
+The A2A Agent Card advertises assessment submission, assessment retrieval, and
+security knowledge query skills.
 
 ### What can it do?
 Once connected, you can ask your AI agent:
@@ -216,6 +254,24 @@ Add to your `claude_desktop_config.json`:
 separate multiple roots on macOS/Linux, or `;` on Windows. If unset, the
 server only allows `./examples`.
 
+FastAPI also serves Streamable HTTP MCP at `/mcp/` and publishes the A2A Agent
+Card at `/.well-known/agent-card.json`. Tokenless protocol access is
+loopback-only. External agents cannot approve, reject, or bypass human review.
+
+For network, Docker, or reverse-proxy access, configure:
+
+```dotenv
+AGENT_GATEWAY_TOKEN=generate-a-long-random-value
+AGENT_GATEWAY_PUBLIC_URL=https://docsentinel.internal.example
+AGENT_GATEWAY_ALLOWED_HOSTS=docsentinel.internal.example
+AGENT_GATEWAY_ALLOWED_ORIGINS=https://trusted-agent-console.internal.example
+```
+
+Clients send `Authorization: Bearer <AGENT_GATEWAY_TOKEN>`. Keep
+`MCP_DOCUMENT_ROOTS`, allowed hosts, and allowed origins as narrow as possible.
+Docker bridge traffic is not treated as loopback, so published MCP/A2A ports
+require a token.
+
 #### 2. Cursor
 1. Go to **Settings > Features > MCP**.
 2. Click **+ Add New MCP Server**.
@@ -239,11 +295,18 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
--   **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+-   **React Console**: [http://localhost:8000/console](http://localhost:8000/console)
+-   **Agent Integrations**: [http://localhost:8000/console/integrations](http://localhost:8000/console/integrations)
+-   **API Docs**: [http://localhost:8000/api-docs](http://localhost:8000/api-docs)
+-   **A2A Agent Card**: [http://localhost:8000/.well-known/agent-card.json](http://localhost:8000/.well-known/agent-card.json)
+
+To connect an external agent through the published Docker port, set
+`AGENT_GATEWAY_TOKEN` in `.env` before running `./deploy.sh`.
 
 ### Option B: Manual Setup
 
-**Prerequisites**: **Python 3.10+**. Optional: [Ollama](https://ollama.ai) (`ollama pull llama2`).
+**Prerequisites**: **Python 3.10+** and **Node.js 20+**. Optional:
+[Ollama](https://ollama.ai) (`ollama pull llama2`).
 
 ```bash
 git clone https://github.com/arthurpanhku/DocSentinel.git
@@ -252,11 +315,16 @@ python3 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env        # Edit if needed: LLM_PROVIDER=ollama or openai
+npm install --prefix frontend
+npm run build --prefix frontend
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
--   **API docs**: [http://localhost:8000/docs](http://localhost:8000/docs) · **Health**: [http://localhost:8000/health](http://localhost:8000/health)
--   **React Console**: [http://localhost:8000/console](http://localhost:8000/console) after building the frontend
+-   **API docs**: [http://localhost:8000/api-docs](http://localhost:8000/api-docs) · **Health**: [http://localhost:8000/health](http://localhost:8000/health)
+-   **React Console**: [http://localhost:8000/console](http://localhost:8000/console)
+-   **Agent Integrations**: [http://localhost:8000/console/integrations](http://localhost:8000/console/integrations)
+-   **MCP Streamable HTTP**: `http://localhost:8000/mcp/`
+-   **A2A Agent Card**: [http://localhost:8000/.well-known/agent-card.json](http://localhost:8000/.well-known/agent-card.json)
 -   **Legacy Review Console (HITL)**: [http://localhost:8000/docs/review-console.html](http://localhost:8000/docs/review-console.html)
 
 ### React Console
@@ -324,6 +392,7 @@ DocSentinel/
 ├── frontend/             # React + TypeScript + Vite + Tailwind console
 ├── app/                  # Application code
 │   ├── api/              # REST routes: assessments, KB, health, skills
+│   ├── agent_gateway/    # MCP/A2A adapters, auth boundary, Agent Card
 │   ├── agent/            # LangGraph orchestrator, phase agents, skills
 │   │   ├── orchestrator.py    # LangGraph state machine & phase routing
 │   │   ├── agents/            # Phase-specific agent implementations
@@ -335,8 +404,9 @@ DocSentinel/
 │   ├── llm/              # LangChain LLM abstraction (OpenAI, Ollama)
 │   ├── parser/           # Document parsing (Docling + SAST/DAST + legacy)
 │   ├── models/           # Pydantic / SQLModel models
+│   ├── services/         # Shared assessment task lifecycle
 │   ├── main.py           # FastAPI app entry point
-│   └── mcp_server.py     # MCP Server for agent integration
+│   └── mcp_server.py     # MCP stdio + Streamable HTTP tools
 ├── tests/                # Automated tests (pytest)
 ├── examples/             # Sample files (questionnaires, policies, reports)
 ├── docs/                 # Design & Spec documentation
@@ -384,6 +454,12 @@ DocSentinel/
 | `SSDLC_DEFAULT_PHASES` | Default phases for full assessment | `requirements,design,development,testing,deployment,operations` |
 | `SSDLC_DEFAULT_STAGE` | Default SSDLC stage if not specified | `auto` |
 | `UPLOAD_MAX_FILE_SIZE_MB` / `UPLOAD_MAX_FILES` | Upload limits | `50` / `10` |
+| `MCP_DOCUMENT_ROOTS` | Filesystem roots available to document assessment tools | `./examples` |
+| `AGENT_GATEWAY_ENABLED` | Enable MCP HTTP and A2A endpoints | `true` |
+| `AGENT_GATEWAY_TOKEN` | Bearer token for remote agent access; empty is loopback-only | -- |
+| `AGENT_GATEWAY_PUBLIC_URL` | Public URL advertised by the A2A Agent Card | `http://localhost:8000` |
+| `AGENT_GATEWAY_ALLOWED_HOSTS` | MCP DNS-rebinding Host allow-list | local hosts |
+| `AGENT_GATEWAY_ALLOWED_ORIGINS` | MCP browser Origin allow-list | local origins |
 
 *See [.env.example](./.env.example) and [docs/05-deployment-runbook.md](./docs/05-deployment-runbook.md) for full options.*
 
@@ -393,12 +469,14 @@ DocSentinel/
 
 | Layer | Technology | Purpose |
 | :--- | :--- | :--- |
+| **Frontend** | React, TypeScript, Vite, Tailwind CSS | Local-first assessment and review console |
 | **Agent Orchestration** | LangGraph | Stateful graph-based SSDLC workflow engine |
 | **LLM Framework** | LangChain | Unified LLM abstraction, prompts, tools, RAG |
 | **Web/API** | FastAPI | Async REST API with auto OpenAPI |
+| **Agent Protocols** | MCP + A2A 1.0 | Governed tools and cross-agent task delegation |
 | **Vector Store** | ChromaDB + LightRAG | Hybrid vector + graph RAG |
 | **Parsing** | Docling + legacy fallback | Multi-format document parsing |
-| **LLM Providers** | OpenAI, Ollama | Cloud and local LLM support |
+| **LLM Providers** | OpenAI, Anthropic, Qwen, DeepSeek, Ollama, OpenAI-compatible APIs | Cloud and local LLM support |
 | **Language** | Python 3.10+ | Primary development language |
 
 ---
@@ -441,6 +519,9 @@ Submit a Skill Template: Have a great security persona for an SSDLC phase? Submi
 
 -   **Vulnerability reporting**: See [SECURITY.md](./SECURITY.md) for responsible disclosure.
 -   **Security requirements**: Follows security controls in [SPEC §7.2](./SPEC.md).
+-   **Document confinement**: MCP/A2A document paths must resolve inside `MCP_DOCUMENT_ROOTS`; symlink escapes are rejected before file reads.
+-   **Agent authority**: External agents may submit and inspect drafts, but cannot approve their own assessments.
+-   **Remote access**: Tokenless MCP/A2A access is loopback-only. Network deployments require a bearer token, TLS, and narrow Host/Origin allow-lists.
 
 ---
 

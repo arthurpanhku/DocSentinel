@@ -9,7 +9,7 @@
 #   docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
 #   docker compose exec ollama ollama pull llama2
 #
-# Open http://localhost:8000/docs and http://localhost:8000/health
+# Open http://localhost:8000/console and http://localhost:8000/api-docs
 
 services:
   app:
@@ -24,6 +24,10 @@ services:
       - CHROMA_PERSIST_DIR=/data/chroma
       - UPLOAD_MAX_FILE_SIZE_MB=50
       - UPLOAD_MAX_FILES=10
+      - AGENT_GATEWAY_TOKEN=${AGENT_GATEWAY_TOKEN:-}
+      - AGENT_GATEWAY_PUBLIC_URL=${AGENT_GATEWAY_PUBLIC_URL:-http://localhost:8000}
+      - AGENT_GATEWAY_ALLOWED_HOSTS=${AGENT_GATEWAY_ALLOWED_HOSTS:-localhost:8000,127.0.0.1:8000}
+      - AGENT_GATEWAY_ALLOWED_ORIGINS=${AGENT_GATEWAY_ALLOWED_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000}
     volumes:
       - docsentinel-data:/data
 

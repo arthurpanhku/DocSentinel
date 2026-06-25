@@ -3,7 +3,11 @@ import os
 import pytest
 
 from app.core.config import settings
-from app.core.document_access import DocumentAccessError, resolve_document_path
+from app.core.document_access import (
+    DocumentAccessError,
+    resolve_document_path,
+    resolve_kb_reindex_directory,
+)
 
 
 def test_resolve_document_path_rejects_path_outside_configured_root(
@@ -62,3 +66,22 @@ def test_resolve_document_path_rejects_symlink_escape(monkeypatch, tmp_path):
 
     with pytest.raises(DocumentAccessError, match="Access denied"):
         resolve_document_path(str(link))
+
+
+def test_resolve_kb_reindex_directory_rejects_outside_root(monkeypatch, tmp_path):
+    allowed_root = tmp_path / "approved"
+    allowed_root.mkdir()
+    outside_root = tmp_path / "outside"
+    outside_root.mkdir()
+    monkeypatch.setattr(settings, "KB_REINDEX_ROOTS", str(allowed_root))
+
+    with pytest.raises(DocumentAccessError, match="KB_REINDEX_ROOTS"):
+        resolve_kb_reindex_directory(outside_root)
+
+
+def test_resolve_kb_reindex_directory_allows_approved_root(monkeypatch, tmp_path):
+    allowed_root = tmp_path / "approved"
+    allowed_root.mkdir()
+    monkeypatch.setattr(settings, "KB_REINDEX_ROOTS", str(allowed_root))
+
+    assert resolve_kb_reindex_directory(allowed_root) == allowed_root.resolve()

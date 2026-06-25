@@ -13,7 +13,9 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.core.config import settings
+from app.core.document_access import resolve_kb_reindex_directory
 from app.models.parser import ParsedDocument
+from app.parser.service import ALLOWED_EXTENSIONS
 
 logger = logging.getLogger(__name__)
 
@@ -369,53 +371,53 @@ class KnowledgeBaseService:
     # Reindex
     # ------------------------------------------------------------------
 
-    async def reindex_directory(self, directory: str) -> dict:
+    async def reindex_directory(self, directory: str | Path) -> dict:
         from app.parser import parse_file
 
-        root = Path(directory)
-        if not root.exists():
-            return {
-                "directory": directory,
-                "indexed": 0,
-                "errors": ["directory_not_found"],
-            }
+        root = resolve_kb_reindex_directory(directory)
         indexed = 0
         errors: list[str] = []
         for path in root.rglob("*"):
             if not path.is_file():
                 continue
             suffix = path.suffix.lower()
-            if suffix not in {".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".md"}:
+            if suffix not in ALLOWED_EXTENSIONS:
+                continue
+            resolved_path = path.resolve(strict=True)
+            try:
+                resolved_path.relative_to(root)
+            except ValueError:
+                errors.append(f"{path.name}: path_outside_reindex_root")
                 continue
             try:
-                parsed = parse_file(path.read_bytes(), path.name)
+                parsed = parse_file(resolved_path.read_bytes(), resolved_path.name)
                 await self.add_document(parsed)
                 indexed += 1
             except Exception as e:
                 errors.append(f"{path.name}: {e!s}")
         return {"directory": str(root), "indexed": indexed, "errors": errors}
 
-    def reindex_directory_sync(self, directory: str) -> dict:
+    def reindex_directory_sync(self, directory: str | Path) -> dict:
         """Synchronous reindex (vector-only, for non-async callers)."""
         from app.parser import parse_file
 
-        root = Path(directory)
-        if not root.exists():
-            return {
-                "directory": directory,
-                "indexed": 0,
-                "errors": ["directory_not_found"],
-            }
+        root = resolve_kb_reindex_directory(directory)
         indexed = 0
         errors: list[str] = []
         for path in root.rglob("*"):
             if not path.is_file():
                 continue
             suffix = path.suffix.lower()
-            if suffix not in {".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".md"}:
+            if suffix not in ALLOWED_EXTENSIONS:
+                continue
+            resolved_path = path.resolve(strict=True)
+            try:
+                resolved_path.relative_to(root)
+            except ValueError:
+                errors.append(f"{path.name}: path_outside_reindex_root")
                 continue
             try:
-                parsed = parse_file(path.read_bytes(), path.name)
+                parsed = parse_file(resolved_path.read_bytes(), resolved_path.name)
                 self._add_document_vector_only(parsed)
                 indexed += 1
             except Exception as e:

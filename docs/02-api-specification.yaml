@@ -1,6 +1,6 @@
-# DocSentinel — REST API 规范 | API Specification (OpenAPI 3.x)
-# 本文件为模板，请随实现补充完整并与 FastAPI 导出或手写保持一致。
-# This file is a template; complete and keep in sync with FastAPI or hand-written spec.
+# DocSentinel — historical REST API design draft
+# Deprecated: the authoritative, generated contract is docs/openapi.json.
+# Regenerate it with: python scripts/export_contracts.py
 
 openapi: 3.0.3
 info:

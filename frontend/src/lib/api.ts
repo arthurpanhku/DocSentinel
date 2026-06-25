@@ -1,5 +1,6 @@
 import type {
   ActivityEntry,
+  AgentIntegrationStatus,
   AssessmentPhase,
   AssessmentTask,
   KBChunk,
@@ -30,6 +31,10 @@ export async function getHealth() {
 
 export async function getLLMConfig() {
   return request<LLMConfig>("/config/llm");
+}
+
+export async function getAgentIntegrationStatus() {
+  return request<AgentIntegrationStatus>("/api/v1/integrations/agents/status");
 }
 
 export async function updateLLMConfig(input: {

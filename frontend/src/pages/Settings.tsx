@@ -1,7 +1,18 @@
 import { KeyRound, RefreshCw, Save, Server, Terminal } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
-import { Badge, Button, Card, CardHeader, ErrorNote, Field, Input, Select } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardHeader,
+  ErrorNote,
+  Field,
+  IconButton,
+  Input,
+  PageHeader,
+  Select
+} from "../components/ui";
 import { getHealth, getLLMConfig, updateLLMConfig } from "../lib/api";
 import type { LLMConfig } from "../types";
 
@@ -89,16 +100,15 @@ export default function Settings() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-xl font-semibold text-text">Settings</h1>
-          <p className="mt-1 text-sm text-muted">System health, LLM configuration, and local console runtime.</p>
-        </div>
-        <Button variant="quiet" onClick={() => void load()}>
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
+      <PageHeader
+        title="Settings"
+        description="Runtime health, model configuration, and local data boundaries."
+        actions={
+          <IconButton label="Refresh settings" onClick={() => void load()}>
+            <RefreshCw aria-hidden="true" />
+          </IconButton>
+        }
+      />
       <ErrorNote message={error} />
       {message ? <div className="rounded-md border border-good/30 bg-good/10 px-3 py-2 text-sm text-good">{message}</div> : null}
 

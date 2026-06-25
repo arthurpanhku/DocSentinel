@@ -59,4 +59,6 @@ fi
 
 echo -e "${GREEN}=== Deployment Complete! ===${NC}"
 echo -e "Access your services at:"
-echo -e "  - API Docs:  http://localhost:8000/docs"
+echo -e "  - Console:   http://localhost:8000/console"
+echo -e "  - API Docs:  http://localhost:8000/api-docs"
+echo -e "  - Health:    http://localhost:8000/health"

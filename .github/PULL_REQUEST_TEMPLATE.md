@@ -24,5 +24,8 @@
 ## Checklist | 检查项
 
 -   [ ] Tests pass locally (`pytest`)
+-   [ ] Frontend checks pass (`npm run check --prefix frontend`)
+-   [ ] Generated contracts are current (`make contracts-check`)
+-   [ ] Security boundaries and denied paths are covered where relevant
 -   [ ] Docs/README updated if needed
 -   [ ] No secrets or sensitive data in the diff

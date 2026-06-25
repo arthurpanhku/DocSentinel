@@ -14,12 +14,16 @@ jobs:
         python-version: ["3.10", "3.11"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
 
       - name: Install dependencies
         run: |
@@ -37,9 +41,42 @@ jobs:
       - name: Run tests
         run: pytest --cov=app --cov-report=xml --cov-report=term
 
+      - name: Verify generated contracts
+        run: python scripts/export_contracts.py --check
+
       # Optional: upload coverage to Codecov (enable if you use codecov.io)
       # - name: Upload coverage
       #   uses: codecov/codecov-action@v4
       #   if: matrix.python-version == '3.11'
       #   with:
       #     files: ./coverage.xml
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Verify generated API types
+        run: |
+          npm run api:generate --prefix frontend
+          git diff --exit-code -- frontend/src/api/schema.d.ts
+
+      - name: Check frontend
+        run: npm run check --prefix frontend
+
+      - name: Audit production frontend dependencies
+        run: npm audit --omit=dev --prefix frontend
+
+      - name: Build frontend
+        run: npm run build --prefix frontend

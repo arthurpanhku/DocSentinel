@@ -4,7 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { StatusBadge, taskTitle } from "../components/domain";
-import { Badge, Button, Card, CardHeader, EmptyState, ErrorNote } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardHeader,
+  EmptyState,
+  ErrorNote,
+  IconButton,
+  PageHeader
+} from "../components/ui";
 import { getActivity, getHealth, getLLMConfig, getRemediations, listAssessments } from "../lib/api";
 import { compactId, formatDate, severityRank } from "../lib/utils";
 import type { ActivityEntry, AssessmentTask, LLMConfig, TrackedRemediation } from "../types";
@@ -63,26 +72,25 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-xl font-semibold text-text">Command Center</h1>
-          <p className="mt-1 text-sm text-muted">Assessments, review queues, remediation work, and system status.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      <PageHeader
+        title="Command Center"
+        description="Assessment throughput, review demand, remediation work, and runtime status."
+        actions={
+          <>
           <Badge tone={health === "ok" ? "good" : "bad"}>API {health}</Badge>
           <Badge tone="accent">{llm ? `${llm.provider}: ${llm.model}` : "LLM unknown"}</Badge>
-          <Button onClick={() => void load()} variant="quiet" disabled={loading}>
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
+          <IconButton label="Refresh dashboard" onClick={() => void load()} disabled={loading}>
+            <RefreshCw aria-hidden="true" />
+          </IconButton>
           <Link to="/assessments">
             <Button>
               <FileCheck2 className="h-4 w-4" />
               New assessment
             </Button>
           </Link>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <ErrorNote message={error} />
 
