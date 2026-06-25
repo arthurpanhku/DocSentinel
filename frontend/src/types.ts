@@ -97,3 +97,15 @@ export interface LLMConfig {
     requires_api_key: boolean;
   }>;
 }
+
+type ApiAgentIntegrationStatus = Schemas["AgentIntegrationStatus"];
+
+export interface AgentIntegrationStatus
+  extends Omit<
+    ApiAgentIntegrationStatus,
+    "protocols" | "mcp_tools" | "a2a_skills"
+  > {
+  protocols: Schemas["AgentProtocolEndpoint"][];
+  mcp_tools: string[];
+  a2a_skills: string[];
+}

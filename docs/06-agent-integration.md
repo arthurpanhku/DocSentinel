@@ -1,114 +1,161 @@
-# Agent Integration Guide | 代理集成指南
+# Agent Integration Guide | Agent 集成指南
 
-DocSentinel supports the **Model Context Protocol (MCP)**, allowing it to be used as a "skill" or "tool" by other autonomous agents (like Claude Desktop, OpenClaw, or LangChain agents).
+DocSentinel supports complementary interoperability protocols:
 
-DocSentinel 支持 **Model Context Protocol (MCP)**，使其能够作为“技能”或“工具”被其他自主智能体（如 Claude Desktop、OpenClaw 或 LangChain Agent）调用。
+- **MCP** exposes narrow tools to coding agents and workflow platforms.
+- **A2A 1.0** exposes DocSentinel as a remote security-assessment agent.
 
----
+Both protocols use the same assessment task service as the REST API and React
+console. Agent submissions always require human review.
 
-## 🔌 Model Context Protocol (MCP)
+## Security Model | 安全模型
 
-DocSentinel exposes its core capabilities (document assessment and knowledge base retrieval) as an MCP Server.
+- Document paths must resolve inside `MCP_DOCUMENT_ROOTS`.
+- With an empty `AGENT_GATEWAY_TOKEN`, remote protocol endpoints accept
+  loopback clients only.
+- Network exposure requires a bearer token, TLS, and preferably an upstream
+  OIDC-aware proxy.
+- Protocol adapters do not return raw source documents. Assessment content may
+  still be sent to the configured LLM provider, so local/private LLM policy
+  remains important.
+- Agents can submit and inspect assessments, but cannot approve their own work.
 
-DocSentinel 将其核心能力（文档评估和知识库检索）作为 MCP Server 对外暴露。
+## MCP
 
-### Available Tools | 可用工具
+### Tools
 
-| Tool Name              | Description (English)                                              | 说明 (Chinese)                           | Inputs                                           |
-| :--------------------- | :----------------------------------------------------------------- | :--------------------------------------- | :----------------------------------------------- |
-| `assess_document`      | Analyze a security document (PDF/Word) and generate a risk report. Supports SSDLC stage selection. | 分析安全文档并生成风险报告。支持 SSDLC 阶段选择。 | `file_path` (str), `scenario_id` (str, optional), `ssdlc_stage` (str, optional) |
-| `query_knowledge_base` | Search the internal security policy database.                      | 检索内部安全策略数据库。                 | `query` (str), `top_k` (int, optional)           |
+| Tool | Purpose |
+| :--- | :--- |
+| `submit_document_assessment` | Submit a document asynchronously; returns the shared assessment task ID. |
+| `get_assessment_status` | Read task status and the available draft report. |
+| `query_knowledge_base` | Retrieve approved KB chunks, limited to 10 results. |
+| `get_agent_gateway_status` | Inspect enabled protocols and access mode. |
+| `assess_document` | Compatibility tool that waits for a draft assessment. |
 
-### 🚀 How to Use with Claude Desktop | 在 Claude Desktop 中使用
+### Local stdio
 
-1.  **Install DocSentinel**:
-    **安装 DocSentinel**：
-    ```bash
-    pip install docsentinel
-    # or install from source
-    # 或从源码安装
-    pip install -e .
-    ```
+Use stdio for Claude Desktop, Cursor, and other agents running on the same
+machine:
 
-2.  **Configure Claude Desktop**:
-    Edit your `claude_desktop_config.json` (usually in `~/Library/Application Support/Claude/` on macOS):
-
-    **配置 Claude Desktop**：
-    编辑 `claude_desktop_config.json`（macOS 上通常位于 `~/Library/Application Support/Claude/`）：
-
-    ```json
-    {
-      "mcpServers": {
-        "docsentinel-security": {
-          "command": "docsentinel-mcp",
-          "args": [],
-          "env": {
-            "OPENAI_API_KEY": "sk-...",
-            "CHROMA_PERSIST_DIR": "/absolute/path/to/data/chroma",
-            "MCP_DOCUMENT_ROOTS": "/absolute/path/to/approved/documents"
-          }
-        }
+```json
+{
+  "mcpServers": {
+    "docsentinel": {
+      "command": "/path/to/DocSentinel/.venv/bin/python",
+      "args": ["/path/to/DocSentinel/app/mcp_server.py"],
+      "env": {
+        "MCP_DOCUMENT_ROOTS": "/absolute/path/to/approved/documents",
+        "LLM_PROVIDER": "ollama"
       }
     }
-    ```
-
-3.  **Restart Claude Desktop**. You can now ask Claude:
-    > "Check the security design document at `/Users/me/docs/design.pdf` for compliance risks using DocSentinel at the Design stage."
-    >
-    > "Assess this SAST report against our testing standards — use the Testing SSDLC stage."
-
-    **重启 Claude Desktop**。现在你可以问 Claude：
-    > "使用 DocSentinel 的设计阶段检查 `/Users/me/docs/design.pdf` 的安全合规风险。"
-    >
-    > "评估这份 SAST 报告——使用测试阶段的 SSDLC 技能。"
-
-    `assess_document` will only read files inside `MCP_DOCUMENT_ROOTS`.
-    Configure this variable to the document folders you want the MCP server to
-    access. Use `:` to separate multiple roots on macOS/Linux, or `;` on Windows.
-    If unset, the server only allows `./examples`.
-
-    `assess_document` 只会读取 `MCP_DOCUMENT_ROOTS` 内的文件。请将该变量配置为
-    允许 MCP server 访问的文档目录。macOS/Linux 使用 `:` 分隔多个目录，Windows 使用
-    `;`。如果未设置，server 默认只允许读取 `./examples`。
-
-### 🤖 How to Use with OpenClaw / LangChain | 在 OpenClaw / LangChain 中使用
-
-Since DocSentinel implements the standard MCP protocol, any MCP-compliant client can connect to it.
-
-由于 DocSentinel 实现了标准的 MCP 协议，任何兼容 MCP 的客户端均可连接。
-
-**Example (Python Client):**
-
-```python
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-
-server_params = StdioServerParameters(
-    command="docsentinel-mcp",
-    args=[],
-    env={
-        "OPENAI_API_KEY": "sk-...",
-        "MCP_DOCUMENT_ROOTS": "/absolute/path/to/approved/documents",
-    }
-)
-
-async with stdio_client(server_params) as (read, write):
-    async with ClientSession(read, write) as session:
-        # List tools
-        tools = await session.list_tools()
-        
-        # Call assessment tool
-        result = await session.call_tool(
-            "assess_document",
-            arguments={"file_path": "/path/to/doc.pdf"}
-        )
-        print(result.content)
+  }
+}
 ```
 
----
+Use `:` to separate multiple roots on macOS/Linux, or `;` on Windows.
 
-## 🤝 OpenClaw Integration | OpenClaw 集成
+### Streamable HTTP
 
-(Coming Soon: Direct integration guide via OpenClaw's standardized agent interface registry.)
+When FastAPI is running, the MCP endpoint is:
 
-（即将推出：通过 OpenClaw 标准化代理接口注册表的直接集成指南。）
+```text
+http://localhost:8000/mcp/
+```
+
+For access from another host:
+
+```dotenv
+AGENT_GATEWAY_TOKEN=generate-a-long-random-value
+AGENT_GATEWAY_PUBLIC_URL=https://docsentinel.internal.example
+AGENT_GATEWAY_ALLOWED_HOSTS=docsentinel.internal.example
+AGENT_GATEWAY_ALLOWED_ORIGINS=https://trusted-agent-console.internal.example
+```
+
+Clients must send:
+
+```http
+Authorization: Bearer <AGENT_GATEWAY_TOKEN>
+```
+
+Use the MCP Inspector or a conforming client to initialize the connection and
+discover tools. The endpoint is not a conventional REST API. Keep the Host and
+Origin allow-lists narrow: they are part of MCP's DNS-rebinding protection and
+must match the deployment URL used by clients.
+
+Docker bridge traffic is not loopback traffic from the container's perspective.
+Set `AGENT_GATEWAY_TOKEN` when connecting to MCP or A2A through a published
+container port.
+
+## A2A 1.0
+
+Agent discovery:
+
+```text
+http://localhost:8000/.well-known/agent-card.json
+```
+
+JSON-RPC endpoint:
+
+```text
+http://localhost:8000/a2a
+```
+
+The Agent Card advertises three skills:
+
+- `assess_security_document`
+- `get_security_assessment`
+- `query_security_knowledge`
+
+A2A message text must contain a JSON object.
+
+Submit an approved server-side document:
+
+```json
+{
+  "operation": "assess_document",
+  "file_path": "./examples/security-design.md",
+  "phase": "design",
+  "scenario_id": "architecture-review",
+  "skill_id": "ssdlc-design"
+}
+```
+
+Retrieve the shared task:
+
+```json
+{
+  "operation": "get_assessment",
+  "task_id": "assessment-task-id"
+}
+```
+
+Query security knowledge:
+
+```json
+{
+  "operation": "query_knowledge_base",
+  "query": "PCI DSS privileged access requirements",
+  "top_k": 3
+}
+```
+
+This first A2A slice references documents already present in an approved
+server-side root. Cross-host uploads will use opaque document handles in a
+future phase rather than granting agents broader filesystem access.
+
+## Operations
+
+The React console exposes protocol state at:
+
+```text
+http://localhost:8000/console/integrations
+```
+
+The machine-readable status endpoint is:
+
+```text
+GET /api/v1/integrations/agents/status
+```
+
+Use logs and assessment activity records to trace which entry point created a
+task (`rest`, `mcp`, or `a2a`).

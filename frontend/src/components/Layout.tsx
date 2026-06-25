@@ -6,6 +6,7 @@ import {
   Gauge,
   ListChecks,
   Menu,
+  Network,
   Settings,
   ShieldCheck,
   X,
@@ -28,6 +29,7 @@ const navItems: NavItem[] = [
   { to: "/assessments", label: "Assessments", icon: ListChecks },
   { to: "/kb", label: "Knowledge Base", icon: Database },
   { to: "/skills", label: "Skills", icon: BrainCircuit },
+  { to: "/integrations", label: "Agent Integrations", icon: Network },
   { to: "/settings", label: "Settings", icon: Settings }
 ];
 

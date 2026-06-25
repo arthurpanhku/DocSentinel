@@ -106,19 +106,27 @@ File paths are not ordinary strings. A caller-controlled path asks the server pr
 
 ### MCP and Agent Tools | MCP 与 Agent 工具
 
-MCP tools are security boundaries because an agent may call them based on user input or prompt-injected instructions.
+MCP tools and A2A messages are security boundaries because an agent may call them based on user input or prompt-injected instructions.
 
 -   Keep tool scopes narrow and explicit.
 -   Prefer IDs, handles, or uploaded document references over arbitrary local paths.
 -   If a tool must touch local files, require an allow-root and document the expected configuration.
+-   Keep tokenless remote protocols confined to loopback. Require `AGENT_GATEWAY_TOKEN`, TLS, and an upstream identity layer before network exposure.
+-   Keep MCP DNS-rebinding protection enabled. Set `AGENT_GATEWAY_ALLOWED_HOSTS` and `AGENT_GATEWAY_ALLOWED_ORIGINS` to the smallest production allow-lists that work.
+-   Do not let an agent disable collaborative review or approve its own assessment.
+-   Treat MCP tools as bounded capabilities and A2A as task delegation; both must call the same application service and policy checks.
 -   Return minimal error details; do not echo sensitive paths or content.
 -   Assume tool output may be visible to the caller and may be copied into an LLM transcript.
 
-MCP 工具是安全边界，因为 agent 可能基于用户输入或 prompt injection 指令调用工具。
+MCP 工具和 A2A 消息都是安全边界，因为 agent 可能基于用户输入或 prompt injection 指令调用它们。
 
 -   保持工具作用域小而明确。
 -   优先使用 ID、handle 或上传文档引用，而不是任意本地路径。
 -   如果工具必须访问本地文件，必须要求允许根目录并记录配置方式。
+-   未配置 token 时，远程协议只能绑定本机回环地址。对网络开放前必须配置 `AGENT_GATEWAY_TOKEN`、TLS 和上游身份认证。
+-   保持 MCP DNS rebinding 防护开启，并将 `AGENT_GATEWAY_ALLOWED_HOSTS`、`AGENT_GATEWAY_ALLOWED_ORIGINS` 收敛到最小可信范围。
+-   不允许 agent 关闭协作评审，也不允许 agent 审批自己的评估结果。
+-   MCP 用于受限工具能力，A2A 用于任务委派；两者必须复用相同的应用服务和策略检查。
 -   返回最小必要错误信息；不要回显敏感路径或内容。
 -   假设工具输出会被调用者看到，也可能进入 LLM transcript。
 

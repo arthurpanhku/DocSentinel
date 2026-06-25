@@ -1,6 +1,92 @@
 {
   "components": {
     "schemas": {
+      "AgentIntegrationStatus": {
+        "properties": {
+          "a2a_skills": {
+            "items": {
+              "type": "string"
+            },
+            "title": "A2A Skills",
+            "type": "array"
+          },
+          "access_mode": {
+            "enum": [
+              "loopback_only",
+              "bearer_token",
+              "disabled"
+            ],
+            "title": "Access Mode",
+            "type": "string"
+          },
+          "data_boundary": {
+            "default": "Agent protocols do not return raw documents. Configured LLM data policy still applies.",
+            "title": "Data Boundary",
+            "type": "string"
+          },
+          "document_roots_configured": {
+            "default": 0,
+            "title": "Document Roots Configured",
+            "type": "integer"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "mcp_tools": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Mcp Tools",
+            "type": "array"
+          },
+          "protocols": {
+            "items": {
+              "$ref": "#/components/schemas/AgentProtocolEndpoint"
+            },
+            "title": "Protocols",
+            "type": "array"
+          }
+        },
+        "required": [
+          "enabled",
+          "access_mode"
+        ],
+        "title": "AgentIntegrationStatus",
+        "type": "object"
+      },
+      "AgentProtocolEndpoint": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "endpoint": {
+            "title": "Endpoint",
+            "type": "string"
+          },
+          "protocol": {
+            "enum": [
+              "mcp",
+              "a2a"
+            ],
+            "title": "Protocol",
+            "type": "string"
+          },
+          "transport": {
+            "title": "Transport",
+            "type": "string"
+          }
+        },
+        "required": [
+          "protocol",
+          "transport",
+          "endpoint",
+          "enabled"
+        ],
+        "title": "AgentProtocolEndpoint",
+        "type": "object"
+      },
       "AssessmentReport": {
         "properties": {
           "compliance_gaps": {
@@ -2097,6 +2183,27 @@
         "summary": "Review Assessment",
         "tags": [
           "assessments"
+        ]
+      }
+    },
+    "/api/v1/integrations/agents/status": {
+      "get": {
+        "operationId": "get_agent_integration_status_api_v1_integrations_agents_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentIntegrationStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Agent Integration Status",
+        "tags": [
+          "integrations"
         ]
       }
     },

@@ -157,6 +157,15 @@ See `.env.example` for the template.
 | `UPLOAD_MAX_FILES`        | Max files per req | 10      |
 | `KB_REINDEX_ROOTS`        | Server directories allowed for KB reindex | `./examples` |
 | `MCP_DOCUMENT_ROOTS`      | Directories accessible to MCP document tools | `./examples` |
+| `AGENT_GATEWAY_ENABLED` | Enable remote MCP and A2A endpoints | `true` |
+| `AGENT_GATEWAY_TOKEN` | Bearer token for remote agent access; empty means loopback-only | empty |
+| `AGENT_GATEWAY_PUBLIC_URL` | Public base URL advertised by the A2A Agent Card | `http://localhost:8000` |
+| `AGENT_GATEWAY_ALLOWED_HOSTS` | MCP Host allow-list; add the exact deployment host and port | local hosts |
+| `AGENT_GATEWAY_ALLOWED_ORIGINS` | MCP browser Origin allow-list; add trusted web origins only | local origins |
+| `AGENT_GATEWAY_TASK_TIMEOUT_SECONDS` | Compatibility MCP wait timeout | `300` |
+
+When running through Docker or a reverse proxy, configure
+`AGENT_GATEWAY_TOKEN`; forwarded traffic is not considered loopback.
 
 ### 4.6 Parser Engine
 

@@ -78,7 +78,10 @@ Ideal for enterprises that need to scale security assessments across many projec
 
 ## Architecture
 
-DocSentinel is built on a **React Console** plus **FastAPI/MCP** access layer, with **LangGraph** for stateful agent orchestration and **LangChain** for unified LLM access. Six phase-specific agents are coordinated by a graph-based state machine with cross-phase context sharing. The orchestrator coordinates parsing, SSDLC stage routing, the knowledge base (RAG), skills, and the LLM. You can use cloud or local LLMs and optional integrations (e.g. AAD, ServiceNow) as your environment requires.
+DocSentinel is built on a **React Console** plus **FastAPI, MCP, and A2A**
+access layer, with **LangGraph** for stateful agent orchestration and
+**LangChain** for unified LLM access. REST and agent protocols share one task
+lifecycle and mandatory human-review policy.
 
 ![DocSentinel Architecture](docsentinel_architecture.png)
 
@@ -89,7 +92,10 @@ flowchart TB
     subgraph Access["Access Layer"]
         Console["React Console<br/>(Vite + Tailwind)"]
         API["REST API<br/>(FastAPI)"]
-        MCP["MCP Server<br/>(stdio)"]
+        Gateway["Agent Gateway"]
+        MCP["MCP<br/>(stdio + HTTP)"]
+        A2A["A2A 1.0<br/>(JSON-RPC)"]
+        Tasks["Shared Assessment Service"]
     end
     subgraph Orchestration["SSDLC Orchestration (LangGraph)"]
         Router["Phase Router"]
@@ -117,9 +123,10 @@ flowchart TB
     User --> Console
     User --> API
     Console --> API
-    User --> MCP
-    API --> Router
-    MCP --> Router
+    User --> MCP & A2A
+    MCP & A2A --> Gateway
+    API & Gateway --> Tasks
+    Tasks --> Router
     Router --> A1 & A2 & A3 & A4 & A5 & A6
     A1 & A2 & A3 & A4 & A5 & A6 --> KB & Parser & Skill
     A1 & A2 & A3 & A4 & A5 & A6 --> Abst
@@ -182,9 +189,10 @@ Cursor, OpenClaw) through MCP.
 
 ---
 
-## Agent Integration (MCP)
+## Agent Integration (MCP + A2A)
 
-Connect DocSentinel to **Claude Desktop**, **Cursor**, or **OpenClaw** to use it as a powerful SSDLC security skill.
+Use MCP to expose bounded tools to Claude Desktop, Cursor, coding agents, and
+workflow platforms. Use A2A to expose DocSentinel as a remote specialist agent.
 
 ### What can it do?
 Once connected, you can ask your AI agent:
@@ -217,6 +225,10 @@ Add to your `claude_desktop_config.json`:
 `assess_document` only reads files inside `MCP_DOCUMENT_ROOTS`. Use `:` to
 separate multiple roots on macOS/Linux, or `;` on Windows. If unset, the
 server only allows `./examples`.
+
+FastAPI also serves Streamable HTTP MCP at `/mcp/` and publishes the A2A Agent
+Card at `/.well-known/agent-card.json`. Tokenless protocol access is
+loopback-only; configure `AGENT_GATEWAY_TOKEN` before network exposure.
 
 #### 2. Cursor
 1. Go to **Settings > Features > MCP**.

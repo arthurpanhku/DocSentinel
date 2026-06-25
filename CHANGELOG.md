@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- MCP Streamable HTTP and A2A 1.0 JSON-RPC agent endpoints backed by a shared
+  assessment task service and visible in the Agent Integrations console.
+- Loopback-only defaults, optional bearer protection, A2A Agent Card discovery,
+  and protocol-level integration tests.
 - Generated OpenAPI and assessment JSON Schema contracts with TypeScript client
   types derived from the FastAPI application.
 - Frontend query provider, accessible mobile navigation, icon tooltips, component
@@ -16,6 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - v5 product trust RFC and architecture, evidence-model, and frontend-design ADRs.
 
 ### Changed
+- Unified REST, MCP, and A2A assessment submissions behind one task lifecycle;
+  agent submissions always require human review.
 - Updated the assessment report model to the v2 contract, including finding-level
   evidence references, threat models, vulnerabilities, and cross-phase references.
 - Moved FastAPI Swagger UI to `/api-docs` and restricted CORS to configured local

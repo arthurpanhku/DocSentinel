@@ -30,7 +30,10 @@ DocSentinel is an **AI-powered SSDLC (Secure Software Development Lifecycle) pla
 
 ## High-Level Architecture | 高层架构
 
-The system is organized in layers: **React Console / Access** → **SSDLC Orchestration (LangGraph)** → **Core Services (KB, Parser, Memory, Skills)** → **LLM Abstraction (LangChain)** → **LLM Backends**. External integrations (AAD, ServiceNow, SAST/DAST tools) connect at the access and orchestration boundaries.
+The system is organized in layers: **React Console / REST / Agent Gateway** →
+**Shared Assessment Service** → **SSDLC Orchestration (LangGraph)** → **Core
+Services** → **LLM Abstraction** → **LLM Backends**. MCP and A2A are adapters,
+not alternate paths around application policy.
 
 ![DocSentinel Architecture Overview](docsentinel_architecture.png)
 
@@ -40,12 +43,15 @@ The system is organized in layers: **React Console / Access** → **SSDLC Orches
 flowchart TB
     subgraph Users["Users"]
         Staff["Security Staff"]
-        APIUser["API / CI-CD / MCP"]
+        APIUser["API / CI-CD / External Agents"]
     end
     subgraph Access["Access Layer"]
         Console["React Console\n(Vite + Tailwind)"]
         API["REST API\n(FastAPI)"]
-        MCP["MCP Server\n(stdio)"]
+        Gateway["Agent Gateway"]
+        MCP["MCP\n(stdio + HTTP)"]
+        A2A["A2A 1.0\n(JSON-RPC)"]
+        Tasks["Shared Assessment\nService"]
     end
     subgraph Orchestration["SSDLC Orchestration (LangGraph)"]
         Router["Phase Router"]
@@ -83,8 +89,12 @@ flowchart TB
     Console --> API
     APIUser --> API
     APIUser --> MCP
-    API --> Router
-    MCP --> Router
+    APIUser --> A2A
+    MCP --> Gateway
+    A2A --> Gateway
+    API --> Tasks
+    Gateway --> Tasks
+    Tasks --> Router
     Router --> A1
     Router --> A2
     Router --> A3
@@ -166,7 +176,11 @@ stateDiagram-v2
 ### 1. Access Layer | 接入层
 
 -   **REST API** (FastAPI): Request validation, routing to SSDLC assessment / KB / health / skills endpoints. Phase-aware endpoints (e.g. `POST /assessments/{phase}`).
--   **MCP Server** (Model Context Protocol): Standard stdio interface for autonomous agents (Claude Desktop, Cursor, OpenClaw) to discover and call SSDLC tools.
+-   **Agent Gateway**: MCP stdio/Streamable HTTP and A2A 1.0 JSON-RPC adapters.
+    Tokenless remote access is loopback-only; all agent submissions require
+    human review.
+-   **Shared Assessment Service**: Owns task state, activity, remediation
+    tracking, and calls into LangGraph for REST, MCP, and A2A alike.
 -   **React Console**: FastAPI serves the production Vite build at `/console`; the
     console covers assessment, evidence, knowledge-base, skill, and runtime workflows.
 -   **Current boundary**: Authentication (AAD/JWT), tenant isolation, and rate limiting

@@ -38,6 +38,7 @@ lightrag-hku>=1.0.0
 # HTTP & async
 httpx>=0.26.0
 mcp>=1.0.0
+a2a-sdk[fastapi]==1.1.0
 
 # Utils
 python-multipart>=0.0.6

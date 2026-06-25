@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import Layout from "./components/Layout";
+import AgentIntegrations from "./pages/AgentIntegrations";
 import Assessments from "./pages/Assessments";
 import Dashboard from "./pages/Dashboard";
 import KnowledgeBase from "./pages/KnowledgeBase";
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="assessments" element={<Assessments />} />
         <Route path="kb" element={<KnowledgeBase />} />
         <Route path="skills" element={<Skills />} />
+        <Route path="integrations" element={<AgentIntegrations />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

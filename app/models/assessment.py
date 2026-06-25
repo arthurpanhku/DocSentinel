@@ -167,3 +167,19 @@ class AssessmentTaskResult(BaseModel):
     version: int = 1
     assignee: str | None = None
     comments: list[dict] = Field(default_factory=list)
+
+
+class RemediationTracking(BaseModel):
+    remediation_id: str
+    status: Literal["open", "in_progress", "resolved", "verified", "closed"] = "open"
+    owner: str | None = None
+    due_at: datetime | None = None
+    external_ticket: str | None = None
+    notes: str | None = None
+    evidence_refs: list[str] = Field(default_factory=list)
+    updated_at: datetime | None = None
+
+
+class TrackedRemediation(BaseModel):
+    remediation: Remediation
+    tracking: RemediationTracking

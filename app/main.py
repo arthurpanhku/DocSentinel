@@ -4,7 +4,7 @@ PRD §5; docs/01-architecture-and-tech-stack.md.
 """
 
 import asyncio
-from contextlib import asynccontextmanager, suppress
+from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -13,9 +13,12 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
 
-from app.api import assessments, health, kb, skills
+from app.agent_gateway.a2a import a2a_routes
+from app.agent_gateway.security import AgentGatewayAuthMiddleware
+from app.api import assessments, health, integrations, kb, skills
 from app.core.config import settings
 from app.kb.service import get_kb_service
+from app.mcp_server import mcp
 
 
 class SPAStaticFiles(StaticFiles):
@@ -31,13 +34,16 @@ class SPAStaticFiles(StaticFiles):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     sync_task = None
-    if settings.KB_AUTO_SYNC_INTERVAL_SECONDS > 0:
-        sync_task = asyncio.create_task(_kb_auto_sync_loop())
-    yield
-    if sync_task:
-        sync_task.cancel()
-        with suppress(asyncio.CancelledError):
-            await sync_task
+    async with AsyncExitStack() as stack:
+        if settings.AGENT_GATEWAY_ENABLED:
+            await stack.enter_async_context(mcp.session_manager.run())
+        if settings.KB_AUTO_SYNC_INTERVAL_SECONDS > 0:
+            sync_task = asyncio.create_task(_kb_auto_sync_loop())
+        yield
+        if sync_task:
+            sync_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await sync_task
 
 
 async def _kb_auto_sync_loop():
@@ -51,6 +57,7 @@ app = FastAPI(
     title="DocSentinel API",
     version="4.2.0",
     description="Automated Security Assessment with LLMs & RAG",
+    lifespan=lifespan,
     docs_url="/api-docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
@@ -63,14 +70,19 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Mcp-Session-Id"],
 )
+app.add_middleware(AgentGatewayAuthMiddleware)
 
 app.include_router(health.router)
 app.include_router(assessments.router, prefix=settings.API_PREFIX)
 app.include_router(kb.router, prefix=settings.API_PREFIX)
+app.include_router(integrations.router, prefix=settings.API_PREFIX)
 app.include_router(
     skills.router, prefix=f"{settings.API_PREFIX}/skills", tags=["skills"]
 )
+app.router.routes.extend(a2a_routes)
+app.mount("/mcp", mcp.streamable_http_app(), name="mcp")
 
 # Mount docs directory for demo purposes
 if Path("docs").exists():
@@ -91,6 +103,8 @@ async def root():
         "service": "DocSentinel",
         "console": "/console",
         "api_docs": "/api-docs",
+        "mcp": "/mcp/",
+        "a2a_agent_card": "/.well-known/agent-card.json",
         "demo": "/docs/demo.html",
         "health": "/health",
     }

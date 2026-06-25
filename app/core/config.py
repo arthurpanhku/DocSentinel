@@ -84,6 +84,17 @@ class Settings(BaseSettings):
     # MCP document access. Colon-separated on macOS/Linux, semicolon on Windows.
     MCP_DOCUMENT_ROOTS: str = "./examples"
 
+    # Agent interoperability gateway. Without a token, protocol endpoints only
+    # accept loopback clients.
+    AGENT_GATEWAY_ENABLED: bool = True
+    AGENT_GATEWAY_TOKEN: str = ""
+    AGENT_GATEWAY_PUBLIC_URL: str = "http://localhost:8000"
+    AGENT_GATEWAY_ALLOWED_HOSTS: str = "127.0.0.1:*,localhost:*,[::1]:*"
+    AGENT_GATEWAY_ALLOWED_ORIGINS: str = (
+        "http://127.0.0.1:*,http://localhost:*"
+    )
+    AGENT_GATEWAY_TASK_TIMEOUT_SECONDS: int = 300
+
     @property
     def upload_max_bytes(self) -> int:
         return self.UPLOAD_MAX_FILE_SIZE_MB * 1024 * 1024
@@ -92,6 +103,22 @@ class Settings(BaseSettings):
     def cors_origins(self) -> list[str]:
         return [
             value.strip() for value in self.CORS_ORIGINS.split(",") if value.strip()
+        ]
+
+    @property
+    def agent_gateway_allowed_hosts(self) -> list[str]:
+        return [
+            value.strip()
+            for value in self.AGENT_GATEWAY_ALLOWED_HOSTS.split(",")
+            if value.strip()
+        ]
+
+    @property
+    def agent_gateway_allowed_origins(self) -> list[str]:
+        return [
+            value.strip()
+            for value in self.AGENT_GATEWAY_ALLOWED_ORIGINS.split(",")
+            if value.strip()
         ]
 
 
