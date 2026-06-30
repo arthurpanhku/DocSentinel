@@ -10,6 +10,9 @@
 #   docker compose exec ollama ollama pull llama2
 #
 # Open http://localhost:8000/console and http://localhost:8000/api-docs
+#
+# Optional infra profile:
+#   docker compose --profile full up -d
 
 services:
   app:
@@ -28,8 +31,43 @@ services:
       - AGENT_GATEWAY_PUBLIC_URL=${AGENT_GATEWAY_PUBLIC_URL:-http://localhost:8000}
       - AGENT_GATEWAY_ALLOWED_HOSTS=${AGENT_GATEWAY_ALLOWED_HOSTS:-localhost:8000,127.0.0.1:8000}
       - AGENT_GATEWAY_ALLOWED_ORIGINS=${AGENT_GATEWAY_ALLOWED_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000}
+      - REDIS_URL=${REDIS_URL:-}
+      - ENABLE_METRICS=${ENABLE_METRICS:-false}
     volumes:
       - docsentinel-data:/data
 
+  postgres:
+    profiles: ["full"]
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-docsentinel}
+      - POSTGRES_USER=${POSTGRES_USER:-docsentinel}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-docsentinel}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-docsentinel}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    profiles: ["full"]
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   docsentinel-data:
+  postgres-data:
+  redis-data:

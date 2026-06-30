@@ -68,6 +68,16 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
+def _configure_optional_infrastructure(application: FastAPI) -> None:
+    if settings.REDIS_URL:
+        application.state.redis_url = settings.REDIS_URL
+    if settings.ENABLE_METRICS:
+        with suppress(ImportError):
+            from prometheus_fastapi_instrumentator import Instrumentator
+
+            Instrumentator().instrument(application).expose(application)
+
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -78,6 +88,7 @@ app.add_middleware(
     expose_headers=["Mcp-Session-Id"],
 )
 app.add_middleware(AgentGatewayAuthMiddleware)
+_configure_optional_infrastructure(app)
 
 app.include_router(health.router)
 app.include_router(assessments.router, prefix=settings.API_PREFIX)

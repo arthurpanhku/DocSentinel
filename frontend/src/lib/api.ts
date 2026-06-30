@@ -12,8 +12,19 @@ import type {
 
 const trimSlash = (value: string) => value.replace(/\/$/, "");
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, init);
+export const API_BASE =
+  typeof import.meta.env.VITE_API_URL === "string" && import.meta.env.VITE_API_URL.trim()
+    ? trimSlash(import.meta.env.VITE_API_URL.trim())
+    : "/api/v1";
+
+export function apiPath(path: string) {
+  if (/^https?:\/\//.test(path)) return path;
+  if (path.startsWith("/api/v1")) return `${API_BASE}${path.slice("/api/v1".length)}`;
+  return path;
+}
+
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(apiPath(path), init);
   if (!response.ok) {
     const text = await response.text();
     throw new Error(text || response.statusText);

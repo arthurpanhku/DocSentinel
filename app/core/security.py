@@ -1,6 +1,8 @@
+from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import bcrypt as bcrypt_backend
 from fastapi import HTTPException, status
 from jose import jwt
 from passlib.context import CryptContext
@@ -11,6 +13,26 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+
+def _bcrypt_secret(password: str) -> bytes:
+    return password.encode("utf-8")[:72]
+
+
+def _bcrypt_hash(password: str) -> str:
+    return bcrypt_backend.hashpw(
+        _bcrypt_secret(password),
+        bcrypt_backend.gensalt(),
+    ).decode("utf-8")
+
+
+def _bcrypt_verify(plain_password: str, hashed_password: str) -> bool:
+    with suppress(ValueError, TypeError):
+        return bcrypt_backend.checkpw(
+            _bcrypt_secret(plain_password),
+            hashed_password.encode("utf-8"),
+        )
+    return False
 
 
 def create_access_token(subject: str | Any, expires_delta: timedelta = None) -> str:
@@ -26,11 +48,17 @@ def create_access_token(subject: str | Any, expires_delta: timedelta = None) -> 
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except ValueError:
+        return _bcrypt_verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    try:
+        return pwd_context.hash(password)
+    except ValueError:
+        return _bcrypt_hash(password)
 
 
 def ensure_role(user: Any, *roles: str) -> Any:

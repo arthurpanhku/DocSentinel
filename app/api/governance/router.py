@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from . import (
     admin,
+    auth,
     controls,
     projects,
     questionnaire,
@@ -12,6 +13,7 @@ from . import (
 )
 
 router = APIRouter()
+router.include_router(auth.router)
 router.include_router(schemas.router)
 router.include_router(projects.router)
 router.include_router(controls.router)

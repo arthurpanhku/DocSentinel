@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BrainCircuit,
   Database,
+  FolderKanban,
   Gauge,
   ListChecks,
   Menu,
@@ -27,6 +28,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { to: "/", label: "Dashboard", icon: Gauge },
   { to: "/assessments", label: "Assessments", icon: ListChecks },
+  { to: "/governance", label: "Governance", icon: FolderKanban },
   { to: "/kb", label: "Knowledge Base", icon: Database },
   { to: "/skills", label: "Skills", icon: BrainCircuit },
   { to: "/integrations", label: "Agent Integrations", icon: Network },
