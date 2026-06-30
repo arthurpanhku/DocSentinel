@@ -260,6 +260,16 @@ def test_resolve_citations_history_prefix_in_evidence_link():
     assert citations[0].evidence_link.startswith("history://")
 
 
+def test_graph_registry_exports_assessment_mermaid():
+    from app.agent.graph.graph_topology import GRAPH_REGISTRY
+
+    assert "docsentinel_assessment" in GRAPH_REGISTRY
+    compiled = GRAPH_REGISTRY["docsentinel_assessment"][1]()
+    mermaid = compiled.get_graph(xray=True).draw_mermaid()
+    assert "draft_assessment" in mermaid
+    assert "persist_gate3_control_evidence" in mermaid
+
+
 @pytest.mark.asyncio
 async def test_citations_from_reviewer_output_used_over_fallback():
     """Reviewer chunk_id sources become the report citations."""
@@ -309,6 +319,68 @@ async def test_citations_from_reviewer_output_used_over_fallback():
     assert len(report.sources) == 1
     assert report.sources[0].file == "policy.pdf"
     assert report.sources[0].excerpt == "Access tokens must expire within 1 hour."
+
+
+@pytest.mark.asyncio
+async def test_langgraph_assessment_persists_gate3_control_evidence(
+    monkeypatch,
+    tmp_path,
+):
+    from sqlmodel import Session, SQLModel, create_engine, select
+
+    from app.agent.graph import assessment_graph
+    from app.models.governance import ControlEvidenceItem, ControlInstance, Project
+
+    engine = create_engine(
+        f"sqlite:///{tmp_path / 'graph.db'}",
+        connect_args={"check_same_thread": False},
+    )
+    SQLModel.metadata.create_all(engine)
+    project_id = uuid4()
+    with Session(engine) as session:
+        session.add(Project(id=project_id, name="Graph project"))
+        session.commit()
+
+    monkeypatch.setattr(assessment_graph, "_session_factory", lambda: Session(engine))
+
+    skill = _make_skill()
+    reviewer_response = """
+    {
+      "summary": "Gate 3 evidence generated",
+      "confidence": 0.82,
+      "risk_items": [],
+      "compliance_gaps": [
+        {
+          "control_or_clause": "SCD-001",
+          "gap_description": "Threat model evidence is incomplete.",
+          "evidence_suggestion": "Attach approved threat model.",
+          "framework": "generic-ssdlc",
+          "confidence": 0.8
+        }
+      ],
+      "remediations": []
+    }
+    """
+
+    with _patch_deps(skill, llm_response=reviewer_response):
+        report = await run_assessment(
+            uuid4(),
+            [_make_doc("Threat model is pending review.")],
+            project_id=str(project_id),
+            phase="design",
+            skill_id="test-skill",
+        )
+
+    with Session(engine) as session:
+        controls = session.exec(select(ControlInstance)).all()
+        evidence_items = session.exec(select(ControlEvidenceItem)).all()
+
+    assert report.summary == "Gate 3 evidence generated"
+    assert len(controls) == 1
+    assert controls[0].control_id == "SCD-001"
+    assert controls[0].status == "evidence_submitted"
+    assert len(evidence_items) == 1
+    assert evidence_items[0].control_instance_id == controls[0].id
 
 
 # ---------------------------------------------------------------------------

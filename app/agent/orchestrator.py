@@ -6,10 +6,10 @@ import asyncio
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
-from app.agent.skills_service import get_skill_service
+from app.agent.skills_service import get_skill_service  # noqa: F401
 from app.core.config import settings
 from app.kb.service import get_kb_service
 from app.llm.base import invoke_llm
@@ -117,65 +117,15 @@ async def run_assessment(
     phase: str | None = None,
     skill_id: str | None = None,
 ) -> AssessmentReport:
-    skill_service = get_skill_service()
-    skill = skill_service.get_skill(skill_id) if skill_id else None
-    if not skill:
-        logger.warning(
-            "No skill_id provided or skill not found; "
-            "defaulting to first built-in skill."
-        )
-        skill = skill_service.list_skills()[0]
+    from app.agent.graph.assessment_graph import run_assessment_graph
 
-    doc_context = _build_document_context(
-        parsed_documents, skill_focus=skill.risk_focus
-    )
-
-    # KB lookup and evidence extraction are independent — run in parallel.
-    policy_future = _policy_and_history_agent(
-        doc_context["query_seed"],
-        skill_focus=skill.risk_focus,
-    )
-    evidence_future = _evidence_agent(parsed_documents, skill.risk_focus)
-    (policy_chunks, history_chunks), evidence_context = await asyncio.gather(
-        policy_future,
-        evidence_future,
-    )
-
-    full_text = doc_context["full_text"]
-    if len(full_text) > _LARGE_DOC_THRESHOLD:
-        draft_raw = await _draft_large_document(
-            full_text,
-            policy_chunks,
-            history_chunks,
-            skill=skill,
-        )
-    else:
-        draft_raw = await _drafter_agent(
-            full_text,
-            policy_chunks,
-            history_chunks,
-            skill=skill,
-        )
-
-    reviewed_raw = await _reviewer_agent(
-        draft_raw,
-        evidence_context,
-        policy_chunks,
-        history_chunks,
-        skill=skill,
-    )
-
-    chunk_lookup = _build_chunk_lookup(policy_chunks, history_chunks)
-    return _parse_llm_output_to_report(
-        raw=reviewed_raw,
+    return await run_assessment_graph(
         task_id=task_id,
-        policy_chunks=policy_chunks,
-        history_chunks=history_chunks,
+        parsed_documents=parsed_documents,
         scenario_id=scenario_id,
         project_id=project_id,
         phase=phase,
         skill_id=skill_id,
-        chunk_lookup=chunk_lookup,
     )
 
 
@@ -613,6 +563,6 @@ def _parse_llm_output_to_report(
             ssdlc_phase=phase,
             skill_id=skill_id,
             model_used=settings.LLM_PROVIDER,
-            completed_at=datetime.now(timezone.utc),
+            completed_at=datetime.now(UTC),
         ),
     )
