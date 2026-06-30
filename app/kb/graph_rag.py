@@ -97,7 +97,7 @@ class GraphRAGService:
 
     async def _embedding_adapter(self, texts: list[str], **kwargs) -> np.ndarray:
         """Adapt project embedding model to LightRAG's expected signature."""
-        from langchain_community.embeddings import HuggingFaceEmbeddings
+        from langchain_huggingface import HuggingFaceEmbeddings
 
         embeddings = HuggingFaceEmbeddings(
             model_name=settings.EMBEDDING_MODEL,

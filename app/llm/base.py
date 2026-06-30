@@ -70,7 +70,7 @@ def get_llm() -> BaseChatModel:
             temperature=0.2,
         )
     if settings.LLM_PROVIDER == "ollama":
-        from langchain_community.chat_models import ChatOllama
+        from langchain_ollama import ChatOllama
 
         return ChatOllama(
             base_url=settings.OLLAMA_BASE_URL,
