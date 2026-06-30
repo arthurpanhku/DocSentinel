@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     PARSER_TIMEOUT_SECONDS: int = 120
 
     # LLM
+    AGENT_LLM_MODE: Literal["", "anthropic_compat"] = ""
     LLM_PROVIDER: Literal[
         "openai",
         "anthropic",
@@ -47,6 +48,10 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_BASE_URL: str = ""
     ANTHROPIC_MODEL: str = "claude-3-5-sonnet-latest"
+    ANTHROPIC_AUTH_TOKEN: str = ""
+    ANTHROPIC_DEFAULT_OPUS_MODEL: str = "claude-3-opus-latest"
+    ANTHROPIC_DEFAULT_SONNET_MODEL: str = "claude-3-5-sonnet-latest"
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: str = "claude-3-5-haiku-latest"
     QWEN_API_KEY: str = ""
     QWEN_BASE_URL: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     QWEN_MODEL: str = "qwen-plus"
@@ -61,6 +66,13 @@ class Settings(BaseSettings):
     LOCAL_MODEL: str = "local-model"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama2"
+    LLM_CONFIG_FILE: str = "./llm_config.json"
+
+    # Governance and optional infrastructure
+    POLICY_PACK_ID: str = "generic-ssdlc"
+    POLICY_PACKS_DIR: str = "./policy_packs"
+    REDIS_URL: str = ""
+    ENABLE_METRICS: bool = False
 
     # Parser engine: "docling", "legacy", or "auto" (docling with fallback)
     PARSER_ENGINE: Literal["docling", "legacy", "auto"] = "auto"

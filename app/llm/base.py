@@ -11,9 +11,39 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from app.core.config import settings
 
 
+def _anthropic_model() -> str:
+    return (
+        settings.ANTHROPIC_MODEL
+        or settings.ANTHROPIC_DEFAULT_SONNET_MODEL
+        or settings.ANTHROPIC_DEFAULT_HAIKU_MODEL
+    )
+
+
+def _anthropic_api_key() -> str:
+    return (
+        settings.ANTHROPIC_AUTH_TOKEN
+        or settings.ANTHROPIC_API_KEY
+        or "not-set-use-anthropic-auth-token"
+    )
+
+
+def _build_anthropic_compat_llm() -> BaseChatModel:
+    from langchain_anthropic import ChatAnthropic
+
+    return ChatAnthropic(
+        model=_anthropic_model(),
+        api_key=_anthropic_api_key(),
+        base_url=settings.ANTHROPIC_BASE_URL or None,
+        temperature=0.2,
+    )
+
+
 @lru_cache(maxsize=1)
 def get_llm() -> BaseChatModel:
     """Return a cached LLM client instance (one per process lifetime)."""
+    if settings.AGENT_LLM_MODE == "anthropic_compat":
+        return _build_anthropic_compat_llm()
+
     if settings.LLM_PROVIDER == "openai":
         from langchain_openai import ChatOpenAI
 
@@ -24,14 +54,7 @@ def get_llm() -> BaseChatModel:
             temperature=0.2,
         )
     if settings.LLM_PROVIDER == "anthropic":
-        from langchain_anthropic import ChatAnthropic
-
-        return ChatAnthropic(
-            model=settings.ANTHROPIC_MODEL,
-            api_key=settings.ANTHROPIC_API_KEY or None,
-            base_url=settings.ANTHROPIC_BASE_URL or None,
-            temperature=0.2,
-        )
+        return _build_anthropic_compat_llm()
     if settings.LLM_PROVIDER in {
         "qwen",
         "deepseek",

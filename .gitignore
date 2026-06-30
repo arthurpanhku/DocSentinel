@@ -30,6 +30,8 @@ env/
 # Environment and secrets
 .env
 .env.local
+llm_config.json
+backend/llm_config.json
 *.pem
 
 # IDE

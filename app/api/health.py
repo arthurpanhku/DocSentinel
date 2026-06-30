@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from app.core.config import settings
-from app.llm.base import get_llm
+from app.services import llm_config_store
 
 router = APIRouter(tags=["health"])
 
@@ -24,6 +24,8 @@ class LLMConfigUpdate(BaseModel):
     model: str | None = None
     base_url: str | None = None
     api_key: str | None = None
+    agent_llm_mode: str | None = None
+    anthropic_auth_token: str | None = None
 
 
 def _mask_secret(value: str | None) -> str | None:
@@ -35,84 +37,7 @@ def _mask_secret(value: str | None) -> str | None:
 
 
 def _provider_values(provider: str) -> tuple[str, str, str]:
-    if provider == "openai":
-        return settings.OPENAI_MODEL, settings.OPENAI_BASE_URL, settings.OPENAI_API_KEY
-    if provider == "anthropic":
-        return (
-            settings.ANTHROPIC_MODEL,
-            settings.ANTHROPIC_BASE_URL,
-            settings.ANTHROPIC_API_KEY,
-        )
-    if provider == "qwen":
-        return settings.QWEN_MODEL, settings.QWEN_BASE_URL, settings.QWEN_API_KEY
-    if provider == "deepseek":
-        return (
-            settings.DEEPSEEK_MODEL,
-            settings.DEEPSEEK_BASE_URL,
-            settings.DEEPSEEK_API_KEY,
-        )
-    if provider == "openai_compatible":
-        return settings.COMPAT_MODEL, settings.COMPAT_BASE_URL, settings.COMPAT_API_KEY
-    if provider == "local_openai":
-        return settings.LOCAL_MODEL, settings.LOCAL_BASE_URL, settings.LOCAL_API_KEY
-    if provider == "ollama":
-        return settings.OLLAMA_MODEL, settings.OLLAMA_BASE_URL, ""
-    return "", "", ""
-
-
-def _set_provider_values(
-    provider: str,
-    model: str | None,
-    base_url: str | None,
-    api_key: str | None,
-) -> None:
-    if provider == "openai":
-        if model is not None:
-            settings.OPENAI_MODEL = model
-        if base_url is not None:
-            settings.OPENAI_BASE_URL = base_url
-        if api_key is not None:
-            settings.OPENAI_API_KEY = api_key
-    elif provider == "anthropic":
-        if model is not None:
-            settings.ANTHROPIC_MODEL = model
-        if base_url is not None:
-            settings.ANTHROPIC_BASE_URL = base_url
-        if api_key is not None:
-            settings.ANTHROPIC_API_KEY = api_key
-    elif provider == "qwen":
-        if model is not None:
-            settings.QWEN_MODEL = model
-        if base_url is not None:
-            settings.QWEN_BASE_URL = base_url
-        if api_key is not None:
-            settings.QWEN_API_KEY = api_key
-    elif provider == "deepseek":
-        if model is not None:
-            settings.DEEPSEEK_MODEL = model
-        if base_url is not None:
-            settings.DEEPSEEK_BASE_URL = base_url
-        if api_key is not None:
-            settings.DEEPSEEK_API_KEY = api_key
-    elif provider == "openai_compatible":
-        if model is not None:
-            settings.COMPAT_MODEL = model
-        if base_url is not None:
-            settings.COMPAT_BASE_URL = base_url
-        if api_key is not None:
-            settings.COMPAT_API_KEY = api_key
-    elif provider == "local_openai":
-        if model is not None:
-            settings.LOCAL_MODEL = model
-        if base_url is not None:
-            settings.LOCAL_BASE_URL = base_url
-        if api_key is not None:
-            settings.LOCAL_API_KEY = api_key
-    elif provider == "ollama":
-        if model is not None:
-            settings.OLLAMA_MODEL = model
-        if base_url is not None:
-            settings.OLLAMA_BASE_URL = base_url
+    return llm_config_store.provider_values(provider)
 
 
 @router.get("/health")
@@ -126,6 +51,7 @@ async def config_llm():
     model, base_url, api_key = _provider_values(settings.LLM_PROVIDER)
     return {
         "provider": settings.LLM_PROVIDER,
+        "agent_llm_mode": settings.AGENT_LLM_MODE,
         "model": model,
         "base_url": base_url,
         "api_key_set": bool(api_key),
@@ -193,18 +119,19 @@ async def update_llm_config(body: LLMConfigUpdate):
             "message": f"Unsupported provider: {body.provider}",
         }
 
-    settings.LLM_PROVIDER = body.provider
-    _set_provider_values(
-        body.provider,
-        body.model.strip() if body.model is not None else None,
-        body.base_url.strip() if body.base_url is not None else None,
-        body.api_key.strip() if body.api_key is not None else None,
+    llm_config_store.update_provider_config(
+        provider=body.provider,
+        agent_llm_mode=body.agent_llm_mode,
+        anthropic_auth_token=body.anthropic_auth_token,
+        model=body.model.strip() if body.model is not None else None,
+        base_url=body.base_url.strip() if body.base_url is not None else None,
+        api_key=body.api_key.strip() if body.api_key is not None else None,
     )
-    get_llm.cache_clear()
     updated_model, updated_base_url, updated_api_key = _provider_values(body.provider)
     return {
         "status": "ok",
         "provider": settings.LLM_PROVIDER,
+        "agent_llm_mode": settings.AGENT_LLM_MODE,
         "model": updated_model,
         "base_url": updated_base_url,
         "api_key_set": bool(updated_api_key),
