@@ -15,7 +15,7 @@ from starlette.responses import Response
 
 from app.agent_gateway.a2a import a2a_routes
 from app.agent_gateway.security import AgentGatewayAuthMiddleware
-from app.api import assessments, health, integrations, kb, skills
+from app.api import assessments, governance, health, integrations, kb, skills
 from app.core.config import settings
 from app.kb.service import get_kb_service
 from app.mcp_server import mcp
@@ -86,6 +86,7 @@ app.include_router(integrations.router, prefix=settings.API_PREFIX)
 app.include_router(
     skills.router, prefix=f"{settings.API_PREFIX}/skills", tags=["skills"]
 )
+app.include_router(governance.router, prefix=settings.API_PREFIX)
 app.router.routes.extend(a2a_routes)
 app.mount("/mcp", mcp.streamable_http_app(), name="mcp")
 

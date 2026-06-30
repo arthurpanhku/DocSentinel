@@ -1,0 +1,52 @@
+id: eu-cra
+name: EU Cyber Resilience Act
+label: EU CRA
+type: overlay
+version: 1.0.0
+description: >
+  Maps PallasGuard controls to EU Cyber Resilience Act (CRA) obligations.
+  Applicable to products with digital elements placed on the EU/EEA market.
+  Covers Annex I essential cybersecurity requirements and vulnerability handling obligations.
+requires_base: generic-ssdlc
+region_group: EU
+applicable_regions: [EU, EEA]
+applicable_system_types: [product_software, connected_device, saas_product]
+required_questions:
+  - cra_product_category
+  - cra_intended_purpose
+
+phases:
+  phase1_intake:
+    additional_fields:
+      - cra_product_category   # Art. 6 product classification (default vs. important vs. critical)
+      - cra_intended_purpose   # Art. 13(1) intended purpose documentation
+  phase4_build_security:
+    framework_context: "EU CRA Annex I Part I — essential cybersecurity requirements"
+    additional_controls:
+      - CRA-VUL-01   # Vulnerability handling policy
+      - CRA-SBOM-01  # SBOM generation and maintenance
+  phase5_control_verify:
+    framework_context: "EU CRA Annex I — security properties to be assessed"
+  phase6_release_gate:
+    framework_context: "EU CRA Art. 14 — reporting obligations"
+    additional_controls:
+      - CRA-DISC-01   # Coordinated vulnerability disclosure
+      - CRA-REPORT-01 # Actively exploited vulnerability reporting to ENISA
+
+citations:
+  CRA-VUL-01:    "EU CRA Annex I Part I §1(e) — identify and document vulnerabilities; handle them without undue delay"
+  CRA-SBOM-01:   "EU CRA Art. 13(5) — SBOM in machine-readable format covering top-level and transitive dependencies"
+  CRA-DISC-01:   "EU CRA Art. 14(1) — report actively exploited vulnerabilities to ENISA and national CSIRT"
+  CRA-REPORT-01: "EU CRA Art. 14(2) — notify users of the product about the vulnerability"
+
+# Cross-reference: PallasGuard control ID → EU CRA article
+control_mappings:
+  GEN-VUL-01: "EU CRA Annex I Part I §1(d)"
+  GEN-VUL-02: "EU CRA Annex I Part I §1(d)"
+  GEN-SC-01:  "EU CRA Art. 13(5)"
+  GEN-SC-02:  "EU CRA Annex I Part I §1(e)"
+  GEN-SC-03:  "EU CRA Annex I Part I §1(e)"
+  GEN-ENC-01: "EU CRA Annex I Part I §1(g)"
+  GEN-ENC-02: "EU CRA Annex I Part I §1(g)"
+  GEN-IAM-01: "EU CRA Annex I Part I §1(b)"
+  GEN-TPR-01: "EU CRA Art. 13(1)"

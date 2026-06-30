@@ -1,0 +1,111 @@
+id: generic-ssdlc
+name: Generic SSDLC Policy Pack
+version: 0.2.0
+description: >
+  Vendor-neutral AI-era SSDLC framework for open-source PallasGuard deployments.
+  Covers six phases from intake through release review, with controls mapped to
+  NIST SSDF, EU CRA, EU AI Act, ISO 27001/42001, OWASP SAMM, and more.
+license: MIT
+
+brand:
+  company_name: PallasGuard
+  app_title: PallasGuard
+  primary_color: "#2563EB"
+  copyright: "© 2026 PallasGuard contributors"
+  email_placeholder: "you@example.com"
+  organization_default: "Your Organization"
+  policy_note: "Protected by your organization's security policy"
+  excel:
+    control_sheet_name: "Control_Review"
+    intake_sheet_name: "Security_Intake"
+    header_color: "#2563EB"
+    column_headers:
+      - "Control ID"
+      - "Domain / Family"
+      - "Requirement"
+      - "Guidance"
+      - "Applicability"
+      - "Risk Tier"
+      - "Evidence Submitted"
+      - "Status"
+      - "Notes"
+      - "Review Status"
+      - "Review Date"
+      - "Reviewer"
+      - "Framework Citations"
+  certificate:
+    title: "SSDLC Security Completion Certificate"
+    subtitle: "All required security phase reviews completed"
+    org_label: "Organization"
+    footer: "Issued by PallasGuard"
+  agent_hints:
+    framework_name: "security framework"
+    intake_form_name: "security intake form"
+    control_doc_name: "control verification document"
+    phase_term: "security phase"
+
+# AI-era SSDLC phases (6 phases replace the previous 4-gate model)
+phases:
+  phase1:
+    name: "Intake & Classification"
+    schema: "phase1_intake"
+    agent: "intake_agent"
+  phase2:
+    name: "Threat Modeling & Security Requirements"
+    schema: "phase2_threat_model"
+    agent: "threat_model_agent"
+  phase3:
+    name: "Secure Design Review"
+    schema: "phase3_design_review"
+    agent: "design_review_agent"
+  phase4:
+    name: "Build Security & SAST/SCA"
+    schema: "phase4_build_security"
+    agent: "build_security_agent"
+  phase5:
+    name: "Security Control Verification"
+    schema: "phase5_control_verify"
+    agent: "control_verification_agent"
+  phase6:
+    name: "Release Review & SSDLC Certificate"
+    schema: "phase6_release_gate"
+    agent: "release_gate_agent"
+
+# Schema registry — maps node_key to file path
+schemas:
+  # Phase 1: Intake & Classification
+  phase1_intake: schemas/phase1_intake.md
+
+  # Phase 2: Threat Modeling (new)
+  phase2_threat_model: schemas/phase2_threat_model.md
+
+  # Phase 3: Secure Design Review (new)
+  phase3_design_review: schemas/phase3_design_review.md
+
+  # Phase 4: Build Security & SAST/SCA (new)
+  phase4_build_security: schemas/phase4_build_security.md
+
+  # Phase 5: Security Control Verification
+  phase5_control_verify: schemas/phase5_control_verify.md
+  phase5_control_verify_ai: schemas/phase5_control_verify_ai.md
+  phase5_control_verify_supplychain: schemas/phase5_control_verify_supplychain.md
+
+  # Phase 6: Release Review & Certificate
+  phase6_release_gate: schemas/phase6_release_gate.md
+
+# Aliases for convenience and backward compatibility
+aliases:
+  # Phase short-hand aliases
+  phase1: phase1_intake
+  phase2: phase2_threat_model
+  phase3: phase3_design_review
+  phase4: phase4_build_security
+  phase5: phase5_control_verify
+  phase6: phase6_release_gate
+
+# Control profiles: map profile name → primary control verification schema
+control_profiles:
+  full_ssdlc: phase5_control_verify
+  essential_ssdlc: phase5_control_verify
+  ai_system: phase5_control_verify_ai
+  supply_chain: phase5_control_verify_supplychain

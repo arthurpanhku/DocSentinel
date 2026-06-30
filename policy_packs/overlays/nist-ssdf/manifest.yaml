@@ -1,0 +1,49 @@
+id: nist-ssdf
+name: NIST SP 800-218 Secure Software Development Framework
+label: NIST SSDF
+type: overlay
+version: 1.0.0
+description: >
+  Maps PallasGuard controls to NIST SP 800-218 (SSDF) practices.
+  Applicable to US federal contractors, FISMA-scoped systems, and any
+  organization adopting NIST frameworks.
+requires_base: generic-ssdlc
+region_group: US
+applicable_regions: [US]
+applicable_system_types: [all]
+required_questions:
+  - release_type
+  - build_system
+
+phases:
+  phase1_intake:
+    framework_context: "NIST SSDF PS.1 — document security requirements"
+  phase2_threat_model:
+    framework_context: "NIST SSDF PW.1 — design software to meet security requirements"
+  phase4_build_security:
+    framework_context: "NIST SSDF PW.7 — review and test software code"
+    additional_controls:
+      - SSDF-PW4-SCA     # Software composition analysis per SSDF PW.4.4
+      - SSDF-RV1-VEX    # Vulnerability Exploitability eXchange (VEX) document
+  phase5_control_verify:
+    framework_context: "NIST SSDF RV.1 — identify and confirm vulnerabilities"
+  phase6_release_gate:
+    framework_context: "NIST SSDF RV.3 — respond to vulnerability reports"
+    additional_controls:
+      - SSDF-RV3-DISC   # Vulnerability disclosure process
+
+citations:
+  SSDF-PW4-SCA: "NIST SP 800-218 PW.4.4 — Test for vulnerabilities in the software's components"
+  SSDF-RV1-VEX: "NIST SP 800-218 RV.1.3 — Analyze vulnerability reports to determine impact"
+  SSDF-RV3-DISC: "NIST SP 800-218 RV.3.3 — Establish and follow a coordinated vulnerability disclosure process"
+
+# Cross-reference: PallasGuard control ID → NIST SSDF practice
+control_mappings:
+  GEN-IAM-01: "NIST SSDF PW.5.1"
+  GEN-LOG-01: "NIST SSDF RV.1.2"
+  GEN-VUL-01: "NIST SSDF PW.7.2"
+  GEN-VUL-02: "NIST SSDF RV.1.1"
+  GEN-SC-01:  "NIST SSDF PW.4.4"
+  GEN-SC-02:  "NIST SSDF PW.4.1"
+  GEN-SC-03:  "NIST SSDF PW.4.4"
+  GEN-TPR-01: "NIST SSDF PS.3.2"

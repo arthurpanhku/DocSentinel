@@ -1,0 +1,58 @@
+id: eu-ai-act
+name: EU Artificial Intelligence Act
+label: EU AI Act
+type: overlay
+version: 1.0.0
+description: >
+  Maps PallasGuard AI controls to EU AI Act obligations.
+  Applicable to high-risk AI systems (Annex III) placed on the EU/EEA market.
+  Covers Art. 9 risk management, Art. 10 data governance, Art. 14 human oversight,
+  Art. 17 quality management, and Art. 43 conformity assessment.
+requires_base: generic-ssdlc
+region_group: EU
+applicable_regions: [EU, EEA]
+applicable_system_types: [genai_system, ml_model, agentic_system, cv_system, nlp_pipeline]
+load_condition: "involves_ai_ml == true AND eu IN geographic_scope"
+required_questions:
+  - ai_eu_risk_class
+  - ai_act_annex_iii_category
+
+phases:
+  phase1_intake:
+    additional_fields:
+      - ai_eu_risk_class         # Already in base phase1_intake
+      - ai_act_annex_iii_category  # Which Annex III category applies (if high-risk)
+  phase2_threat_model:
+    framework_context: "EU AI Act Art. 9 — risk management system"
+    additional_controls:
+      - EUAI-RM-01   # AI risk management system documentation
+  phase3_design_review:
+    framework_context: "EU AI Act Art. 10 — data governance requirements"
+    additional_controls:
+      - EUAI-DG-01   # Data governance and quality management
+  phase5_control_verify:
+    framework_context: "EU AI Act Art. 13–17 — transparency, human oversight, accuracy, robustness"
+    additional_controls:
+      - EUAI-TR-01   # Transparency and instructions for use (Art. 13)
+  phase6_release_gate:
+    framework_context: "EU AI Act Art. 43 — conformity assessment"
+    additional_controls:
+      - EUAI-CA-01   # Conformity assessment and CE marking (high-risk AI)
+
+citations:
+  EUAI-RM-01: "EU AI Act Art. 9 — risk management system for high-risk AI systems"
+  EUAI-DG-01: "EU AI Act Art. 10 — data and data governance for high-risk AI"
+  EUAI-TR-01: "EU AI Act Art. 13 — transparency and provision of information to deployers"
+  EUAI-CA-01: "EU AI Act Art. 43 — conformity assessment procedure"
+
+# Cross-reference: PallasGuard AI control ID → EU AI Act article
+control_mappings:
+  AI-SEC-01: "EU AI Act Art. 15 — accuracy, robustness and cybersecurity"
+  AI-SEC-02: "EU AI Act Art. 11 — technical documentation"
+  AI-SEC-03: "EU AI Act Art. 10 — data and data governance"
+  AI-SEC-04: "EU AI Act Art. 15(3) — adversarial robustness"
+  AI-SEC-05: "EU AI Act Art. 12 — record-keeping"
+  AI-SEC-07: "EU AI Act Art. 10(2)(f) — examination for bias"
+  AI-GOV-01: "EU AI Act Art. 11 — technical documentation"
+  AI-GOV-02: "EU AI Act Art. 14 — human oversight"
+  AI-GOV-03: "EU AI Act Art. 43 — conformity assessment"

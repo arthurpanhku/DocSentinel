@@ -71,6 +71,7 @@ class Settings(BaseSettings):
     # Governance and optional infrastructure
     POLICY_PACK_ID: str = "generic-ssdlc"
     POLICY_PACKS_DIR: str = "./policy_packs"
+    POLICY_PACKS_OVERLAY_DIR: str = ""
     REDIS_URL: str = ""
     ENABLE_METRICS: bool = False
 
