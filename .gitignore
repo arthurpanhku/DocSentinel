@@ -41,6 +41,7 @@ env/
 # AI tooling
 .claude/
 .trae/
+_pallasguard_src/
 
 # Data and persistence
 data/
