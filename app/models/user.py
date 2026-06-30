@@ -1,5 +1,9 @@
 from sqlmodel import Field, SQLModel
 
+BASE_ROLES = {"admin", "auditor", "user"}
+GOVERNANCE_ROLES = {"client", "security_reviewer", "security_approver"}
+VALID_ROLES = BASE_ROLES | GOVERNANCE_ROLES
+
 
 class UserBase(SQLModel):
     username: str = Field(index=True, unique=True)
@@ -7,7 +11,7 @@ class UserBase(SQLModel):
     full_name: str | None = None
     is_active: bool = True
     is_superuser: bool = False
-    role: str = Field(default="user")  # 'admin', 'auditor', 'user'
+    role: str = Field(default="user")  # admin/auditor/user + governance roles
 
 
 class User(UserBase, table=True):

@@ -74,6 +74,22 @@ class Settings(BaseSettings):
     REDIS_URL: str = ""
     ENABLE_METRICS: bool = False
 
+    # Database
+    DATABASE_URL: str = "sqlite:///./database.db"
+    ENABLE_CREATE_ALL: bool = True
+    INITIAL_ADMIN_EMAIL: str = "admin@example.com"
+    INITIAL_ADMIN_PASSWORD: str = ""
+    INITIAL_ADMIN_FULL_NAME: str = "System Admin"
+    INITIAL_CLIENT_EMAIL: str = "client@example.com"
+    INITIAL_CLIENT_PASSWORD: str = ""
+    INITIAL_CLIENT_FULL_NAME: str = "Client User"
+    INITIAL_SECURITY_EMAIL: str = "security@example.com"
+    INITIAL_SECURITY_PASSWORD: str = ""
+    INITIAL_SECURITY_FULL_NAME: str = "Security Reviewer"
+    INITIAL_APPROVER_EMAIL: str = "approver@example.com"
+    INITIAL_APPROVER_PASSWORD: str = ""
+    INITIAL_APPROVER_FULL_NAME: str = "Security Approver"
+
     # Parser engine: "docling", "legacy", or "auto" (docling with fallback)
     PARSER_ENGINE: Literal["docling", "legacy", "auto"] = "auto"
 
