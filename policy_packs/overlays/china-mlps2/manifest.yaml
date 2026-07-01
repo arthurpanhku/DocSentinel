@@ -1,0 +1,37 @@
+id: china-mlps2
+name: China Multi-Level Protection Scheme 2.0 (等保 2.0)
+label: MLPS 2.0
+type: overlay
+version: 2.0.0
+description: >
+  Maps PallasGuard controls to China MLPS 2.0 (GB/T 22239-2019) requirements.
+  Applicable to information systems operated in China mainland.
+  Covers second-level and above protection class requirements.
+requires_base: generic-ssdlc
+region_group: Asia
+applicable_regions: [CN]
+applicable_system_types: [all]
+load_condition: "cn IN geographic_scope"
+required_questions:
+  - geographic_scope
+  - data_classification
+
+phases:
+  phase1_intake:
+    framework_context: "MLPS 2.0 §4.1 — 定级：系统保护等级确定"
+    additional_fields:
+      - mlps_protection_class   # 等保级别：第二级/第三级/第四级
+
+control_mappings:
+  GEN-IAM-01: "GB/T 22239-2019 §7.1.4.1 — 身份鉴别"
+  GEN-IAM-02: "GB/T 22239-2019 §7.1.4.2 — 访问控制"
+  GEN-IAM-03: "GB/T 22239-2019 §7.1.4.2 — 访问控制（特权管理）"
+  GEN-LOG-01: "GB/T 22239-2019 §7.1.4.6 — 安全审计"
+  GEN-LOG-02: "GB/T 22239-2019 §7.1.4.6 — 安全审计（审计记录保护）"
+  GEN-ENC-01: "GB/T 22239-2019 §7.1.4.4 — 通信传输"
+  GEN-ENC-02: "GB/T 22239-2019 §7.2.4.3 — 数据完整性与保密性"
+  GEN-VUL-01: "GB/T 22239-2019 §7.1.5.5 — 代码安全"
+  GEN-VUL-02: "GB/T 22239-2019 §7.1.5.5 — 漏洞和风险管理"
+  GEN-BCP-01: "GB/T 22239-2019 §7.2.4.1 — 数据备份恢复"
+  GEN-PRV-01: "PIPL Art. 51 — 个人信息处理者合规义务"
+  GEN-TPR-01: "GB/T 22239-2019 §7.1.2.5 — 供应链安全"

@@ -84,9 +84,7 @@ class AgentGateway:
             raise ValueError(f"Unsupported phase: {phase}")
         document_path = resolve_document_path(file_path)
         if document_path.stat().st_size > settings.upload_max_bytes:
-            raise ValueError(
-                f"File exceeds {settings.UPLOAD_MAX_FILE_SIZE_MB}MB limit"
-            )
+            raise ValueError(f"File exceeds {settings.UPLOAD_MAX_FILE_SIZE_MB}MB limit")
         parsed = parse_file(document_path.read_bytes(), document_path.name)
         parsed.metadata.scenario_id = scenario_id
         parsed.metadata.ssdlc_phase_hint = phase

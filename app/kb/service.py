@@ -5,11 +5,12 @@ Hybrid retrieval merges vector similarity + entity-relationship graph.
 
 import hashlib
 import logging
+import uuid
 from pathlib import Path
 
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.core.config import settings
@@ -120,6 +121,56 @@ class KnowledgeBaseService:
             await self._insert_to_graph(content, parsed, doc_id)
 
         return doc_id
+
+    async def ingest(
+        self,
+        parsed: ParsedDocument,
+        document_id: str | None = None,
+        *,
+        graphify: bool = True,
+    ) -> dict:
+        """Single KB ingestion entry point for vector, graph, and graphify stores."""
+        doc_id = await self.add_document(parsed, document_id)
+        artifacts: dict = {}
+        if graphify:
+            artifacts = self._write_graphify_artifact(parsed, doc_id)
+        return {
+            "document_id": doc_id,
+            "stores": {
+                "chroma": True,
+                "graph_rag": bool(getattr(settings, "ENABLE_GRAPH_RAG", False)),
+                "light_rag": bool(artifacts),
+            },
+            "graphify": artifacts,
+        }
+
+    def _write_graphify_artifact(self, parsed: ParsedDocument, doc_id: str) -> dict:
+        """Write the local markdown and entity graph used by lexical Light RAG."""
+        try:
+            from app.services.graphify_kb import (
+                ParsedDocument as GraphifyDocument,
+            )
+            from app.services.graphify_kb import write_artifacts
+
+            content = (
+                parsed.content
+                if isinstance(parsed.content, str)
+                else str(parsed.content)
+            )
+            filename = parsed.metadata.filename or f"{doc_id}.txt"
+            graph_doc_id = uuid.uuid5(uuid.NAMESPACE_URL, doc_id)
+            return write_artifacts(
+                doc_id=graph_doc_id,
+                title=Path(filename).stem or doc_id,
+                filename=filename,
+                parsed=GraphifyDocument(
+                    text=content,
+                    parser=parsed.metadata.parser_engine or "unknown",
+                ),
+            )
+        except Exception as exc:
+            logger.warning("Graphify KB artifact skipped: %s", exc)
+            return {}
 
     def add_document_sync(
         self, parsed: ParsedDocument, document_id: str | None = None
@@ -391,7 +442,7 @@ class KnowledgeBaseService:
                 continue
             try:
                 parsed = parse_file(resolved_path.read_bytes(), resolved_path.name)
-                await self.add_document(parsed)
+                await self.ingest(parsed)
                 indexed += 1
             except Exception as e:
                 errors.append(f"{path.name}: {e!s}")

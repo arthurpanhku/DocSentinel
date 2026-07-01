@@ -1,0 +1,34 @@
+id: acme-ssdlc
+name: Example SSDLC Policy Pack
+version: 0.1.0
+description: Copy this template when creating an organization-specific policy pack.
+license: custom
+
+brand:
+  company_name: Example Organization
+  app_title: PallasGuard
+  primary_color: "#2563EB"
+  copyright: "© 2026 Example Organization."
+  email_placeholder: "you@example.com"
+  organization_default: "Example Organization"
+  policy_note: "Protected by organization security policy"
+
+schemas:
+  phase1_intake: schemas/phase1_intake.md
+  phase2_threat_model: schemas/phase2_threat_model.md
+  phase3_design_review: schemas/phase3_design_review.md
+  phase4_build_security: schemas/phase4_build_security.md
+  phase5_control_verify: schemas/phase5_control_verify.md
+  phase6_release_gate: schemas/phase6_release_gate.md
+
+aliases:
+  phase1: phase1_intake
+  phase2: phase2_threat_model
+  phase3: phase3_design_review
+  phase4: phase4_build_security
+  phase5: phase5_control_verify
+  phase6: phase6_release_gate
+
+control_profiles:
+  full_ssdlc: phase5_control_verify
+  essential_ssdlc: phase5_control_verify

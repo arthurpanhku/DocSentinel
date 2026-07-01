@@ -123,9 +123,7 @@ def build_agent_card() -> AgentCard:
                 ),
                 tags=["security", "assessment", "status"],
                 examples=[
-                    json.dumps(
-                        {"operation": "get_assessment", "task_id": "<task-id>"}
-                    )
+                    json.dumps({"operation": "get_assessment", "task_id": "<task-id>"})
                 ],
                 input_modes=["application/json", "text/plain"],
                 output_modes=["application/json"],

@@ -1,0 +1,43 @@
+id: owasp-samm
+name: OWASP Software Assurance Maturity Model (SAMM 2.0)
+label: OWASP SAMM
+type: overlay
+version: 2.0.0
+description: >
+  Maps PallasGuard phases and controls to OWASP SAMM 2.0 practices.
+  Applicable to any organization assessing software assurance maturity.
+  Covers all five SAMM business functions: Governance, Design, Implementation,
+  Verification, and Operations.
+requires_base: generic-ssdlc
+region_group: Industry
+applicable_regions: []
+applicable_system_types: [all]
+required_questions:
+  - system_type
+  - internet_facing
+
+phases:
+  phase1_intake:
+    framework_context: "OWASP SAMM Governance — Strategy & Metrics, Policy & Compliance"
+  phase2_threat_model:
+    framework_context: "OWASP SAMM Design — Threat Assessment (TA)"
+  phase3_design_review:
+    framework_context: "OWASP SAMM Design — Security Architecture (SA)"
+  phase4_build_security:
+    framework_context: "OWASP SAMM Implementation — Secure Build (SB), Secure Deployment (SD)"
+  phase5_control_verify:
+    framework_context: "OWASP SAMM Verification — Requirements-driven Testing (RT)"
+  phase6_release_gate:
+    framework_context: "OWASP SAMM Operations — Incident Management (IM)"
+
+# Cross-reference: PallasGuard control ID → OWASP SAMM practice
+control_mappings:
+  GEN-IAM-01: "OWASP SAMM V-RT-1"
+  GEN-VUL-01: "OWASP SAMM I-SB-2"
+  GEN-VUL-02: "OWASP SAMM V-PT-2"
+  GEN-SC-01:  "OWASP SAMM I-SB-1"
+  GEN-SC-02:  "OWASP SAMM I-SD-2"
+  GEN-SC-03:  "OWASP SAMM I-SB-1"
+  GEN-BCP-01: "OWASP SAMM O-EM-2"
+  GEN-TPR-01: "OWASP SAMM G-PC-2"
+  AI-SEC-01:  "OWASP SAMM D-TA-2 (AI threat assessment)"

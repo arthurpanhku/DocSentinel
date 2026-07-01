@@ -14,7 +14,7 @@
 
 | Item       | Requirement                                             |
 | :--------- | :------------------------------------------------------ |
-| **Python** | 3.10+                                                   |
+| **Python** | 3.11+                                                   |
 | **OS**     | Linux (Recommended) / Windows Server / Container        |
 | **Memory** | Minimum 4GB, Recommended 8GB+ (for local LLM/Vector DB) |
 | **CPU**    | 2+ Cores (AVX support for some vector libs)             |

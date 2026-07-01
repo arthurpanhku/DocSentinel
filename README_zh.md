@@ -16,7 +16,7 @@
 <p align="center">
   <a href="https://github.com/arthurpanhku/DocSentinel/releases"><img src="https://img.shields.io/github/v/release/arthurpanhku/DocSentinel?include_prereleases" alt="Latest release"/></a>
   <a href="https://github.com/arthurpanhku/DocSentinel/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"/></a>
-  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"/></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python 3.11+"/></a>
   <a href="https://github.com/arthurpanhku/DocSentinel"><img src="https://img.shields.io/badge/GitHub-arthurpanhku%2FDocSentinel--Agent-24292e?logo=github" alt="GitHub repo"/></a>
   <a href="docs/06-agent-integration.md"><img src="https://img.shields.io/badge/MCP-Ready-green?logo=anthropic" alt="MCP Ready"/></a>
   <a href="https://python.langchain.com/"><img src="https://img.shields.io/badge/LangChain-Powered-orange" alt="LangChain"/></a>
@@ -142,6 +142,12 @@ flowchart TB
 - 测试阶段：漏洞数据库、修复指南
 - 部署阶段：CIS 基线、加固指南
 - 运维阶段：CVE 数据库、应急手册
+
+### 治理与合规工作流
+DocSentinel 已合并 PallasGuard 治理能力：以 `generic-ssdlc` 与 8 套公开合规 overlay
+驱动项目控制生成、Gate 1/3 问卷、提交审批、审计、证据跟踪和 Pallas Lens
+就绪度评分。治理门户与原有评估控制台共用 FastAPI、LangGraph、RAG、JWT
+和 Alembic 持久层。
 
 ### API 优先 & MCP 就绪
 Headless 服务设计。通过 REST API 集成到 CI/CD 管道，或通过 MCP 作为 AI 智能体（Claude Desktop、Cursor、OpenClaw）的技能使用。

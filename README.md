@@ -16,7 +16,7 @@
 <p align="center">
   <a href="https://github.com/arthurpanhku/DocSentinel/releases"><img src="https://img.shields.io/github/v/release/arthurpanhku/DocSentinel?include_prereleases" alt="Latest release"/></a>
   <a href="https://github.com/arthurpanhku/DocSentinel/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"/></a>
-  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"/></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python 3.11+"/></a>
   <a href="https://github.com/arthurpanhku/DocSentinel"><img src="https://img.shields.io/badge/GitHub-arthurpanhku%2FDocSentinel--Agent-24292e?logo=github" alt="GitHub repo"/></a>
   <a href="docs/06-agent-integration.md"><img src="https://img.shields.io/badge/MCP-Ready-green?logo=anthropic" alt="MCP Ready"/></a>
   <a href="docs/06-agent-integration.md"><img src="https://img.shields.io/badge/A2A-1.0-blueviolet" alt="A2A 1.0"/></a>
@@ -167,6 +167,20 @@ Submit security questionnaires, design documents, or audit reports. DocSentinel 
 - **Compliance Gaps**: Missing controls against frameworks like ISO 27001, PCI DSS.
 - **Remediation Steps**: Actionable advice to fix identified issues.
 
+### Governance & Compliance Workflows
+PallasGuard governance capabilities are merged into DocSentinel as first-class
+project workflows:
+- **Policy packs**: `generic-ssdlc` plus eight public overlays for NIST SSDF,
+  MAS TRM, ISO 27001:2022, EU AI Act, ISO 42001, China MLPS 2.0, OWASP SAMM,
+  and EU CRA.
+- **Gate workflows**: Gate 1/3 questionnaire, submission, approval, audit, and
+  evidence tracking flows backed by SQLModel and Alembic migrations.
+- **Control generation**: Framework overlays generate applicable SCD controls
+  and expected evidence without replacing DocSentinel's existing assessment
+  engine.
+- **Pallas Lens**: Project readiness scoring summarizes control coverage,
+  evidence depth, and next actions in the React governance portal.
+
 ### Intelligent Agent Orchestration (LangGraph)
 - **Stateful workflows**: LangGraph state machine maintains context across phases
 - **Cross-phase traceability**: Threats from Design link to test cases in Testing and monitoring rules in Operations
@@ -305,7 +319,7 @@ To connect an external agent through the published Docker port, set
 
 ### Option B: Manual Setup
 
-**Prerequisites**: **Python 3.10+** and **Node.js 20+**. Optional:
+**Prerequisites**: **Python 3.11+** and **Node.js 20+**. Optional:
 [Ollama](https://ollama.ai) (`ollama pull llama2`).
 
 ```bash
@@ -477,7 +491,7 @@ DocSentinel/
 | **Vector Store** | ChromaDB + LightRAG | Hybrid vector + graph RAG |
 | **Parsing** | Docling + legacy fallback | Multi-format document parsing |
 | **LLM Providers** | OpenAI, Anthropic, Qwen, DeepSeek, Ollama, OpenAI-compatible APIs | Cloud and local LLM support |
-| **Language** | Python 3.10+ | Primary development language |
+| **Language** | Python 3.11+ | Primary development language |
 
 ---
 

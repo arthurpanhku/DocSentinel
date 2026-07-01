@@ -14,7 +14,7 @@
 
 | Item            | Choice           | Version | Notes                          |
 | :-------------- | :--------------- | :------ | :----------------------------- |
-| **Language**    | Python           | 3.10+   |                                |
+| **Language**    | Python           | 3.11+   |                                |
 | **Package Mgr** | pip              | —       | `requirements.txt`             |
 | **Runtime**     | CPython / Docker | —       | See `05-deployment-runbook.md` |
 

@@ -4,7 +4,7 @@
 
 ---
 
-将以下内容复制到 GitHub → Releases → Draft a new release → 选择 tag `v0.1.0` → 粘贴到描述框。  
+将以下内容复制到 GitHub → Releases → Draft a new release → 选择 tag `v0.1.0` → 粘贴到描述框。
 Copy the content below into GitHub → Releases → Draft a new release → choose tag `v0.1.0` → paste into the description.
 
 ---
@@ -34,7 +34,7 @@ Copy the content below into GitHub → Releases → Draft a new release → choo
    # 浏览器打开 http://localhost:8000/docs
    docker compose exec ollama ollama pull llama2
    ```
-4. **Python 方式**：需 Python 3.10+，解压后执行：
+4. **Python 方式**：需 Python 3.11+，解压后执行：
    ```bash
    cd DocSentinel-0.1.0
    python3 -m venv .venv && source .venv/bin/activate
@@ -77,7 +77,7 @@ This is the **first official release** of **DocSentinel**, an AI-powered assista
    # Open http://localhost:8000/docs in your browser
    docker compose exec ollama ollama pull llama2
    ```
-4. **Python**: Requires Python 3.10+. After extracting:
+4. **Python**: Requires Python 3.11+. After extracting:
    ```bash
    cd DocSentinel-0.1.0
    python3 -m venv .venv && source .venv/bin/activate

@@ -6,9 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased]
+## [Unreleased] — PallasGuard merge
 
 ### Added
+- Governance domain model and Alembic migrations for projects, submissions,
+  control instances, questionnaires, audit trails, prompt audit records, and
+  sub-agent runs.
+- Policy-pack driven governance with `generic-ssdlc`, framework templates, and
+  eight public compliance overlays: NIST SSDF, MAS TRM, ISO 27001:2022,
+  EU AI Act, ISO 42001, China MLPS 2.0, OWASP SAMM, and EU CRA.
+- Governance APIs for projects, controls, evidence, submissions,
+  questionnaires, schema discovery, Pallas Lens scoring, sub-agent tracking,
+  and JWT login.
+- React governance portal with project creation, framework overlay selection,
+  control evidence capture, Pallas Lens readiness scoring, and sub-agent run
+  visibility.
+- Excel/offline governance helpers and a single knowledge-base ingestion entry
+  that writes to Chroma, Graph RAG, and the lightweight lexical knowledge graph.
+- Optional Postgres/Redis Docker Compose `full` profile and opt-in
+  Prometheus metrics wiring through `ENABLE_METRICS`.
 - MCP Streamable HTTP and A2A 1.0 JSON-RPC agent endpoints backed by a shared
   assessment task service and visible in the Agent Integrations console.
 - Loopback-only defaults, optional bearer protection, A2A Agent Card discovery,
@@ -20,6 +36,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - v5 product trust RFC and architecture, evidence-model, and frontend-design ADRs.
 
 ### Changed
+- Converged orchestration on LangGraph while keeping DocSentinel's assessment
+  task lifecycle, report contracts, and existing API surface intact.
+- Converged LLM access on the DocSentinel provider abstraction with
+  LangChain 1.x compatible clients and Anthropic-compatible mode support.
+- Moved governance additions into new modules/functions where names overlapped
+  with existing DocSentinel core modules.
 - Unified REST, MCP, and A2A assessment submissions behind one task lifecycle;
   agent submissions always require human review.
 - Updated the assessment report model to the v2 contract, including finding-level
@@ -30,6 +52,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   official CPU-only PyTorch wheels for practical private deployment.
 
 ### Security
+- Excluded private/local policy-pack material from the merge and retained the
+  final sensitive-content grep gate in `docs/merge/EXCLUSIONS.md`.
+- Added bcrypt 5 compatibility fallback for JWT password verification while
+  preserving the existing passlib-first security path.
 - Constrained MCP `assess_document.file_path` reads to configured `MCP_DOCUMENT_ROOTS`
   before opening files, including symlink escape protection and pre-read extension
   validation.

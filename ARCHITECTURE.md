@@ -17,23 +17,23 @@
 
 ## Overview | 概述
 
-DocSentinel is an **AI-powered SSDLC (Secure Software Development Lifecycle) platform** that automates security activities across all six phases of the software development lifecycle. Built on **LangChain** and **LangGraph**, the system orchestrates phase-specific AI agents to perform security assessments of documents, questionnaires, and reports — from requirements analysis and threat modeling to vulnerability monitoring and incident response — providing stateful, graph-based agent workflows with stage-aware routing. This document describes the **system architecture**: high-level design, components, data flow, integrations, and deployment. For product goals and requirements, see [SPEC.md](./SPEC.md).
+DocSentinel is an **AI-powered SSDLC (Secure Software Development Lifecycle) platform** that automates security activities across all six phases of the software development lifecycle. Built on **LangChain** and **LangGraph**, the system orchestrates phase-specific AI agents to perform security assessments of documents, questionnaires, and reports — from requirements analysis and threat modeling to vulnerability monitoring and incident response — providing stateful, graph-based agent workflows with stage-aware routing. The PallasGuard merge adds policy-pack governance, Gate 1/3 workflows, control evidence, submissions, audit trails, and Pallas Lens readiness scoring on the same FastAPI, SQLModel, Alembic, RAG, and React console foundation. This document describes the **system architecture**: high-level design, components, data flow, integrations, and deployment. For product goals and requirements, see [SPEC.md](./SPEC.md).
 
 ---
 
 ## Goals & Context | 目标与背景
 
 -   **Goal**: Provide AI-assisted security coverage across the entire SSDLC — Requirements, Design, Development, Testing, Deployment, and Operations — reducing manual effort for security teams while improving coverage and consistency. Automate first-pass assessment of security-related documents (questionnaires, design docs, compliance evidence) and produce structured reports (risks, compliance gaps, remediations).
--   **Context**: Enterprise security teams must embed security into every phase of delivery (Shift-Left), aligned with frameworks like NIST SSDF, OWASP SAMM, Microsoft SDL, and SOC2. The system provides phase-specific agents orchestrated by LangGraph, a unified knowledge base (RAG) with phase-specific collections, multi-format parsing, pluggable LLMs (cloud or local) via LangChain, and **SSDLC-aware assessment pipelines**.
+-   **Context**: Enterprise security teams must embed security into every phase of delivery (Shift-Left), aligned with frameworks like NIST SSDF, OWASP SAMM, Microsoft SDL, and SOC2. The system provides phase-specific agents orchestrated by LangGraph, a unified knowledge base (RAG) with phase-specific collections, multi-format parsing, pluggable LLMs (cloud or local) via LangChain, **SSDLC-aware assessment pipelines**, and governance controls generated from public policy packs.
 
 ---
 
 ## High-Level Architecture | 高层架构
 
 The system is organized in layers: **React Console / REST / Agent Gateway** →
-**Shared Assessment Service** → **SSDLC Orchestration (LangGraph)** → **Core
-Services** → **LLM Abstraction** → **LLM Backends**. MCP and A2A are adapters,
-not alternate paths around application policy.
+**Shared Assessment Service and Governance APIs** → **SSDLC Orchestration
+(LangGraph)** → **Core Services** → **LLM Abstraction** → **LLM Backends**.
+MCP and A2A are adapters, not alternate paths around application policy.
 
 ![DocSentinel Architecture Overview](docsentinel_architecture.png)
 
@@ -71,6 +71,12 @@ flowchart TB
         Mem["Memory"]
         Skill["Skills"]
     end
+    subgraph Governance["Governance Domain"]
+        Projects["Projects"]
+        Controls["Policy-Pack\nControls"]
+        Gate["Gate 1/3\nSubmissions"]
+        Lens["Pallas Lens"]
+    end
     subgraph LLM["LLM Layer (LangChain)"]
         Abst["LLM Abstraction"]
     end
@@ -94,6 +100,10 @@ flowchart TB
     A2A --> Gateway
     API --> Tasks
     Gateway --> Tasks
+    API --> Projects
+    Projects --> Controls
+    Projects --> Gate
+    Projects --> Lens
     Tasks --> Router
     Router --> A1
     Router --> A2
@@ -105,6 +115,7 @@ flowchart TB
     A1 & A2 & A3 & A4 & A5 & A6 --> KB
     A1 & A2 & A3 & A4 & A5 & A6 --> Parser
     A1 & A2 & A3 & A4 & A5 & A6 --> Skill
+    A1 & A2 & A3 & A4 & A5 & A6 --> Controls
     A1 & A2 & A3 & A4 & A5 & A6 --> Abst
     Abst --> Cloud
     Abst --> Local
@@ -182,7 +193,8 @@ stateDiagram-v2
 -   **Shared Assessment Service**: Owns task state, activity, remediation
     tracking, and calls into LangGraph for REST, MCP, and A2A alike.
 -   **React Console**: FastAPI serves the production Vite build at `/console`; the
-    console covers assessment, evidence, knowledge-base, skill, and runtime workflows.
+    console covers assessment, governance, evidence, knowledge-base, skill, and
+    runtime workflows.
 -   **Current boundary**: Authentication (AAD/JWT), tenant isolation, and rate limiting
     remain future enterprise controls and are not yet wired into endpoints.
 
@@ -197,14 +209,33 @@ stateDiagram-v2
 -   Assessment submission is **non-blocking** — returns task_id immediately, processes in background.
 -   Singleton `KnowledgeBaseService` and cached LLM client shared across requests.
 
-### 3. Memory | 记忆体
+### 3. Governance Domain | 治理域
+
+-   **Projects**: `GovernanceProject` records organize risk tier, review mode,
+    system context, selected compliance frameworks, and control profile.
+-   **Policy packs**: `generic-ssdlc`, `framework-template`, and eight public
+    overlays generate applicable controls and expected evidence. Private/local
+    packs are intentionally ignored by git and excluded from the merge.
+-   **Controls and evidence**: Control instances preserve framework IDs,
+    normalized requirements, applicability, status, confidence, and evidence
+    links without replacing the existing assessment report model.
+-   **Gate workflows**: Questionnaires, submissions, approvals, and audit
+    events model Gate 1/3 review steps for client, security reviewer, and
+    approver roles.
+-   **Pallas Lens**: A scoring service summarizes readiness, evidence depth,
+    posture, dimension scores, and next actions for each project.
+-   **Persistence**: Governance tables use SQLModel and Alembic migrations under
+    `alembic/versions/`, while local development can still rely on
+    `ENABLE_CREATE_ALL=true`.
+
+### 4. Memory | 记忆体
 
 -   **Working memory**: LangGraph shared state (`SSDLCState`) persisted via checkpointing.
 -   **Cross-phase context**: Findings from earlier phases are carried forward automatically (e.g. Design threats → Testing test cases).
 -   **History reuse**: Past assessment reports are indexed into a dedicated Chroma collection and retrieved as context for new assessments.
 -   **Status**: LangGraph `MemorySaver` for MVP; database-backed checkpointer for production.
 
-### 4. Skills & Personas | 技能与角色
+### 5. Skills & Personas | 技能与角色
 
 -   **Persona-based Assessment**: Defines "who" is assessing (e.g. ISO 27001 Auditor vs. AppSec Engineer).
 -   **Built-in Persona Skills**: 4 hardcoded personas (ISO 27001 Auditor, AppSec Engineer, GDPR DPO, Cloud Architect) in `skills_registry.py`.
@@ -219,7 +250,7 @@ stateDiagram-v2
 -   **Custom Skills**: File-backed (`data/skills.json`) CRUD via REST API.
 -   **Dynamic Orchestration**: LangGraph injects skill-specific context into RAG queries and LLM prompts based on the selected persona and SSDLC stage.
 
-### 5. Knowledge Base (RAG) | 知识库
+### 6. Knowledge Base (RAG) | 知识库
 
 -   **Vector Store**: ChromaDB for chunk-level similarity search (sentence-transformers embeddings).
 -   **Graph RAG**: LightRAG for entity-relationship aware retrieval (controls → policies → vulnerabilities → threats). Enabled via `ENABLE_GRAPH_RAG` config.
@@ -234,7 +265,7 @@ stateDiagram-v2
 -   **History Reuse**: Indexes past assessment responses into a dedicated Chroma collection.
 -   **Singleton**: Single `KnowledgeBaseService` instance shared across the application lifecycle.
 
-### 6. Parser | 文件解析
+### 7. Parser | 文件解析
 
 -   **Primary engine**: Docling — preserves tables, headings, and supports OCR for scanned PDFs. Outputs structured Markdown.
 -   **Fallback engine**: Legacy parsers (PyMuPDF, python-docx, openpyxl, python-pptx) for when Docling is unavailable.
@@ -242,7 +273,7 @@ stateDiagram-v2
 -   **Engine selection**: Configurable via `PARSER_ENGINE` (`auto` / `docling` / `legacy`). `auto` tries Docling first, falls back to legacy.
 -   Shared pipeline for both assessment input and KB document ingestion.
 
-### 7. LLM Abstraction (LangChain) | LLM 抽象层
+### 8. LLM Abstraction (LangChain) | LLM 抽象层
 
 -   Single interface for chat/completion via **LangChain** (`ChatOpenAI` / `ChatOllama`).
 -   LangChain is also the foundation for LangGraph agent nodes — each node uses LangChain's `Runnable` interface.

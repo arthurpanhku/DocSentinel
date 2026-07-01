@@ -31,7 +31,7 @@ This directory holds **executable design and specification** artifacts that acco
 
 Aligned with PRD and current implementation:
 
--   **Language**: Python 3.10+
+-   **Language**: Python 3.11+
 -   **Web/API**: FastAPI + MCP (stdio/Streamable HTTP) + A2A 1.0
 -   **Agent Orchestration**: LangGraph (stateful graph-based workflows with SSDLC routing)
 -   **LLM Framework**: LangChain (unified LLM abstraction, prompts, tools, RAG)

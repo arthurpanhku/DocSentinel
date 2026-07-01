@@ -14,8 +14,26 @@ from .assessment import (
     TrackedRemediation,
     Vulnerability,
 )
+from .audit import AuditLog
+from .governance import (
+    ComplianceObligation,
+    ControlEvidenceItem,
+    ControlInstance,
+    GateSubmission,
+    GovernanceAuditLog,
+    OrgFrameworkConfig,
+    PolicyDocument,
+    PolicyEmbedding,
+    Project,
+    PromptAuditLog,
+    QuestionInstance,
+    QuestionnaireInstance,
+    RequirementRow,
+    SubAgentRun,
+)
 from .integration import AgentIntegrationStatus, AgentProtocolEndpoint
 from .parser import ParsedDocument
+from .user import User
 
 __all__ = [
     "AgentIntegrationStatus",
@@ -23,16 +41,32 @@ __all__ = [
     "AssessmentReport",
     "AssessmentTaskCreated",
     "AssessmentTaskResult",
+    "AuditLog",
     "ComplianceGap",
+    "ComplianceObligation",
+    "ControlEvidenceItem",
+    "ControlInstance",
     "CrossPhaseRef",
     "DreadScore",
+    "GateSubmission",
+    "GovernanceAuditLog",
+    "OrgFrameworkConfig",
     "ParsedDocument",
+    "PolicyDocument",
+    "PolicyEmbedding",
+    "Project",
+    "PromptAuditLog",
+    "QuestionInstance",
+    "QuestionnaireInstance",
     "Remediation",
     "RemediationTracking",
+    "RequirementRow",
     "RiskItem",
     "SourceCitation",
+    "SubAgentRun",
     "Threat",
     "ThreatModel",
     "TrackedRemediation",
+    "User",
     "Vulnerability",
 ]

@@ -116,6 +116,8 @@ flowchart TB
 | **Parsing**          | Word, PDF, Excel, PPT, Text → Markdown/JSON.                              |
 | **Wissensdatenbank** | Multi-Format-Upload, Chunking, Vektorisierung (Chroma), RAG-Abfrage.      |
 | **Bewertung**        | Dateien einreichen → strukturierter Bericht (Risiken, Lücken, Maßnahmen). |
+| **Governance**       | Projektkontrollen, Gate 1/3-Fragebögen, Einreichungen, Freigaben und Audit-Trails. |
+| **Pallas Lens**      | Bereitschaftsscore, Evidenzabdeckung und nächste Maßnahmen je Projekt. |
 | **LLM**              | Konfigurierbarer Anbieter: **Ollama** (lokal), OpenAI, usw.               |
 | **API**              | REST API & **MCP Server** für Agenten-Integration.                        |
 | **Sicherheit**       | Eingebautes RBAC, Audit-Logs und Schutz vor Prompt Injection.             |

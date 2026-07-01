@@ -36,8 +36,7 @@ async def upload_document(file: UploadFile = File(...)):  # noqa: B008
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
     kb = get_kb_service()
-    doc_id = await kb.add_document(parsed)
-    return {"document_id": doc_id}
+    return await kb.ingest(parsed)
 
 
 @router.post("/query")

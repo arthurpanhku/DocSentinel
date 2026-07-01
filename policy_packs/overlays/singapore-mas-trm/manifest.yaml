@@ -1,0 +1,29 @@
+id: singapore-mas-trm
+name: Singapore MAS Technology Risk Management Guidelines
+label: MAS TRM
+type: overlay
+version: 2021.1.0
+description: >
+  Maps PallasGuard controls to Singapore MAS TRM Guidelines (January 2021).
+  Applicable to financial institutions regulated by MAS operating in Singapore.
+  Covers §4 (System Acquisition, Development and Maintenance) and §6 (Cyber Security).
+requires_base: generic-ssdlc
+region_group: Asia
+applicable_regions: [SG]
+applicable_system_types: [all]
+load_condition: "sg IN geographic_scope"
+required_questions:
+  - geographic_scope
+  - regulatory_obligations
+
+control_mappings:
+  GEN-IAM-01: "MAS TRM §6.3 — Authentication and access controls"
+  GEN-IAM-02: "MAS TRM §6.3.2 — Privileged access management"
+  GEN-LOG-01: "MAS TRM §6.2 — Security event monitoring and management"
+  GEN-ENC-01: "MAS TRM §6.4 — Encryption and cryptographic controls"
+  GEN-ENC-02: "MAS TRM §6.4 — Encryption and cryptographic controls"
+  GEN-VUL-01: "MAS TRM §4.2.4 — Application security testing"
+  GEN-VUL-02: "MAS TRM §4.2.4 — Penetration testing"
+  GEN-SC-03:  "MAS TRM §4.2.3 — Software vulnerability management"
+  GEN-TPR-01: "MAS TRM §9 — Outsourcing Risk Management"
+  GEN-BCP-01: "MAS TRM §7 — Business Continuity Management"

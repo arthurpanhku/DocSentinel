@@ -1,5 +1,7 @@
 import logging
 import re
+from collections.abc import Iterable
+from dataclasses import dataclass
 
 from fastapi import HTTPException
 
@@ -23,6 +25,21 @@ INJECTION_PATTERNS: list[re.Pattern] = [
 ]
 
 MAX_INPUT_LENGTH = 500_000
+
+_EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+_IPV4_RE = re.compile(
+    r"\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}" r"(?:25[0-5]|2[0-4]\d|1?\d?\d)\b"
+)
+_CN_MOBILE_RE = re.compile(r"(?<!\d)(?:\+?86[-\s]?)?1[3-9]\d{9}(?!\d)")
+_HOST_RE = re.compile(
+    r"\b(?:[A-Za-z0-9-]+\.)+(?:corp|internal|local|example|com|net|org)\b"
+)
+
+
+@dataclass(frozen=True)
+class SanitizedText:
+    text: str
+    redacted_fields: list[str]
 
 
 def sanitize_input(text: str) -> str:
@@ -54,3 +71,27 @@ def sanitize_input(text: str) -> str:
             )
 
     return text
+
+
+def sanitize_text(text: str | None) -> SanitizedText:
+    """Redact common PII and infrastructure markers before LLM use."""
+    value = text or ""
+    redacted: list[str] = []
+    replacements = [
+        ("email", _EMAIL_RE, "[REDACTED_EMAIL]"),
+        ("ipv4", _IPV4_RE, "[REDACTED_IP]"),
+        ("cn_mobile", _CN_MOBILE_RE, "[REDACTED_PHONE]"),
+        ("hostname", _HOST_RE, "[REDACTED_HOST]"),
+    ]
+    for label, pattern, marker in replacements:
+        value, count = pattern.subn(marker, value)
+        if count:
+            redacted.append(label)
+    return SanitizedText(value, sorted(set(redacted)))
+
+
+def merge_redactions(*items: Iterable[str]) -> list[str]:
+    merged: set[str] = set()
+    for item in items:
+        merged.update(item)
+    return sorted(merged)

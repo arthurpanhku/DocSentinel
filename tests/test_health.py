@@ -47,8 +47,16 @@ def test_config_llm(client):
     assert any(p["id"] == "local_openai" for p in data["providers"])
 
 
-def test_update_config_llm_masks_api_key(client):
+def test_update_config_llm_masks_api_key(client, monkeypatch, tmp_path):
     """PUT /config/llm updates runtime config and masks API keys."""
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "LLM_CONFIG_FILE", str(tmp_path / "llm_config.json"))
+    monkeypatch.setattr(settings, "LLM_PROVIDER", "ollama")
+    monkeypatch.setattr(settings, "COMPAT_MODEL", "")
+    monkeypatch.setattr(settings, "COMPAT_BASE_URL", "")
+    monkeypatch.setattr(settings, "COMPAT_API_KEY", "")
+
     r = client.put(
         "/config/llm",
         json={

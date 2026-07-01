@@ -32,7 +32,7 @@ Since I cannot directly submit Pull Requests to external repositories on your be
 
 ## 3. Awesome LangChain
 
-**Target Repo**: [kyrolabs/awesome-langchain](https://github.com/kyrolabs/awesome-langchain)  
+**Target Repo**: [kyrolabs/awesome-langchain](https://github.com/kyrolabs/awesome-langchain)
 **Category**: `Open Source Projects` or `Applications`
 
 **Copy & Paste this line**:
@@ -44,7 +44,7 @@ Since I cannot directly submit Pull Requests to external repositories on your be
 
 ## 4. Awesome Local AI / LLM
 
-**Target Repo**: [janhq/awesome-local-ai](https://github.com/janhq/awesome-local-ai)  
+**Target Repo**: [janhq/awesome-local-ai](https://github.com/janhq/awesome-local-ai)
 **Category**: `Applications`
 
 **Copy & Paste this line**:

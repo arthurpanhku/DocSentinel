@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     PARSER_TIMEOUT_SECONDS: int = 120
 
     # LLM
+    AGENT_LLM_MODE: Literal["", "anthropic_compat"] = ""
     LLM_PROVIDER: Literal[
         "openai",
         "anthropic",
@@ -47,6 +48,10 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_BASE_URL: str = ""
     ANTHROPIC_MODEL: str = "claude-3-5-sonnet-latest"
+    ANTHROPIC_AUTH_TOKEN: str = ""
+    ANTHROPIC_DEFAULT_OPUS_MODEL: str = "claude-3-opus-latest"
+    ANTHROPIC_DEFAULT_SONNET_MODEL: str = "claude-3-5-sonnet-latest"
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: str = "claude-3-5-haiku-latest"
     QWEN_API_KEY: str = ""
     QWEN_BASE_URL: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     QWEN_MODEL: str = "qwen-plus"
@@ -61,6 +66,30 @@ class Settings(BaseSettings):
     LOCAL_MODEL: str = "local-model"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama2"
+    LLM_CONFIG_FILE: str = "./llm_config.json"
+
+    # Governance and optional infrastructure
+    POLICY_PACK_ID: str = "generic-ssdlc"
+    POLICY_PACKS_DIR: str = "./policy_packs"
+    POLICY_PACKS_OVERLAY_DIR: str = ""
+    REDIS_URL: str = ""
+    ENABLE_METRICS: bool = False
+
+    # Database
+    DATABASE_URL: str = "sqlite:///./database.db"
+    ENABLE_CREATE_ALL: bool = True
+    INITIAL_ADMIN_EMAIL: str = "admin@example.com"
+    INITIAL_ADMIN_PASSWORD: str = ""
+    INITIAL_ADMIN_FULL_NAME: str = "System Admin"
+    INITIAL_CLIENT_EMAIL: str = "client@example.com"
+    INITIAL_CLIENT_PASSWORD: str = ""
+    INITIAL_CLIENT_FULL_NAME: str = "Client User"
+    INITIAL_SECURITY_EMAIL: str = "security@example.com"
+    INITIAL_SECURITY_PASSWORD: str = ""
+    INITIAL_SECURITY_FULL_NAME: str = "Security Reviewer"
+    INITIAL_APPROVER_EMAIL: str = "approver@example.com"
+    INITIAL_APPROVER_PASSWORD: str = ""
+    INITIAL_APPROVER_FULL_NAME: str = "Security Approver"
 
     # Parser engine: "docling", "legacy", or "auto" (docling with fallback)
     PARSER_ENGINE: Literal["docling", "legacy", "auto"] = "auto"
@@ -90,9 +119,7 @@ class Settings(BaseSettings):
     AGENT_GATEWAY_TOKEN: str = ""
     AGENT_GATEWAY_PUBLIC_URL: str = "http://localhost:8000"
     AGENT_GATEWAY_ALLOWED_HOSTS: str = "127.0.0.1:*,localhost:*,[::1]:*"
-    AGENT_GATEWAY_ALLOWED_ORIGINS: str = (
-        "http://127.0.0.1:*,http://localhost:*"
-    )
+    AGENT_GATEWAY_ALLOWED_ORIGINS: str = "http://127.0.0.1:*,http://localhost:*"
     AGENT_GATEWAY_TASK_TIMEOUT_SECONDS: int = 300
 
     @property

@@ -15,7 +15,7 @@ from starlette.responses import Response
 
 from app.agent_gateway.a2a import a2a_routes
 from app.agent_gateway.security import AgentGatewayAuthMiddleware
-from app.api import assessments, health, integrations, kb, skills
+from app.api import assessments, governance, health, integrations, kb, skills
 from app.core.config import settings
 from app.kb.service import get_kb_service
 from app.mcp_server import mcp
@@ -35,6 +35,11 @@ class SPAStaticFiles(StaticFiles):
 async def lifespan(app: FastAPI):
     sync_task = None
     async with AsyncExitStack() as stack:
+        from app.core.db import check_migrations_current
+        from app.services.llm_config_store import load_and_apply
+
+        load_and_apply()
+        check_migrations_current()
         if settings.AGENT_GATEWAY_ENABLED:
             await stack.enter_async_context(mcp.session_manager.run())
         if settings.KB_AUTO_SYNC_INTERVAL_SECONDS > 0:
@@ -63,6 +68,17 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
+
+def _configure_optional_infrastructure(application: FastAPI) -> None:
+    if settings.REDIS_URL:
+        application.state.redis_url = settings.REDIS_URL
+    if settings.ENABLE_METRICS:
+        with suppress(ImportError):
+            from prometheus_fastapi_instrumentator import Instrumentator
+
+            Instrumentator().instrument(application).expose(application)
+
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -73,6 +89,7 @@ app.add_middleware(
     expose_headers=["Mcp-Session-Id"],
 )
 app.add_middleware(AgentGatewayAuthMiddleware)
+_configure_optional_infrastructure(app)
 
 app.include_router(health.router)
 app.include_router(assessments.router, prefix=settings.API_PREFIX)
@@ -81,6 +98,7 @@ app.include_router(integrations.router, prefix=settings.API_PREFIX)
 app.include_router(
     skills.router, prefix=f"{settings.API_PREFIX}/skills", tags=["skills"]
 )
+app.include_router(governance.router, prefix=settings.API_PREFIX)
 app.router.routes.extend(a2a_routes)
 app.mount("/mcp", mcp.streamable_http_app(), name="mcp")
 

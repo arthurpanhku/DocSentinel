@@ -1,0 +1,25 @@
+id: iso-42001
+name: ISO/IEC 42001:2023 Artificial Intelligence Management System
+label: ISO 42001
+type: overlay
+version: 2023.1.0
+description: >
+  Maps PallasGuard AI controls to ISO/IEC 42001:2023 requirements.
+  Applicable to organizations developing, deploying, or using AI systems.
+  Covers AIMS scope, risk management, AI system lifecycle, and continual improvement.
+requires_base: generic-ssdlc
+region_group: ISO
+applicable_regions: []
+applicable_system_types: [genai_system, ml_model, agentic_system, cv_system]
+load_condition: "involves_ai_ml == true"
+required_questions:
+  - involves_ai_ml
+  - ai_system_type
+
+control_mappings:
+  AI-SEC-02: "ISO 42001:2023 §8.4 — AI system lifecycle (provenance)"
+  AI-SEC-03: "ISO 42001:2023 §8.4 — Data for AI (training data quality)"
+  AI-SEC-05: "ISO 42001:2023 §9.1 — Monitoring, measurement, analysis and evaluation"
+  AI-GOV-01: "ISO 42001:2023 §7.5 — Documented information (model documentation)"
+  AI-GOV-02: "ISO 42001:2023 §8.7 — AI system impact assessment"
+  AI-SEC-07: "ISO 42001:2023 §8.4.2 — Ensuring data quality and representativeness"

@@ -30,6 +30,8 @@ env/
 # Environment and secrets
 .env
 .env.local
+llm_config.json
+backend/llm_config.json
 *.pem
 
 # IDE
@@ -41,11 +43,21 @@ env/
 # AI tooling
 .claude/
 .trae/
+_pallasguard_src/
 
 # Data and persistence
 data/
+database.db
 *.db
 chroma/
+uploads/
+app/uploads/
+frontend/uploads/
+knowledge_base/uploads/
+policy_packs/private/
+policy_packs/local/
+policy_packs/*-internal/
+policy_packs/*-private/
 
 # Logs and cache
 *.log

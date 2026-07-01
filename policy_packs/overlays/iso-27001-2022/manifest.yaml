@@ -1,0 +1,35 @@
+id: iso-27001-2022
+name: ISO/IEC 27001:2022 Information Security Management
+label: ISO 27001
+type: overlay
+version: 2022.1.0
+description: >
+  Maps PallasGuard controls to ISO/IEC 27001:2022 Annex A controls.
+  Applicable to organizations seeking ISO 27001 certification or alignment.
+  Covers all 93 controls across 4 themes: Organizational, People, Physical, Technological.
+requires_base: generic-ssdlc
+region_group: ISO
+applicable_regions: []
+applicable_system_types: [all]
+required_questions:
+  - system_type
+  - data_classification
+
+control_mappings:
+  GEN-IAM-01: "ISO 27001:2022 A.8.5 — Secure authentication"
+  GEN-IAM-02: "ISO 27001:2022 A.8.2 — Privileged access rights"
+  GEN-IAM-03: "ISO 27001:2022 A.8.18 — Use of privileged utility programs"
+  GEN-LOG-01: "ISO 27001:2022 A.8.15 — Logging"
+  GEN-LOG-02: "ISO 27001:2022 A.8.15 — Logging"
+  GEN-ENC-01: "ISO 27001:2022 A.8.24 — Use of cryptography"
+  GEN-ENC-02: "ISO 27001:2022 A.8.24 — Use of cryptography"
+  GEN-VUL-01: "ISO 27001:2022 A.8.29 — Security testing in development and acceptance"
+  GEN-VUL-02: "ISO 27001:2022 A.8.29 — Security testing in development and acceptance"
+  GEN-VUL-03: "ISO 27001:2022 A.8.29 — Security testing in development and acceptance"
+  GEN-SEC-01: "ISO 27001:2022 A.8.28 — Secure coding"
+  GEN-BCP-01: "ISO 27001:2022 A.8.13 — Information backup"
+  GEN-PRV-01: "ISO 27001:2022 A.5.34 — Privacy and protection of PII"
+  GEN-PRV-02: "ISO 27001:2022 A.5.34 — Privacy and protection of PII"
+  GEN-TPR-01: "ISO 27001:2022 A.5.19 — Information security in supplier relationships"
+  GEN-SC-01:  "ISO 27001:2022 A.8.8 — Management of technical vulnerabilities"
+  GEN-SC-03:  "ISO 27001:2022 A.8.8 — Management of technical vulnerabilities"
