@@ -2590,6 +2590,12 @@
         "title": "GenerateControlsRequest",
         "type": "object"
       }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
     }
   },
   "info": {
@@ -2871,6 +2877,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Submit Assessment",
         "tags": [
           "assessments"
@@ -3003,6 +3014,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Add Comment",
         "tags": [
           "assessments"
@@ -3110,6 +3126,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Remediation Tracking",
         "tags": [
           "assessments"
@@ -3210,6 +3231,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Review Assessment",
         "tags": [
           "assessments"
@@ -3463,6 +3489,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Upload Document",
         "tags": [
           "knowledge-base"
@@ -3542,6 +3573,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Reindex Kb",
         "tags": [
           "knowledge-base"
@@ -5605,6 +5641,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Create Skill",
         "tags": [
           "skills"
@@ -5646,6 +5687,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Delete Skill",
         "tags": [
           "skills"
@@ -5738,6 +5784,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Skill",
         "tags": [
           "skills"

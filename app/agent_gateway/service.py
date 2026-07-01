@@ -88,7 +88,10 @@ class AgentGateway:
         parsed = parse_file(document_path.read_bytes(), document_path.name)
         parsed.metadata.scenario_id = scenario_id
         parsed.metadata.ssdlc_phase_hint = phase
-        sanitize_input(parsed.content if isinstance(parsed.content, str) else "")
+        sanitize_input(
+            parsed.content if isinstance(parsed.content, str) else "",
+            resource=f"{source}:document:{document_path.name}",
+        )
         created = await assessment_service.submit(
             [parsed],
             scenario_id=scenario_id,
@@ -122,7 +125,7 @@ class AgentGateway:
         return result.model_dump(mode="json")
 
     async def query_knowledge_base(self, query: str, top_k: int = 3) -> dict[str, Any]:
-        sanitized = sanitize_input(query)
+        sanitized = sanitize_input(query, resource="agent_gateway:kb_query")
         bounded_top_k = max(1, min(top_k, 10))
         results = await get_kb_service().query(sanitized, bounded_top_k)
         return {

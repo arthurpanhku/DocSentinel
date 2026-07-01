@@ -1,8 +1,11 @@
 """Knowledge base API: upload document, query (hybrid RAG)."""
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from typing import Any
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
+from app.core.deps import require_roles
 from app.core.document_access import (
     DocumentAccessError,
     resolve_kb_reindex_directory,
@@ -12,6 +15,8 @@ from app.kb.service import get_kb_service
 from app.parser import parse_file
 
 router = APIRouter(prefix="/kb", tags=["knowledge-base"])
+KB_WRITE_ROLES = ("admin", "auditor", "security_reviewer")
+KB_WRITE_DEP = Depends(require_roles(*KB_WRITE_ROLES))
 
 
 class KBQueryRequest(BaseModel):
@@ -24,7 +29,10 @@ class KBReindexRequest(BaseModel):
 
 
 @router.post("/documents")
-async def upload_document(file: UploadFile = File(...)):  # noqa: B008
+async def upload_document(
+    file: UploadFile = File(...),  # noqa: B008
+    _current_user: Any = KB_WRITE_DEP,
+):
     """Upload a document to the knowledge base (vector + graph RAG)."""
     from app.core.config import settings
 
@@ -42,7 +50,7 @@ async def upload_document(file: UploadFile = File(...)):  # noqa: B008
 @router.post("/query")
 async def query_kb(body: KBQueryRequest):
     """Hybrid RAG query: vector similarity + graph retrieval."""
-    sanitize_input(body.query)
+    sanitize_input(body.query, resource="kb:query")
     kb = get_kb_service()
     docs = await kb.query(body.query, top_k=body.top_k)
     return {
@@ -51,7 +59,10 @@ async def query_kb(body: KBQueryRequest):
 
 
 @router.post("/reindex")
-async def reindex_kb(body: KBReindexRequest):
+async def reindex_kb(
+    body: KBReindexRequest,
+    _current_user: Any = KB_WRITE_DEP,
+):
     try:
         directory = resolve_kb_reindex_directory(body.directory)
     except DocumentAccessError as exc:

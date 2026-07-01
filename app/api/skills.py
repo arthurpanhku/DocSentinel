@@ -2,12 +2,17 @@
 API endpoints for managing skills (personas).
 """
 
-from fastapi import APIRouter, HTTPException
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.agent.skills_service import get_skill_service
+from app.core.deps import require_roles
 from app.models.skill import Skill, SkillCreate, SkillUpdate
 
 router = APIRouter()
+SKILL_WRITE_ROLES = ("admin", "auditor")
+SKILL_WRITE_DEP = Depends(require_roles(*SKILL_WRITE_ROLES))
 
 
 @router.get("/", response_model=list[Skill])
@@ -28,7 +33,10 @@ async def get_skill(skill_id: str):
 
 
 @router.post("/", response_model=Skill)
-async def create_skill(skill_in: SkillCreate):
+async def create_skill(
+    skill_in: SkillCreate,
+    _current_user: Any = SKILL_WRITE_DEP,
+):
     """Create a new custom skill."""
     service = get_skill_service()
     try:
@@ -38,7 +46,11 @@ async def create_skill(skill_in: SkillCreate):
 
 
 @router.put("/{skill_id}", response_model=Skill)
-async def update_skill(skill_id: str, skill_in: SkillUpdate):
+async def update_skill(
+    skill_id: str,
+    skill_in: SkillUpdate,
+    _current_user: Any = SKILL_WRITE_DEP,
+):
     """Update an existing custom skill."""
     service = get_skill_service()
     try:
@@ -48,7 +60,10 @@ async def update_skill(skill_id: str, skill_in: SkillUpdate):
 
 
 @router.delete("/{skill_id}")
-async def delete_skill(skill_id: str):
+async def delete_skill(
+    skill_id: str,
+    _current_user: Any = SKILL_WRITE_DEP,
+):
     """Delete a custom skill."""
     service = get_skill_service()
     try:

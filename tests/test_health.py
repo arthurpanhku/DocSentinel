@@ -62,7 +62,7 @@ def test_update_config_llm_masks_api_key(client, monkeypatch, tmp_path):
         json={
             "provider": "openai_compatible",
             "model": "my-model",
-            "base_url": "http://localhost:9999/v1",
+            "base_url": "http://localhost:1234/v1",
             "api_key": "sk-test-1234567890",
         },
     )
@@ -71,7 +71,7 @@ def test_update_config_llm_masks_api_key(client, monkeypatch, tmp_path):
     assert data["status"] == "ok"
     assert data["provider"] == "openai_compatible"
     assert data["model"] == "my-model"
-    assert data["base_url"] == "http://localhost:9999/v1"
+    assert data["base_url"] == "http://localhost:1234/v1"
     assert data["api_key_set"] is True
     assert data["api_key_preview"] == "sk-t...7890"
 

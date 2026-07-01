@@ -11,6 +11,7 @@ from uuid import UUID
 
 from app.agent.skills_service import get_skill_service  # noqa: F401
 from app.core.config import settings
+from app.core.guardrails import UNTRUSTED_CONTENT_INSTRUCTION, wrap_untrusted_content
 from app.kb.service import get_kb_service
 from app.llm.base import invoke_llm
 from app.models.assessment import (
@@ -22,6 +23,8 @@ from app.models.assessment import (
     SourceCitation,
 )
 from app.models.parser import ParsedDocument
+from app.services.s2o_rule_engine import get_engine
+from app.services.schema_service import get_gate3_controls
 
 logger = logging.getLogger(__name__)
 
@@ -137,11 +140,15 @@ def _build_document_context(
     doc_texts: list[str] = []
     for d in parsed_documents:
         c = d.content if isinstance(d.content, str) else str(d.content)
-        doc_texts.append(f"[{d.metadata.filename}]\n{c}")
+        doc_texts.append(wrap_untrusted_content(d.metadata.filename, c))
     combined_input = "\n\n---\n\n".join(doc_texts)
+    raw_query_input = "\n\n---\n\n".join(
+        d.content if isinstance(d.content, str) else str(d.content)
+        for d in parsed_documents
+    )
     return {
         "full_text": combined_input,
-        "query_seed": _extract_query_seed(combined_input, skill_focus),
+        "query_seed": _extract_query_seed(raw_query_input, skill_focus),
     }
 
 
@@ -178,12 +185,16 @@ async def _evidence_agent(
     for d in parsed_documents:
         content = d.content if isinstance(d.content, str) else str(d.content)
         doc_parts.append(
-            f"[{d.metadata.filename}]\n{_truncate_at_boundary(content, 6000)}"
+            wrap_untrusted_content(
+                d.metadata.filename,
+                _truncate_at_boundary(content, 6000),
+            )
         )
     combined = "\n\n---\n\n".join(doc_parts)
 
     system_prompt = (
         "You are a security evidence extractor. "
+        f"{UNTRUSTED_CONTENT_INSTRUCTION} "
         "Extract verbatim lines or short passages that directly support or contradict "
         "the given focus areas. Format each line as: filename#Ln: <exact quote>. "
         "Return only evidence lines, one per line, maximum 30 lines."
@@ -244,6 +255,7 @@ async def _drafter_agent(
 
     base_prompt = (
         "You are DrafterAgent in a multi-agent security workflow. "
+        f"{UNTRUSTED_CONTENT_INSTRUCTION} "
         "Create an assessment draft in JSON only with keys: summary, risk_items, "
         "compliance_gaps, remediations."
     )
@@ -253,6 +265,7 @@ async def _drafter_agent(
             f"{skill.system_prompt}\n"
             f"You are acting as {skill.name}. {skill.description}\n"
             f"Focus areas: {', '.join(skill.risk_focus)}.\n"
+            f"{UNTRUSTED_CONTENT_INSTRUCTION}\n"
             "Output strictly JSON with keys: summary, risk_items, "
             "compliance_gaps, remediations."
         )
@@ -302,6 +315,7 @@ async def _merge_drafts(drafts: list[str], skill: object | None = None) -> str:
     system_prompt = (
         "You are MergeAgent. Consolidate multiple security assessment drafts from "
         "different sections of the same document into one unified assessment. "
+        f"{UNTRUSTED_CONTENT_INSTRUCTION} "
         f"{skill_info}"
         "Deduplicate findings, keep the highest-severity version of duplicates, "
         "and merge remediations. "
@@ -336,6 +350,7 @@ async def _reviewer_agent(
     base_prompt = (
         "You are ReviewerAgent. Validate and improve the draft for consistency and "
         "hallucination resistance. "
+        f"{UNTRUSTED_CONTENT_INSTRUCTION} "
         "Output JSON only with keys: summary, confidence, risk_items, "
         "compliance_gaps, remediations, sources. "
         f"Available chunk IDs: {chunk_ids}. "
@@ -350,6 +365,7 @@ async def _reviewer_agent(
             f"You are a Reviewer for the {skill.name} persona. "
             f"Validate the draft against {', '.join(skill.compliance_frameworks)}. "
             "Ensure findings match the persona's focus. "
+            f"{UNTRUSTED_CONTENT_INSTRUCTION} "
             "Output JSON only with keys: summary, confidence, risk_items, "
             "compliance_gaps, remediations, sources. "
             f"Available chunk IDs: {chunk_ids}. "
@@ -359,9 +375,17 @@ async def _reviewer_agent(
             "Only include chunks you actually used."
         )
 
+    draft_context = wrap_untrusted_content(
+        "draft",
+        _truncate_at_boundary(draft_raw, 8000),
+    )
+    evidence_lines = wrap_untrusted_content(
+        "evidence",
+        _truncate_at_boundary(evidence_context, 2000),
+    )
     user_prompt = (
-        f"## Draft\n{_truncate_at_boundary(draft_raw, 8000)}\n\n"
-        f"## Evidence Lines\n{_truncate_at_boundary(evidence_context, 2000)}\n\n"
+        f"## Draft\n{draft_context}\n\n"
+        f"## Evidence Lines\n{evidence_lines}\n\n"
         f"## Policy Chunks\n{_truncate_at_boundary(policy_context, 3000)}\n\n"
         f"## Historical Answers\n{_truncate_at_boundary(history_context, 2000)}\n\n"
         "Keep only well-supported findings. Declare which chunks you used in `sources`."
@@ -380,11 +404,15 @@ def _format_chunks_with_ids(chunks: list, prefix: str) -> str:
         if source_type == "graph":
             graph_mode = metadata.get("graph_mode", "hybrid")
             formatted.append(
-                f"[{c_id}] [GRAPH/{graph_mode}] {src}\n{d.page_content[:600]}"
+                f"[{c_id}] [GRAPH/{graph_mode}] {src}\n"
+                f"{wrap_untrusted_content(c_id, d.page_content[:600])}"
             )
         else:
             page = metadata.get("page")
-            formatted.append(f"[{c_id}] {src} p={page}\n{d.page_content[:600]}")
+            formatted.append(
+                f"[{c_id}] {src} p={page}\n"
+                f"{wrap_untrusted_content(c_id, d.page_content[:600])}"
+            )
     return "\n\n".join(formatted)
 
 
@@ -505,7 +533,7 @@ def _parse_llm_output_to_report(
     if not citations:
         citations = _derive_sources_from_chunks(policy_chunks, history_chunks)
 
-    return AssessmentReport(
+    report = AssessmentReport(
         task_id=str(task_id),
         phase=phase,
         status="completed",
@@ -566,3 +594,137 @@ def _parse_llm_output_to_report(
             completed_at=datetime.now(UTC),
         ),
     )
+    return _apply_rule_engine_decision(report, project_id=project_id)
+
+
+def _apply_rule_engine_decision(
+    report: AssessmentReport,
+    *,
+    project_id: str | None,
+) -> AssessmentReport:
+    rule_inputs = _rule_engine_inputs(project_id)
+    decision = get_engine().evaluate(**rule_inputs)
+    risk_rating = str(decision.get("risk_rating") or "unknown")
+    risk_level = str(decision.get("risk_level") or "unknown")
+    control_profile = str(decision.get("control_profile") or "unknown")
+    requirements = list(decision.get("requirements") or [])
+    matched_rules = list(decision.get("matched_rules") or [])
+
+    try:
+        control_count = len(get_gate3_controls(control_profile))
+    except Exception:
+        control_count = 0
+
+    severity = risk_rating if risk_rating in {"low", "medium", "high"} else "low"
+    decision_text = (
+        f"Rule engine decision: risk_rating={risk_rating}; "
+        f"risk_level={risk_level}; control_profile={control_profile}; "
+        f"matched_rules={','.join(matched_rules) or 'none'}."
+    )
+    advisory_summary = report.summary or "No LLM advisory summary provided."
+    report.summary = f"{decision_text} LLM advisory summary: {advisory_summary}"
+    report.risk_items.insert(
+        0,
+        RiskItem(
+            id="S2O-RISK",
+            title=f"Rule engine risk rating: {risk_rating}",
+            severity=severity,
+            description=(
+                "Deterministic risk decision from app.services.s2o_rule_engine. "
+                f"Inputs: {json.dumps(rule_inputs, sort_keys=True)}"
+            ),
+            category="rule_engine",
+            phase=report.phase,
+            confidence=1.0,
+        ),
+    )
+    report.compliance_gaps.insert(
+        0,
+        ComplianceGap(
+            id="S2O-CONTROLS",
+            control_or_clause=f"S2O:{control_profile}",
+            gap_description=(
+                "Deterministic compliance/control-profile decision from rule "
+                "engine. Required workflow areas: "
+                f"{', '.join(requirements) or 'none'}. "
+                f"Schema-validated Gate 3 control count: {control_count}."
+            ),
+            evidence_suggestion="Review rule-engine matched_rules and Gate 3 controls.",
+            framework=settings.POLICY_PACK_ID,
+            phase=report.phase,
+            confidence=1.0,
+        ),
+    )
+    report.confidence = min(report.confidence or 0.0, 0.95)
+    return report
+
+
+def _rule_engine_inputs(project_id: str | None) -> dict[str, str]:
+    defaults = {
+        "data_classification": "2",
+        "access": "2",
+        "solution_type": "1",
+        "hosting_environment": "1",
+        "release_type": "1",
+    }
+    if not project_id:
+        return defaults
+
+    try:
+        project_uuid = UUID(str(project_id))
+        from sqlmodel import Session
+
+        from app.core.db import engine
+        from app.models.governance import Project
+
+        with Session(engine) as session:
+            project = session.get(Project, project_uuid)
+    except Exception:
+        return defaults
+
+    if project is None:
+        return defaults
+
+    return {
+        "data_classification": _rule_code(
+            getattr(project, "data_classification", None),
+            {"1", "2", "3"},
+            {
+                "critical": "1",
+                "high": "1",
+                "confidential": "2",
+                "medium": "2",
+                "low": "3",
+                "public": "3",
+            },
+            defaults["data_classification"],
+        ),
+        "access": defaults["access"],
+        "solution_type": _rule_code(
+            getattr(project, "system_type", None),
+            {"1", "2", "3", "4", "5", "6"},
+            {},
+            defaults["solution_type"],
+        ),
+        "hosting_environment": _rule_code(
+            getattr(project, "hosting_type", None),
+            {"1", "2", "3", "4", "40", "41", "50", "60", "70", "80"},
+            {},
+            defaults["hosting_environment"],
+        ),
+        "release_type": defaults["release_type"],
+    }
+
+
+def _rule_code(
+    value: object,
+    allowed: set[str],
+    aliases: dict[str, str],
+    default: str,
+) -> str:
+    if value is None:
+        return default
+    normalized = str(value).strip().lower()
+    if normalized in allowed:
+        return normalized
+    return aliases.get(normalized, default)

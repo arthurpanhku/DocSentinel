@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
-from jose import JWTError, jwt
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
@@ -81,7 +81,7 @@ async def me(
             algorithms=[ALGORITHM],
         )
         user_id = int(decoded.get("sub"))
-    except (JWTError, TypeError, ValueError) as exc:
+    except (jwt.PyJWTError, TypeError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token.",

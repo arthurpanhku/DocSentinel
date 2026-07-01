@@ -3,8 +3,8 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import bcrypt as bcrypt_backend
+import jwt
 from fastapi import HTTPException, status
-from jose import jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings
@@ -43,6 +43,17 @@ def create_access_token(subject: str | Any, expires_delta: timedelta = None) -> 
     to_encode = {"exp": expire, "sub": str(subject)}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+
+def decode_access_token(token: str) -> dict[str, Any]:
+    try:
+        return jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+    except jwt.PyJWTError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

@@ -25,7 +25,7 @@ def test_get_llm_constructs_deepseek(monkeypatch):
 def test_get_llm_constructs_anthropic_compat(monkeypatch):
     monkeypatch.setattr(settings, "AGENT_LLM_MODE", "anthropic_compat")
     monkeypatch.setattr(settings, "ANTHROPIC_AUTH_TOKEN", "sk-ant-test")
-    monkeypatch.setattr(settings, "ANTHROPIC_BASE_URL", "https://anthropic.example/v1")
+    monkeypatch.setattr(settings, "ANTHROPIC_BASE_URL", "https://api.anthropic.com")
     monkeypatch.setattr(settings, "ANTHROPIC_MODEL", "")
     monkeypatch.setattr(settings, "ANTHROPIC_DEFAULT_SONNET_MODEL", "claude-test")
     get_llm.cache_clear()
