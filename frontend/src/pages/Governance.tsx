@@ -39,6 +39,7 @@ import {
   type GovernanceProject,
   type PallasLens
 } from "../lib/governanceApi";
+import { englishDisplayText, frameworkDisplayName } from "../lib/displayText";
 import { cn } from "../lib/utils";
 
 const riskTiers = ["low", "medium", "high", "critical"];
@@ -203,8 +204,15 @@ export default function Governance() {
                         onChange={() => toggleFramework(overlay.id)}
                         type="checkbox"
                       />
-                      <span className="min-w-0 flex-1 truncate">{overlay.label ?? overlay.id}</span>
-                      <span className="text-xs text-muted">{overlay.region_group}</span>
+                      <span className="min-w-0 flex-1 truncate">
+                        {frameworkDisplayName(
+                          overlay.id,
+                          overlay.label ?? overlay.name
+                        )}
+                      </span>
+                      <span className="text-xs text-muted">
+                        {englishDisplayText(overlay.region_group, "Framework")}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -354,16 +362,24 @@ function ControlsPanel({
                 <span className="text-xs text-muted">{control.control_id}</span>
               </div>
               <div>
-                <div className="text-sm font-medium text-text">{control.title}</div>
+                <div className="text-sm font-medium text-text">
+                  {englishDisplayText(control.title, control.control_id)}
+                </div>
                 <p className="mt-1 text-sm leading-5 text-muted">
-                  {control.normalized_requirement}
+                  {englishDisplayText(
+                    control.normalized_requirement,
+                    "Control requirement"
+                  )}
                 </p>
               </div>
               <div className="grid gap-2 md:grid-cols-[1fr_auto]">
                 <Textarea
                   minLength={1}
                   onChange={(event) => onDraftChange(control.control_id, event.target.value)}
-                  placeholder={control.expected_evidence[0] ?? "Evidence note"}
+                  placeholder={englishDisplayText(
+                    control.expected_evidence[0],
+                    "Evidence note"
+                  )}
                   value={evidenceDraft[control.control_id] ?? ""}
                 />
                 <Button
@@ -408,13 +424,17 @@ function LensPanel({ lens, loading }: { lens: PallasLens | null; loading: boolea
               {lens.posture}
             </Badge>
           </div>
-          <p className="mt-2 text-sm leading-5 text-muted">{lens.summary}</p>
+          <p className="mt-2 text-sm leading-5 text-muted">
+            {englishDisplayText(lens.summary, "Governance readiness summary")}
+          </p>
         </div>
         <div className="grid gap-3">
           {lens.dimensions.map((dimension) => (
             <div key={dimension.key} className="grid gap-1.5">
               <div className="flex justify-between gap-3 text-xs">
-                <span className="text-muted">{dimension.label}</span>
+                <span className="text-muted">
+                  {englishDisplayText(dimension.label, dimension.key)}
+                </span>
                 <span className="font-medium text-text">{dimension.score}</span>
               </div>
               <div className="h-2 overflow-hidden rounded bg-panel2">
@@ -434,9 +454,13 @@ function LensPanel({ lens, loading }: { lens: PallasLens | null; loading: boolea
             >
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-accent" aria-hidden="true" />
-                <div className="truncate text-sm font-medium text-text">{action.action}</div>
+                <div className="truncate text-sm font-medium text-text">
+                  {englishDisplayText(action.action, action.title)}
+                </div>
               </div>
-              <div className="mt-1 text-xs leading-5 text-muted">{action.reason}</div>
+              <div className="mt-1 text-xs leading-5 text-muted">
+                {englishDisplayText(action.reason, "Action recommended")}
+              </div>
             </div>
           ))}
         </div>
