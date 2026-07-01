@@ -63,6 +63,26 @@ Ideal for enterprises that need to scale security assessments across many projec
 
 ---
 
+## Product Tour
+
+![DocSentinel console demo](docs/images/docsentinel-console-demo.gif)
+
+The local React console brings the main workflow into one operational surface:
+
+- **Command Center**: live API and LLM status, assessment throughput, review
+  demand, remediation queues, and recent activity.
+- **Assessment Workbench**: upload project documents, choose SSDLC phase/skill,
+  inspect AI-generated risks, and complete human review.
+- **Governance Portal**: create projects, apply public framework overlays,
+  generate controls, submit evidence, and track Pallas Lens readiness.
+- **Knowledge Base**: ingest policies and standards for RAG-backed review.
+- **Agent Integrations**: expose governed MCP and A2A tools to coding agents and
+  multi-agent platforms without granting approval authority.
+- **Settings**: switch providers such as DeepSeek, OpenAI, Anthropic, Qwen, or
+  Ollama; API keys are accepted locally and only shown as masked previews.
+
+---
+
 ## Why DocSentinel?
 
 | Pain Point | DocSentinel Solution |
@@ -332,6 +352,18 @@ cp .env.example .env        # Edit if needed: LLM_PROVIDER=ollama or openai
 npm install --prefix frontend
 npm run build --prefix frontend
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+#### DeepSeek example
+
+Set these values in `.env`, or use the **Settings** page after the server is
+running. Never commit real API keys.
+
+```dotenv
+LLM_PROVIDER=deepseek
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
+DEEPSEEK_API_KEY=sk-your-deepseek-key
 ```
 
 -   **API docs**: [http://localhost:8000/api-docs](http://localhost:8000/api-docs) · **Health**: [http://localhost:8000/health](http://localhost:8000/health)
