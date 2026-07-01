@@ -1,6 +1,6 @@
 """Tests for assessment API (LLM mocked)."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 from app.models.assessment import (
@@ -36,7 +36,7 @@ def _make_report(task_id):
             scenario_id=None,
             project_id=None,
             model_used="ollama",
-            completed_at=datetime.now(timezone.utc),
+            completed_at=datetime.now(UTC),
         ),
     )
 

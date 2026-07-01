@@ -8,7 +8,7 @@ We need two types of assets: **Static Screenshots** (for README) and a **Live De
 
 ## 1. Static Screenshots (Required) | 静态截图（必须）
 
-**Target | 目标**: 
+**Target | 目标**:
 - `docs/images/streamlit-dashboard.png`
 - `docs/images/streamlit-workbench.png`
 - `docs/images/streamlit-knowledge-base.png`

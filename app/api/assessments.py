@@ -116,9 +116,7 @@ async def list_assessments(
     offset: int = Query(0, ge=0),
 ):
     statuses = (
-        {item.strip() for item in status.split(",") if item.strip()}
-        if status
-        else None
+        {item.strip() for item in status.split(",") if item.strip()} if status else None
     )
     return assessment_service.list(
         statuses=statuses,

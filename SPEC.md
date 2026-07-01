@@ -19,6 +19,11 @@
 
 **History | 版本历史**
 
+-   **v4.1**: PallasGuard merge. Added governance projects, policy-pack driven
+    controls, Gate 1/3 questionnaire/submission workflows, audit trails, Pallas
+    Lens readiness scoring, Alembic migrations, and the React governance portal.
+    PallasGuard 合并。新增治理项目、policy pack 驱动控制、Gate 1/3 问卷/提交工作流、
+    审计轨迹、Pallas Lens 就绪度评分、Alembic 迁移与 React 治理门户。
 -   **v4.0**: SSDLC + LangGraph. Full SSDLC lifecycle support (6 stages), LangChain/LangGraph as orchestration engine, stage-specific skills and assessment flows. Pivoted to full-phase support with phase-specific SSDLC agents.
     SSDLC + LangGraph。完整 SSDLC 生命周期支持（6 阶段），引入 LangChain/LangGraph 作为编排引擎，阶段专属 Skill 与评估流程。转向全阶段支持，配备阶段专用 SSDLC Agent。
 -   **v3.1**: Performance & quality. Graph RAG, Docling parser, async pipeline, parallel orchestration, guardrails, singleton KB, cached LLM.
@@ -126,6 +131,13 @@ The platform covers six standard SSDLC phases with dedicated AI agents for each:
 
 The platform uses **LangGraph** to orchestrate these agents into configurable workflows — agents can run sequentially, in parallel, or conditionally based on project context. **LangChain** provides the unified LLM abstraction, tool integration, and RAG pipeline.
 
+The PallasGuard merge adds a governance layer around the assessment engine:
+projects can select public policy-pack overlays, generate applicable controls,
+collect evidence, run Gate 1/3 questionnaire and submission workflows, preserve
+audit trails, and view Pallas Lens readiness scoring. These capabilities share
+DocSentinel's FastAPI API, React console, LangGraph orchestration, SQLModel
+models, Alembic migrations, and RAG ingestion path.
+
 **中文**
 
 构建一个**面向安全团队的 AI 驱动 SSDLC 平台**，首要方向为：**自动化覆盖安全软件开发生命周期的全部安全活动，评估所有需要安全团队审阅的表格、文档与报告**。安全人员将项目相关文件提交给 Agent 后，平台能够：
@@ -146,6 +158,12 @@ The platform uses **LangGraph** to orchestrate these agents into configurable wo
 6.  **运维阶段 Agent**：监控漏洞情报，辅助应急响应，跟踪补丁管理，审计安全日志。
 
 平台使用 **LangGraph** 将这些 Agent 编排为可配置的工作流——Agent 可根据项目上下文顺序执行、并行执行或条件执行。**LangChain** 提供统一的 LLM 抽象、工具集成和 RAG 管道。
+
+PallasGuard 合并后，DocSentinel 在评估引擎外增加治理层：项目可选择公开
+policy pack overlay，生成适用控制，收集证据，执行 Gate 1/3 问卷与提交审批，
+保留审计轨迹，并通过 Pallas Lens 查看项目就绪度评分。这些能力复用 DocSentinel
+的 FastAPI、React 控制台、LangGraph 编排、SQLModel 模型、Alembic 迁移与 RAG
+摄取路径。
 
 ### 3.2 SSDLC Phase Details | SSDLC 阶段详述
 

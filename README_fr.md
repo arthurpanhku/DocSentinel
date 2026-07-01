@@ -116,6 +116,8 @@ flowchart TB
 | **Analyse**               | Word, PDF, Excel, PPT, Texte → Markdown/JSON.                                 |
 | **Base de Connaissances** | Téléchargement multi-formats, découpage, vectorisation (Chroma), requête RAG. |
 | **Évaluation**            | Soumettre des fichiers → rapport structuré (risques, écarts, remédiations).   |
+| **Gouvernance**           | Contrôles projet, questionnaires Gate 1/3, soumissions, approbations et audit. |
+| **Pallas Lens**           | Score de préparation, couverture des preuves et prochaines actions par projet. |
 | **LLM**                   | Fournisseur configurable : **Ollama** (local), OpenAI, etc.                   |
 | **API**                   | API REST & **Serveur MCP** pour l'intégration d'agents.                       |
 | **Sécurité**              | RBAC intégré, journaux d'audit et protections contre l'injection de prompt.   |

@@ -50,7 +50,7 @@ if [[ "$COMPOSE_FILES" == *"ollama"* ]]; then
     # Wait for Ollama to be ready
     echo "  > Waiting for Ollama service..."
     sleep 5
-    
+
     # Pull default model if not exists
     MODEL=$(grep OLLAMA_MODEL .env | cut -d '=' -f2 || echo "llama2")
     echo "  > Ensuring model '$MODEL' is available..."

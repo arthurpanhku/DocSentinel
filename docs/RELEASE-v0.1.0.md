@@ -4,7 +4,7 @@
 
 ---
 
-将以下内容复制到 GitHub → Releases → Draft a new release → 选择 tag `v0.1.0` → 粘贴到描述框。  
+将以下内容复制到 GitHub → Releases → Draft a new release → 选择 tag `v0.1.0` → 粘贴到描述框。
 Copy the content below into GitHub → Releases → Draft a new release → choose tag `v0.1.0` → paste into the description.
 
 ---

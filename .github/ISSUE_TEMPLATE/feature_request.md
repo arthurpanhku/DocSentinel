@@ -8,26 +8,26 @@ assignees: ''
 
 ## Problem or Use Case | 问题或使用场景
 
-**What problem does this solve, or what use case would it enable?**  
+**What problem does this solve, or what use case would it enable?**
 希望解决什么问题，或支持什么使用场景？
 
 ---
 
 ## Proposed Solution | 建议方案
 
-**Describe the feature or change you’d like.**  
+**Describe the feature or change you’d like.**
 描述你期望的功能或改动。
 
 ---
 
 ## Alternatives Considered | 考虑过的其他方案
 
-**Any alternative approaches you’ve thought about.**  
+**Any alternative approaches you’ve thought about.**
 是否考虑过其他实现方式。
 
 ---
 
 ## Additional Context | 其他信息
 
-Links, references, or examples (e.g. from other tools).  
+Links, references, or examples (e.g. from other tools).
 相关链接、参考或示例（如其他工具的做法）。

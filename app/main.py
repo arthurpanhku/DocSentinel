@@ -68,6 +68,7 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
+
 def _configure_optional_infrastructure(application: FastAPI) -> None:
     if settings.REDIS_URL:
         application.state.redis_url = settings.REDIS_URL

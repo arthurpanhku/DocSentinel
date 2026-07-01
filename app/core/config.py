@@ -119,9 +119,7 @@ class Settings(BaseSettings):
     AGENT_GATEWAY_TOKEN: str = ""
     AGENT_GATEWAY_PUBLIC_URL: str = "http://localhost:8000"
     AGENT_GATEWAY_ALLOWED_HOSTS: str = "127.0.0.1:*,localhost:*,[::1]:*"
-    AGENT_GATEWAY_ALLOWED_ORIGINS: str = (
-        "http://127.0.0.1:*,http://localhost:*"
-    )
+    AGENT_GATEWAY_ALLOWED_ORIGINS: str = "http://127.0.0.1:*,http://localhost:*"
     AGENT_GATEWAY_TASK_TIMEOUT_SECONDS: int = 300
 
     @property

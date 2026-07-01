@@ -1,6 +1,6 @@
 # Example files | 示例文件
 
-Sample documents for testing DocSentinel locally.  
+Sample documents for testing DocSentinel locally.
 用于本地测试 DocSentinel 的示例文档。
 
 | File | Use |

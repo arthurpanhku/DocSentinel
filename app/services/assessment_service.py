@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -63,7 +63,7 @@ class AssessmentService:
     ) -> AssessmentTaskCreated:
         task_id = uuid4()
         task_id_str = str(task_id)
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         self._tasks[task_id_str] = {
             "task_id": task_id,
             "status": "pending",
@@ -118,7 +118,7 @@ class AssessmentService:
         task["activity"].append(
             {
                 "type": "assessment_started",
-                "at": datetime.now(timezone.utc).isoformat(),
+                "at": datetime.now(UTC).isoformat(),
                 "message": "Assessment processing started",
             }
         )
@@ -137,7 +137,7 @@ class AssessmentService:
                 report.metadata.skill_id = skill_id
             report.phase = phase
             target_status = "review_pending" if collaborative_mode else "completed"
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             tracking = {
                 item.id: RemediationTracking(
                     remediation_id=item.id,
@@ -173,7 +173,7 @@ class AssessmentService:
             logger.exception("Assessment %s failed", task_id_str)
             task["status"] = "failed"
             task["error"] = str(exc)
-            task["completed_at"] = datetime.now(timezone.utc)
+            task["completed_at"] = datetime.now(UTC)
 
     def _index_history(
         self,
@@ -192,7 +192,7 @@ class AssessmentService:
             self._tasks[task_id]["activity"].append(
                 {
                     "type": "history_index_skipped",
-                    "at": datetime.now(timezone.utc).isoformat(),
+                    "at": datetime.now(UTC).isoformat(),
                     "message": "History indexing unavailable in current runtime",
                 }
             )
@@ -236,8 +236,7 @@ class AssessmentService:
             reverse=True,
         )
         return [
-            self.get(str(task["task_id"]))
-            for task in tasks[offset : offset + limit]
+            self.get(str(task["task_id"])) for task in tasks[offset : offset + limit]
         ]
 
     async def wait_for_terminal(
@@ -259,7 +258,7 @@ class AssessmentService:
 
     def add_comment(self, task_id: str, content: str, user_id: str) -> None:
         task = self._record(task_id)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         task["comments"].append(
             {"content": content, "user_id": user_id, "at": now.isoformat()}
         )
@@ -294,7 +293,7 @@ class AssessmentService:
         task["status"] = new_status
         if assignee:
             task["assignee"] = assignee
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         task["activity"].append(
             {
                 "type": "review_action",
@@ -353,7 +352,7 @@ class AssessmentService:
         if update.get("evidence_refs") is None:
             update.pop("evidence_refs", None)
         existing.update(update)
-        existing["updated_at"] = datetime.now(timezone.utc)
+        existing["updated_at"] = datetime.now(UTC)
         tracking[remediation_id] = existing
         task["activity"].append(
             {

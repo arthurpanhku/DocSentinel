@@ -40,7 +40,7 @@ def _as_list(value: Any) -> list[str]:
         return []
     if isinstance(value, list):
         return [str(v) for v in value if str(v)]
-    if isinstance(value, (tuple, set)):
+    if isinstance(value, tuple | set):
         return [str(v) for v in value if str(v)]
     text = str(value).strip()
     if not text:
@@ -183,7 +183,7 @@ def resolve_control_set(
 
 
 def _norm(value: Any) -> str:
-    if isinstance(value, (list, tuple, set)):
+    if isinstance(value, list | tuple | set):
         return " ".join(_norm(v) for v in value)
     return str(value or "").strip().lower()
 

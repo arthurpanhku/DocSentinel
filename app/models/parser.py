@@ -3,14 +3,14 @@ Parsed document model.
 Aligned with docs/03-assessment-report-and-skill-contract.md §2 Parser Output Schema.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class ParsedDocumentMetadata(BaseModel):
