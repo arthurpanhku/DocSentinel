@@ -186,7 +186,8 @@ async def test_evidence_agent_falls_back_when_llm_raises():
                     [_make_doc("The token must be stored securely.")],
                     skill_id="test-skill",
                 )
-    assert report.summary == "ok"
+    assert report.summary.startswith("Rule engine decision:")
+    assert "LLM advisory summary: ok" in report.summary
 
 
 # ---------------------------------------------------------------------------
@@ -375,7 +376,8 @@ async def test_langgraph_assessment_persists_gate3_control_evidence(
         controls = session.exec(select(ControlInstance)).all()
         evidence_items = session.exec(select(ControlEvidenceItem)).all()
 
-    assert report.summary == "Gate 3 evidence generated"
+    assert report.summary.startswith("Rule engine decision:")
+    assert "LLM advisory summary: Gate 3 evidence generated" in report.summary
     assert len(controls) == 1
     assert controls[0].control_id == "SCD-001"
     assert controls[0].status == "evidence_submitted"

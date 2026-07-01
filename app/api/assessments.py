@@ -109,7 +109,10 @@ async def submit_assessment(
             parsed = parse_file(content, file.filename or "unknown")
             parsed.metadata.scenario_id = scenario_id
             parsed.metadata.ssdlc_phase_hint = phase
-            sanitize_input(parsed.content if isinstance(parsed.content, str) else "")
+            sanitize_input(
+                parsed.content if isinstance(parsed.content, str) else "",
+                resource=f"assessment:{file.filename or 'unknown'}",
+            )
             parsed_documents.append(parsed)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc

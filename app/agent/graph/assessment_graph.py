@@ -45,6 +45,8 @@ def persist_assessment_control_evidence(
 
     findings = []
     for gap in report.compliance_gaps:
+        if gap.id.startswith("S2O-"):
+            continue
         findings.append(
             {
                 "control_id": _control_id(gap.control_or_clause, gap.id),
@@ -59,6 +61,8 @@ def persist_assessment_control_evidence(
             }
         )
     for risk in report.risk_items:
+        if risk.category == "rule_engine" or risk.id.startswith("S2O-"):
+            continue
         findings.append(
             {
                 "control_id": _control_id(risk.category, risk.id),

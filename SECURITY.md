@@ -44,7 +44,7 @@ If you discover a security vulnerability, please report it responsibly:
 -   **Input Validation**: File type and size limits are enforced (see `UPLOAD_MAX_FILE_SIZE_MB`, `UPLOAD_MAX_FILES`). Only allowed extensions are parsed (see `app/parser/service.py`).
 -   **MCP Document Roots**: `assess_document.file_path` is confined to `MCP_DOCUMENT_ROOTS` before any file read. Configure this to the smallest approved document directory; never expose the MCP server with broad roots such as `/`, a user home directory, or a shared workspace containing secrets.
 -   **KB Reindex Roots**: `/api/v1/kb/reindex` is confined to `KB_REINDEX_ROOTS`, including resolved symlink targets. Do not reuse a broad application working directory as the reindex root.
--   **Prompt Injection Guardrails**: Input sanitization via regex pattern detection and length limits is enforced before content reaches the LLM (see `app/core/guardrails.py`). Malicious inputs are rejected with HTTP 400.
+-   **Prompt Injection Guardrails**: Length limits remain hard blocks. Prompt-injection pattern detection is treated as heuristic telemetry: matches are audited, while document content is still handled as untrusted data inside explicit LLM delimiters. Final risk/control decisions are cross-checked with the deterministic rule engine rather than accepted from free-form LLM text.
 -   **TLS**: In production, use HTTPS and TLS 1.2+ for all endpoints and external calls ([PRD §7.2 DATA-01](./SPEC.md)).
 -   **Auth**: API currently does not enforce authentication in the MVP; add AAD/API Key as per [PRD §7.2 IAM](./SPEC.md) before exposing externally.
 -   **LangGraph State**: Assessment state and checkpoints may contain sensitive document content. Ensure `LANGGRAPH_CHECKPOINT_DIR` is on encrypted storage in production.
@@ -54,7 +54,7 @@ If you discover a security vulnerability, please report it responsibly:
 -   **输入验证**：强制执行文件类型与大小限制（见 `UPLOAD_MAX_FILE_SIZE_MB`、`UPLOAD_MAX_FILES`）。仅解析允许的扩展名（见 `app/parser/service.py`）。
 -   **MCP 文档根目录**：`assess_document.file_path` 必须在任何文件读取之前被限制在 `MCP_DOCUMENT_ROOTS` 内。请将该值配置为最小必要的批准文档目录；不要在对外暴露 MCP server 时使用 `/`、用户 home 目录或包含密钥的共享工作区等宽泛根目录。
 -   **知识库重建根目录**：`/api/v1/kb/reindex` 必须限制在 `KB_REINDEX_ROOTS` 内，并检查解析后的 symlink 目标。不要直接把宽泛的应用工作目录作为重建根目录。
--   **提示注入防护**：通过正则模式检测和长度限制对输入进行清洗，在内容到达 LLM 之前执行（见 `app/core/guardrails.py`）。恶意输入将被 HTTP 400 拒绝。
+-   **提示注入防护**：长度限制仍作为硬拦截。提示注入模式检测仅作为启发式审计信号：命中会被记录，但文档内容会继续以明确 delimiter 包裹为不可信数据。最终风险/控制决策由确定性规则引擎交叉校验，而不是直接采信 LLM 自由文本。
 -   **TLS**：生产环境中，所有端点与外部调用必须使用 HTTPS 和 TLS 1.2+（[PRD §7.2 DATA-01](./SPEC.md)）。
 -   **认证**：MVP 阶段 API 暂未强制认证；在对外暴露前，请根据 [PRD §7.2 IAM](./SPEC.md) 添加 AAD/API Key 认证。
 -   **LangGraph 状态**：评估状态和检查点可能包含敏感文档内容。生产环境中请确保 `LANGGRAPH_CHECKPOINT_DIR` 位于加密存储上。

@@ -50,7 +50,7 @@ async def upload_document(
 @router.post("/query")
 async def query_kb(body: KBQueryRequest):
     """Hybrid RAG query: vector similarity + graph retrieval."""
-    sanitize_input(body.query)
+    sanitize_input(body.query, resource="kb:query")
     kb = get_kb_service()
     docs = await kb.query(body.query, top_k=body.top_k)
     return {
