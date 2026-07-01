@@ -1,6 +1,6 @@
 """Health and runtime configuration endpoints."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.core.config import settings
@@ -119,14 +119,17 @@ async def update_llm_config(body: LLMConfigUpdate):
             "message": f"Unsupported provider: {body.provider}",
         }
 
-    llm_config_store.update_provider_config(
-        provider=body.provider,
-        agent_llm_mode=body.agent_llm_mode,
-        anthropic_auth_token=body.anthropic_auth_token,
-        model=body.model.strip() if body.model is not None else None,
-        base_url=body.base_url.strip() if body.base_url is not None else None,
-        api_key=body.api_key.strip() if body.api_key is not None else None,
-    )
+    try:
+        llm_config_store.update_provider_config(
+            provider=body.provider,
+            agent_llm_mode=body.agent_llm_mode,
+            anthropic_auth_token=body.anthropic_auth_token,
+            model=body.model.strip() if body.model is not None else None,
+            base_url=body.base_url.strip() if body.base_url is not None else None,
+            api_key=body.api_key.strip() if body.api_key is not None else None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     updated_model, updated_base_url, updated_api_key = _provider_values(body.provider)
     return {
         "status": "ok",

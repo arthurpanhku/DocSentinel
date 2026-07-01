@@ -9,6 +9,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from app.core.config import settings
+from app.core.net_guard import assert_safe_url
 
 
 def _anthropic_model() -> str:
@@ -33,7 +34,7 @@ def _build_anthropic_compat_llm() -> BaseChatModel:
     return ChatAnthropic(
         model=_anthropic_model(),
         api_key=_anthropic_api_key(),
-        base_url=settings.ANTHROPIC_BASE_URL or None,
+        base_url=assert_safe_url(settings.ANTHROPIC_BASE_URL) or None,
         temperature=0.2,
     )
 
@@ -50,7 +51,7 @@ def get_llm() -> BaseChatModel:
         return ChatOpenAI(
             model=settings.OPENAI_MODEL,
             api_key=settings.OPENAI_API_KEY or None,
-            base_url=settings.OPENAI_BASE_URL or None,
+            base_url=assert_safe_url(settings.OPENAI_BASE_URL) or None,
             temperature=0.2,
         )
     if settings.LLM_PROVIDER == "anthropic":
@@ -89,14 +90,14 @@ def get_llm() -> BaseChatModel:
         return ChatOpenAI(
             model=model,
             api_key=api_key or None,
-            base_url=base_url or None,
+            base_url=assert_safe_url(base_url) or None,
             temperature=0.2,
         )
     if settings.LLM_PROVIDER == "ollama":
         from langchain_ollama import ChatOllama
 
         return ChatOllama(
-            base_url=settings.OLLAMA_BASE_URL,
+            base_url=assert_safe_url(settings.OLLAMA_BASE_URL),
             model=settings.OLLAMA_MODEL,
             temperature=0.2,
         )

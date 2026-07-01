@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from app.core.config import settings
+from app.core.net_guard import assert_safe_url
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +89,8 @@ def load_and_apply() -> None:
         value = stored[key]
         if value == MASKED_SECRET or not hasattr(settings, key):
             continue
+        if key.endswith("_BASE_URL"):
+            value = assert_safe_url(str(value))
         setattr(settings, key, value)
         applied = True
 
@@ -142,7 +145,7 @@ def update_provider_config(
         setattr(settings, model_key, clean_model)
         stored[model_key] = clean_model
     if base_url is not None:
-        clean_base_url = base_url.strip()
+        clean_base_url = assert_safe_url(base_url)
         setattr(settings, base_url_key, clean_base_url)
         stored[base_url_key] = clean_base_url
     if api_key_key and api_key is not None and api_key != MASKED_SECRET:

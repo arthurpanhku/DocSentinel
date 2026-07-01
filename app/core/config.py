@@ -68,6 +68,11 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama2"
     LLM_CONFIG_FILE: str = "./llm_config.json"
+    LLM_BASE_URL_ALLOWLIST: str = (
+        "http://localhost:11434,http://127.0.0.1:11434,http://[::1]:11434,"
+        "http://localhost:1234/v1,http://127.0.0.1:1234/v1,"
+        "http://[::1]:1234/v1"
+    )
 
     # Governance and optional infrastructure
     POLICY_PACK_ID: str = "generic-ssdlc"
@@ -169,6 +174,14 @@ class Settings(BaseSettings):
         return [
             value.strip()
             for value in self.AGENT_GATEWAY_ALLOWED_ORIGINS.split(",")
+            if value.strip()
+        ]
+
+    @property
+    def llm_base_url_allowlist(self) -> list[str]:
+        return [
+            value.strip()
+            for value in self.LLM_BASE_URL_ALLOWLIST.split(",")
             if value.strip()
         ]
 
