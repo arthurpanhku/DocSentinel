@@ -15,8 +15,12 @@ def disable_rest_auth_for_existing_tests(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def clear_assessment_tasks():
+    if hasattr(app.state, "rate_limiter"):
+        app.state.rate_limiter.reset()
     assessment_service.clear()
     yield
+    if hasattr(app.state, "rate_limiter"):
+        app.state.rate_limiter.reset()
     assessment_service.clear()
 
 

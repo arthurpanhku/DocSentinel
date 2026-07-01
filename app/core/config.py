@@ -75,6 +75,9 @@ class Settings(BaseSettings):
     POLICY_PACKS_OVERLAY_DIR: str = ""
     REDIS_URL: str = ""
     ENABLE_METRICS: bool = False
+    RATE_LIMIT_ENABLED: bool = True
+    LLM_RATE_LIMIT_REQUESTS_PER_MINUTE: int = 120
+    LLM_RATE_LIMIT_BURST: int = 120
 
     # Database
     DATABASE_URL: str = "sqlite:///./database.db"

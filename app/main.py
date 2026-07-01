@@ -17,6 +17,7 @@ from app.agent_gateway.a2a import a2a_routes
 from app.agent_gateway.security import AgentGatewayAuthMiddleware
 from app.api import assessments, governance, health, integrations, kb, skills
 from app.core.config import settings
+from app.core.ratelimit import RateLimitMiddleware, build_rate_limiter
 from app.kb.service import get_kb_service
 from app.mcp_server import mcp
 
@@ -88,6 +89,8 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["Mcp-Session-Id"],
 )
+app.state.rate_limiter = build_rate_limiter()
+app.add_middleware(RateLimitMiddleware, limiter=app.state.rate_limiter)
 app.add_middleware(AgentGatewayAuthMiddleware)
 _configure_optional_infrastructure(app)
 
