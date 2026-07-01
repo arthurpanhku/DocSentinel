@@ -107,7 +107,34 @@ If supporting Okta or Google Workspace:
 
 ---
 
-## 4. Changelog | 修订记录
+## 4. Compliance Exchange | 合规数据交换
+
+DocSentinel can export governance controls and project evidence in OSCAL-style
+JSON for downstream GRC, audit, and compliance-as-code workflows.
+
+### 4.1 Control Catalog Export
+
+```bash
+curl "http://localhost:8000/api/v1/oscal/catalog?framework_ids=nist-ssdf"
+```
+
+The response includes resolved policy-pack controls grouped by family, source
+framework properties, and OpenCRE search links for cross-framework requirement
+mapping.
+
+### 4.2 Project Assessment Results Export
+
+```bash
+curl "http://localhost:8000/api/v1/projects/{project_id}/oscal/assessment-results"
+```
+
+The response includes reviewed controls, evidence observations, and findings
+derived from DocSentinel control status. Use this export to attach release-gate
+evidence to external audit workpapers or compliance automation pipelines.
+
+---
+
+## 5. Changelog | 修订记录
 
 | Version | Date    | Changes                                     |
 | :------ | :------ | :------------------------------------------ |
