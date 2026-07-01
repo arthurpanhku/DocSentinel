@@ -122,6 +122,26 @@ class Settings(BaseSettings):
     AGENT_GATEWAY_ALLOWED_ORIGINS: str = "http://127.0.0.1:*,http://localhost:*"
     AGENT_GATEWAY_TASK_TIMEOUT_SECONDS: int = 300
 
+    def __init__(self, **values):
+        super().__init__(**values)
+        self._validate_production_security()
+
+    def _validate_production_security(self) -> None:
+        if self.ENV.strip().lower() not in {"production", "prod"}:
+            return
+
+        secret = self.SECRET_KEY.strip()
+        if not secret or secret == "change-me-in-production" or len(secret) < 32:
+            raise RuntimeError(
+                "SECRET_KEY must be set to a random value of at least 32 "
+                "characters in production."
+            )
+        if self.AGENT_GATEWAY_ENABLED and not self.AGENT_GATEWAY_TOKEN.strip():
+            raise RuntimeError(
+                "AGENT_GATEWAY_TOKEN is required when AGENT_GATEWAY_ENABLED is "
+                "true in production."
+            )
+
     @property
     def upload_max_bytes(self) -> int:
         return self.UPLOAD_MAX_FILE_SIZE_MB * 1024 * 1024
