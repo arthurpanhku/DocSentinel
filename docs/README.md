@@ -6,6 +6,10 @@ This directory holds **executable design and specification** artifacts that acco
 
 **PRD Location**: [`../SPEC.md`](../SPEC.md)
 
+**Brand Asset**: [`images/docsentinel-mascot.png`](./images/docsentinel-mascot.png) is the README mascot logo used across the project documentation.
+
+**品牌资产**：[`images/docsentinel-mascot.png`](./images/docsentinel-mascot.png) 是项目文档统一使用的 README 吉祥物 logo。
+
 ---
 
 ## Document List | 文档列表

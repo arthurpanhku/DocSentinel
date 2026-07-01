@@ -5,7 +5,7 @@
 </div>
 
 <p align="center">
-  <img src="docs/images/docsentinel-mascot.png" width="200" alt="DocSentinel mascot"/>
+  <img src="docs/images/docsentinel-mascot.png" width="220" alt="DocSentinel mascot logo"/>
 </p>
 
 <p align="center">
