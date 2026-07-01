@@ -319,7 +319,7 @@ To connect an external agent through the published Docker port, set
 
 ### Option B: Manual Setup
 
-**Prerequisites**: **Python 3.10+** and **Node.js 20+**. Optional:
+**Prerequisites**: **Python 3.11+** and **Node.js 20+**. Optional:
 [Ollama](https://ollama.ai) (`ollama pull llama2`).
 
 ```bash
@@ -491,7 +491,7 @@ DocSentinel/
 | **Vector Store** | ChromaDB + LightRAG | Hybrid vector + graph RAG |
 | **Parsing** | Docling + legacy fallback | Multi-format document parsing |
 | **LLM Providers** | OpenAI, Anthropic, Qwen, DeepSeek, Ollama, OpenAI-compatible APIs | Cloud and local LLM support |
-| **Language** | Python 3.10+ | Primary development language |
+| **Language** | Python 3.11+ | Primary development language |
 
 ---
 
