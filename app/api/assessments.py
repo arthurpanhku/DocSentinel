@@ -1,13 +1,14 @@
 """Assessment REST API backed by the shared assessment task service."""
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
-from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
 from app.agent.orchestrator import run_assessment
 from app.core.config import settings
+from app.core.deps import require_roles
 from app.core.guardrails import sanitize_input
 from app.kb.service import get_kb_service
 from app.models.assessment import (
@@ -24,6 +25,22 @@ from app.services.assessment_service import (
 )
 
 router = APIRouter(prefix="/assessments", tags=["assessments"])
+
+ASSESSMENT_SUBMIT_ROLES = (
+    "admin",
+    "auditor",
+    "user",
+    "client",
+    "security_reviewer",
+)
+ASSESSMENT_REVIEW_ROLES = (
+    "admin",
+    "auditor",
+    "security_reviewer",
+    "security_approver",
+)
+ASSESSMENT_SUBMIT_DEP = Depends(require_roles(*ASSESSMENT_SUBMIT_ROLES))
+ASSESSMENT_REVIEW_DEP = Depends(require_roles(*ASSESSMENT_REVIEW_ROLES))
 
 
 class ReviewActionRequest(BaseModel):
@@ -74,6 +91,7 @@ async def submit_assessment(
     phase: AssessmentPhase = Form("auto"),  # noqa: B008
     skill_id: str | None = Form(None),
     collaborative_mode: bool = Form(True),
+    _current_user: Any = ASSESSMENT_SUBMIT_DEP,
 ):
     """Submit an assessment task; returns task_id immediately for polling."""
     if len(files) > settings.UPLOAD_MAX_FILES:
@@ -152,6 +170,7 @@ async def update_remediation_tracking(
     task_id: str,
     remediation_id: str,
     body: RemediationTrackingUpdateRequest,
+    _current_user: Any = ASSESSMENT_REVIEW_DEP,
 ):
     try:
         return assessment_service.update_remediation(
@@ -171,7 +190,11 @@ async def update_remediation_tracking(
 
 
 @router.post("/{task_id}/review")
-async def review_assessment(task_id: str, body: ReviewActionRequest):
+async def review_assessment(
+    task_id: str,
+    body: ReviewActionRequest,
+    _current_user: Any = ASSESSMENT_REVIEW_DEP,
+):
     try:
         status = assessment_service.review(
             task_id,
@@ -195,7 +218,11 @@ async def get_task_activity(task_id: str):
 
 
 @router.post("/{task_id}/comments")
-async def add_comment(task_id: str, body: CommentRequest):
+async def add_comment(
+    task_id: str,
+    body: CommentRequest,
+    _current_user: Any = ASSESSMENT_SUBMIT_DEP,
+):
     try:
         assessment_service.add_comment(task_id, body.content, body.user_id)
     except TaskNotFoundError as exc:

@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     API_PREFIX: str = "/api/v1"
     SECRET_KEY: str = "change-me-in-production"
+    AUTH_ENABLED: bool = True
     CORS_ORIGINS: str = (
         "http://localhost:5173,http://127.0.0.1:5173,"
         "http://localhost:8000,http://127.0.0.1:8000"
