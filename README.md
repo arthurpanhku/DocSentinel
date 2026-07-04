@@ -104,69 +104,108 @@ The local React console brings the main workflow into one operational surface:
 
 ## Architecture
 
-DocSentinel is built on a **React Console** plus **FastAPI, MCP, and A2A**
-access layer, with **LangGraph** for stateful agent orchestration and
-**LangChain** for unified LLM access. REST and agent protocols share one task
-lifecycle; MCP and A2A submissions always enter the human-review workflow.
+DocSentinel is a **React Console + FastAPI** application with three governed
+entry paths: REST APIs for the console and CI, MCP tools for coding agents, and
+A2A JSON-RPC for remote agent delegation. These entry paths converge on the
+same `AssessmentService`, LangGraph assessment pipeline, knowledge base, and
+human-review lifecycle. Governance workflows from PallasGuard are now a
+first-class domain beside assessment, backed by SQLModel records, policy packs,
+control evidence, audit trails, and Pallas Lens readiness scoring.
 
 ![DocSentinel Architecture](docsentinel_architecture.png)
 
 ```mermaid
 flowchart TB
-    subgraph User["User / Security Staff"]
-    end
-    subgraph Access["Access Layer"]
+    subgraph Access["Users and Agent Access"]
+        direction LR
+        Staff["Security staff"]
         Console["React Console<br/>(Vite + Tailwind)"]
-        API["REST API<br/>(FastAPI)"]
-        Gateway["Agent Gateway"]
-        MCP["MCP<br/>(stdio + HTTP)"]
-        A2A["A2A 1.0<br/>(JSON-RPC)"]
-        Tasks["Shared Assessment Service"]
-    end
-    subgraph Orchestration["SSDLC Orchestration (LangGraph)"]
-        Router["Phase Router"]
-        A1["Requirements Agent"]
-        A2["Design Agent"]
-        A3["Development Agent"]
-        A4["Testing Agent"]
-        A5["Deployment Agent"]
-        A6["Operations Agent"]
-    end
-    subgraph Core["Core Services"]
-        KB["Knowledge Base (RAG)"]
-        Parser["Parser"]
-        Skill["Skills"]
-        Mem["Memory"]
-    end
-    subgraph LLM["LLM Layer (LangChain)"]
-        Abst["LLM Abstraction"]
-    end
-    subgraph Backends["LLM Backends"]
-        Cloud["OpenAI / Claude / Qwen"]
-        Local["Ollama / vLLM"]
+        RESTClient["REST / CI clients"]
+        AgentClient["MCP / A2A clients"]
     end
 
-    User --> Console
-    User --> API
-    Console --> API
-    User --> MCP & A2A
-    MCP & A2A --> Gateway
-    API & Gateway --> Tasks
-    Tasks --> Router
-    Router --> A1 & A2 & A3 & A4 & A5 & A6
-    A1 & A2 & A3 & A4 & A5 & A6 --> KB & Parser & Skill
-    A1 & A2 & A3 & A4 & A5 & A6 --> Abst
-    Abst --> Cloud & Local
+    subgraph Runtime["FastAPI Runtime"]
+        direction LR
+        Security["Security boundary<br/>CORS, rate limit, JWT/RBAC,<br/>gateway token or loopback"]
+        REST["REST API routers<br/>assessments, KB, skills,<br/>settings, governance"]
+        Gateway["Agent Gateway<br/>MCP tools + A2A JSON-RPC"]
+        Tasks["AssessmentService<br/>async tasks, activity log,<br/>human review queue"]
+    end
+
+    subgraph Pipeline["Assessment Pipeline"]
+        direction LR
+        Parse["Parse + guardrails<br/>Docling or legacy"]
+        Graph["LangGraph workflow<br/>skill, isolated document data,<br/>policy/history/evidence context"]
+        Review["LLM draft + review<br/>via LangChain"]
+        Validate["Schema validation<br/>+ S2O rule checks"]
+        Report["Structured report<br/>risks, gaps, remediations"]
+    end
+
+    subgraph Governance["Governance / Pallas Domain"]
+        direction LR
+        Projects["Projects + framework selection"]
+        Controls["Control generator<br/>questionnaires + applicability"]
+        Evidence["Gate submissions<br/>evidence + audit logs"]
+        Lens["Pallas Lens<br/>readiness + exports"]
+    end
+
+    subgraph Support["Shared Support Services"]
+        direction LR
+        KB["KnowledgeBaseService<br/>Chroma + LightRAG + history"]
+        Policies["Policy packs + overlays<br/>schema service + S2O ontology"]
+        LLMFactory["LLM factory<br/>settings + llm_config.json<br/>base_url SSRF guard"]
+        Providers["OpenAI, Anthropic, Qwen,<br/>DeepSeek, Ollama, local OpenAI"]
+        DB["SQLModel DB<br/>SQLite or Postgres"]
+    end
+
+    Staff --> Console
+    Console --> Security
+    RESTClient --> Security
+    AgentClient --> Security
+    Security --> REST
+    Security --> Gateway
+    REST --> Tasks
+    Gateway --> Tasks
+    REST --> Projects
+    REST --> KB
+    Tasks --> Parse --> Graph --> Review --> Validate --> Report
+    Report --> Tasks
+    Report -->|project_id present| Evidence
+    Projects --> Controls --> Evidence --> Lens
+    Graph --> KB
+    Graph --> Policies
+    Review --> LLMFactory --> Providers
+    Validate --> Policies
+    Policies --> Controls
+    Projects --> DB
+    Controls --> DB
+    Evidence --> DB
 ```
 
 **Data flow (simplified):**
 
-1.  User selects SSDLC phase(s) and uploads documents (or optionally lets the SSDLC Router auto-detect the stage).
-2.  **Parser** converts files (PDF, Word, Excel, PPT, SAST/DAST reports, etc.) to text/Markdown.
-3.  **LangGraph Router** dispatches to the appropriate **Phase Agent(s)**, loading stage-specific skill + checklist.
-4.  Phase Agent queries **KB** (phase-specific collections) and applies **Skills**; Policy+Evidence run in parallel, then Drafter+Reviewer.
-5.  **LLM** (via LangChain) produces structured findings with cross-phase traceability.
-6.  Returns **assessment report** (risks, threats, gaps, remediations, confidence, SSDLC stage).
+1.  Security staff work in the React console; REST clients call `/api/v1/*`;
+    coding agents call MCP or A2A through the agent gateway.
+2.  REST write paths use JWT/RBAC dependencies. Agent protocols use a bearer
+    gateway token or loopback-only development access. LLM-costly POST paths are
+    rate limited by IP or bearer token.
+3.  Assessment submissions enter `AssessmentService`, which creates an async
+    task, parses uploaded or approved local documents, applies guardrails, and
+    invokes the LangGraph assessment pipeline.
+4.  The LangGraph pipeline loads the selected skill, wraps untrusted document
+    content as data, retrieves policy/history/evidence context from the KB, asks
+    the LLM for draft/review text, and converts the result into the structured
+    assessment schema.
+5.  Deterministic services remain authoritative for governance decisions:
+    policy-pack schemas, the S2O rule engine, control applicability, and schema
+    validation cross-check LLM output before it enters the review queue.
+6.  When an assessment is linked to a project, findings are persisted as Gate 3
+    control evidence. Governance workflows then use the same SQLModel store for
+    projects, controls, submissions, audit logs, Pallas Lens scoring, and exports.
+7.  The KB persists chunks in Chroma, optional graph artifacts in LightRAG, and
+    prior assessment history for reuse. Runtime LLM settings are loaded from
+    `.env` plus `llm_config.json`, and every provider base URL is checked by the
+    network guard before client construction.
 
 *Detailed architecture: [ARCHITECTURE.md](./ARCHITECTURE.md) and [docs/01-architecture-and-tech-stack.md](./docs/01-architecture-and-tech-stack.md).*
 
