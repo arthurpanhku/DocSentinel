@@ -67,7 +67,7 @@ docsentinel-mcp = "app.mcp_server:mcp.run"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["app*"]
+include = ["app*", "evals*"]
 
 # --- Tool Configuration ---
 

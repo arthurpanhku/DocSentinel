@@ -267,6 +267,33 @@ REST API, or expose the same assessment capabilities to AI agents (Claude Deskto
 Cursor, OpenClaw) through MCP. A2A-compatible platforms can delegate assessment
 tasks to DocSentinel as a specialist security agent.
 
+### Reproducible Evaluation Harness
+DocSentinel includes an `evals/` harness for measuring assessment quality against
+public and future golden datasets without going through HTTP or the UI. The first
+implemented path covers OWASP Benchmark v1.2 SAST triage:
+
+- **Dataset hygiene**: raw benchmark data is fetched locally into ignored paths;
+  only the fetch script, checksum, manifest, and tiny test fixture are committed.
+- **Direct pipeline execution**: the runner calls `AssessmentService.submit()`
+  with `phase="testing"` and `skill_id="ssdlc-testing"`, matching production task
+  semantics while staying self-contained.
+- **Hard-key scoring**: M1 scores CWE-based binary triage with accuracy,
+  precision, recall, F1, and false-positive rate, with no LLM judge.
+- **Scorecards**: every run writes machine-readable `scorecard.json` and a
+  human-readable `scorecard.md` under `evals/reports/<run_id>/`.
+
+```bash
+python evals/datasets/owasp_benchmark/fetch.py
+python -m evals.runner.run_eval \
+  --dataset-id owasp_benchmark \
+  --raw-dir evals/datasets/owasp_benchmark/raw/BenchmarkJava-master \
+  --run-id local-owasp \
+  --repeats 1
+```
+
+See [docs/07-evaluation-plan.md](./docs/07-evaluation-plan.md) for the full
+methodology and milestone roadmap.
+
 ---
 
 ## Agent Integration (MCP + A2A)
@@ -495,6 +522,7 @@ DocSentinel/
 │   ├── main.py           # FastAPI app entry point
 │   └── mcp_server.py     # MCP stdio + Streamable HTTP tools
 ├── tests/                # Automated tests (pytest)
+├── evals/                # Reproducible quality eval harness and scorecards
 ├── examples/             # Sample files (questionnaires, policies, reports)
 ├── docs/                 # Design & Spec documentation
 │   ├── 01-architecture-and-tech-stack.md
@@ -503,6 +531,7 @@ DocSentinel/
 │   ├── 04-integration-guide.md
 │   ├── 05-deployment-runbook.md
 │   ├── 06-agent-integration.md
+│   ├── 07-evaluation-plan.md
 │   └── schemas/
 ├── .github/              # Issue/PR templates, CI (Actions)
 ├── Dockerfile
@@ -574,6 +603,7 @@ DocSentinel/
 -   **[SPEC.md](./SPEC.md)** — Product requirements: SSDLC phases, features, security controls.
 -   **[CHANGELOG.md](./CHANGELOG.md)** — Version history; [Releases](https://github.com/arthurpanhku/DocSentinel/releases).
 -   **Design docs** [docs/](./docs/): Architecture, API spec (OpenAPI), contracts, integration guides, deployment runbook.
+-   **[docs/07-evaluation-plan.md](./docs/07-evaluation-plan.md)** — Evaluation methodology and milestone plan for `evals/`.
 
 ---
 
@@ -590,6 +620,7 @@ chmod +x test_integration.sh
 pip install -r requirements-dev.txt
 pytest
 pytest tests/test_skills_api.py   # Run specific test
+pytest evals/tests                # Run evaluation harness tests
 ```
 
 ## Contributing

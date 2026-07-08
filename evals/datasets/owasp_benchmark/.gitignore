@@ -1,0 +1,6 @@
+raw/
+downloads/
+*.zip
+*.tar.gz
+BenchmarkJava*/
+

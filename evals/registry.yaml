@@ -1,0 +1,16 @@
+datasets:
+  owasp_benchmark:
+    id: owasp_benchmark
+    name: OWASP Benchmark v1.2
+    source_url: https://github.com/OWASP-Benchmark/BenchmarkJava
+    source_archive_url: https://github.com/OWASP-Benchmark/BenchmarkJava/archive/refs/heads/master.zip
+    license: Apache-2.0-ish; verify upstream project terms before redistribution
+    phase: testing
+    skill_id: ssdlc-testing
+    adapter: evals.adapters.owasp_benchmark:to_cases
+    checksum_algorithm: sha256
+    checksum: 6331494d8ebf90654a4fd7ad292ff8621ee06cefdd2776214475c76fbaf0dce7
+    checksum_target: source_archive
+    contamination_risk: high
+    n_cases: 2740
+    raw_data_policy: fetch_only_do_not_commit

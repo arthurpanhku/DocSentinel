@@ -1,0 +1,17 @@
+defaults:
+  repeats: 3
+  temperature: 0.0
+  timeout_seconds: 300
+
+datasets:
+  owasp_benchmark:
+    repeats: 1
+    phase: testing
+    skill_id: ssdlc-testing
+
+models:
+  - id: ollama-local
+    provider: ollama
+    model_id: llama2
+    temperature: 0.0
+
