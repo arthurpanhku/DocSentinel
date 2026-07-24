@@ -55,6 +55,15 @@ class DreadScore(BaseModel):
     total: float | None = None
 
 
+class EvidenceVerification(BaseModel):
+    status: Literal["supported", "contradicted", "insufficient_evidence"]
+    support_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    rationale: str
+    evidence_ids: list[str] = Field(default_factory=list)
+    counterevidence_ids: list[str] = Field(default_factory=list)
+    requires_human_review: Literal[True] = True
+
+
 class Threat(BaseModel):
     id: str
     category: Literal[
@@ -69,11 +78,24 @@ class Threat(BaseModel):
     affected_component: str | None = None
     dread_score: DreadScore | None = None
     mitigations: list[str] = Field(default_factory=list)
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    citation_ids: list[str] = Field(default_factory=list)
+    verification: EvidenceVerification | None = None
+
+
+class EvidenceCriticSummary(BaseModel):
+    status: Literal["completed", "fallback"]
+    verifier: str
+    supported: int = 0
+    contradicted: int = 0
+    insufficient_evidence: int = 0
+    total: int = 0
 
 
 class ThreatModel(BaseModel):
     methodology: Literal["STRIDE", "DREAD", "STRIDE_DREAD"] | None = None
     threats: list[Threat] = Field(default_factory=list)
+    verification_summary: EvidenceCriticSummary | None = None
 
 
 class Vulnerability(BaseModel):
@@ -112,6 +134,13 @@ class SourceCitation(BaseModel):
     excerpt: str
     evidence_link: str | None = None
     score: float | None = None
+    document_hash: str | None = None
+    locator: str | None = None
+    source_kind: Literal[
+        "current_document",
+        "policy",
+        "history",
+    ] = "policy"
 
 
 class ReportMetadata(BaseModel):

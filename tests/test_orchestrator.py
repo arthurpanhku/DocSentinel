@@ -7,6 +7,7 @@ from app.agent.orchestrator import (
     _build_chunk_lookup,
     _evidence_agent_keyword_fallback,
     _extract_query_seed,
+    _normalize_threat_model,
     _resolve_citations_from_llm,
     _split_text_with_overlap,
     run_assessment,
@@ -268,7 +269,37 @@ def test_graph_registry_exports_assessment_mermaid():
     compiled = GRAPH_REGISTRY["docsentinel_assessment"][1]()
     mermaid = compiled.get_graph(xray=True).draw_mermaid()
     assert "draft_assessment" in mermaid
+    assert "verify_threat_evidence" in mermaid
     assert "persist_gate3_control_evidence" in mermaid
+
+
+def test_normalize_threat_model_accepts_common_stride_variations():
+    normalized = _normalize_threat_model(
+        {
+            "methodology": "stride+dread",
+            "threats": [
+                {
+                    "category": "Information Disclosure",
+                    "description": "Sensitive payloads may be exposed.",
+                    "affected_component": "Event bus",
+                    "dread_score": {"damage": 15, "exploitability": 0},
+                },
+                {
+                    "id": "T2",
+                    "category": "Privilege Escalation",
+                    "description": "A shared service token grants admin access.",
+                },
+            ],
+        }
+    )
+
+    assert normalized is not None
+    assert normalized["methodology"] == "STRIDE_DREAD"
+    assert normalized["threats"][0]["id"] == "T1"
+    assert normalized["threats"][0]["category"] == "InformationDisclosure"
+    assert normalized["threats"][0]["dread_score"]["damage"] == 10
+    assert normalized["threats"][0]["dread_score"]["exploitability"] == 1
+    assert normalized["threats"][1]["category"] == "ElevationOfPrivilege"
 
 
 @pytest.mark.asyncio
@@ -320,6 +351,101 @@ async def test_citations_from_reviewer_output_used_over_fallback():
     assert len(report.sources) == 1
     assert report.sources[0].file == "policy.pdf"
     assert report.sources[0].excerpt == "Access tokens must expire within 1 hour."
+
+
+@pytest.mark.asyncio
+async def test_design_assessment_runs_inference_time_threat_evidence_critic():
+    import json
+
+    from app.services.evidence_critic import build_document_passages
+
+    skill = _make_skill(
+        id="ssdlc-design",
+        name="Design Agent",
+        risk_focus=["Threat Modeling"],
+    )
+    document = _make_doc(
+        "# Webhook design\n"
+        "The public payment webhook accepts unsigned payloads. "
+        "HMAC validation is not implemented.",
+        filename="architecture.md",
+    )
+    evidence_id = build_document_passages([document])[0].id
+    reviewed = json.dumps(
+        {
+            "summary": "Unsigned webhook threat",
+            "confidence": 0.8,
+            "risk_items": [],
+            "compliance_gaps": [],
+            "remediations": [],
+            "sources": [],
+            "threat_model": {
+                "methodology": "STRIDE",
+                "threats": [
+                    {
+                        "id": "T1",
+                        "category": "Tampering",
+                        "description": "Unsigned webhook payloads may be modified.",
+                        "affected_component": "payment webhook",
+                        "mitigations": ["Implement HMAC verification."],
+                    }
+                ],
+            },
+        }
+    )
+    critic = json.dumps(
+        {
+            "verdicts": [
+                {
+                    "threat_id": "T1",
+                    "status": "supported",
+                    "support_score": 0.94,
+                    "evidence_ids": [evidence_id],
+                    "counterevidence_ids": [],
+                    "rationale": (
+                        "The current design explicitly accepts unsigned payloads."
+                    ),
+                }
+            ]
+        }
+    )
+
+    async def assessment_llm(system_prompt, _user_prompt):
+        if "Reviewer" in system_prompt or "Validate" in system_prompt:
+            return reviewed
+        if "evidence extractor" in system_prompt:
+            return "architecture.md#L2: HMAC validation is not implemented."
+        return reviewed
+
+    with patch("app.agent.orchestrator.get_skill_service") as mock_svc:
+        inst = MagicMock()
+        inst.get_skill.return_value = skill
+        inst.list_skills.return_value = [skill]
+        mock_svc.return_value = inst
+        with patch("app.agent.orchestrator.invoke_llm", side_effect=assessment_llm):
+            with patch("app.agent.orchestrator.get_kb_service") as mock_kb_svc:
+                mock_kb = MagicMock()
+                mock_kb.query = AsyncMock(return_value=[])
+                mock_kb.query_history_responses.return_value = []
+                mock_kb_svc.return_value = mock_kb
+                with patch(
+                    "app.services.evidence_critic.invoke_llm",
+                    new=AsyncMock(return_value=critic),
+                ):
+                    report = await run_assessment(
+                        uuid4(),
+                        [document],
+                        phase="design",
+                        skill_id="ssdlc-design",
+                    )
+
+    assert report.threat_model is not None
+    assert report.threat_model.verification_summary is not None
+    assert report.threat_model.verification_summary.supported == 1
+    assert report.threat_model.threats[0].verification is not None
+    assert report.threat_model.threats[0].verification.status == "supported"
+    assert report.threat_model.threats[0].citation_ids == [evidence_id]
+    assert report.sources[0].source_kind == "current_document"
 
 
 @pytest.mark.asyncio

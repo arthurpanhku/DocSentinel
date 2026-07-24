@@ -15,6 +15,12 @@
 > read as a methodology reference for others building evals over
 > document-review / agentic-security tools.
 
+**Implementation note:** M0 and M1 are implemented. A focused Design-phase
+Threat Evidence Critic scorer is also available for verdict accuracy,
+supported precision/recall/F1, contradiction recall, abstention, citation
+validity, and confusion reporting. This vertical slice supports the public demo
+but does not mark the broader M2 or M5 milestones complete.
+
 ---
 
 ## 1. Goals and Non-Goals

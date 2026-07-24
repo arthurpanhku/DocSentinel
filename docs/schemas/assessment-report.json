@@ -201,6 +201,98 @@
       "title": "DreadScore",
       "type": "object"
     },
+    "EvidenceCriticSummary": {
+      "properties": {
+        "contradicted": {
+          "default": 0,
+          "title": "Contradicted",
+          "type": "integer"
+        },
+        "insufficient_evidence": {
+          "default": 0,
+          "title": "Insufficient Evidence",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "completed",
+            "fallback"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "supported": {
+          "default": 0,
+          "title": "Supported",
+          "type": "integer"
+        },
+        "total": {
+          "default": 0,
+          "title": "Total",
+          "type": "integer"
+        },
+        "verifier": {
+          "title": "Verifier",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "verifier"
+      ],
+      "title": "EvidenceCriticSummary",
+      "type": "object"
+    },
+    "EvidenceVerification": {
+      "properties": {
+        "counterevidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Counterevidence Ids",
+          "type": "array"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        },
+        "requires_human_review": {
+          "const": true,
+          "default": true,
+          "title": "Requires Human Review",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "supported",
+            "contradicted",
+            "insufficient_evidence"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "support_score": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Support Score",
+          "type": "number"
+        }
+      },
+      "required": [
+        "status",
+        "rationale"
+      ],
+      "title": "EvidenceVerification",
+      "type": "object"
+    },
     "Remediation": {
       "properties": {
         "action": {
@@ -480,6 +572,18 @@
     },
     "SourceCitation": {
       "properties": {
+        "document_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Document Hash"
+        },
         "evidence_link": {
           "anyOf": [
             {
@@ -503,6 +607,18 @@
         "id": {
           "title": "Id",
           "type": "string"
+        },
+        "locator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Locator"
         },
         "page": {
           "anyOf": [
@@ -539,6 +655,16 @@
           ],
           "default": null,
           "title": "Score"
+        },
+        "source_kind": {
+          "default": "policy",
+          "enum": [
+            "current_document",
+            "policy",
+            "history"
+          ],
+          "title": "Source Kind",
+          "type": "string"
         }
       },
       "required": [
@@ -575,6 +701,27 @@
           "title": "Category",
           "type": "string"
         },
+        "citation_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Citation Ids",
+          "type": "array"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
         "description": {
           "title": "Description",
           "type": "string"
@@ -600,6 +747,17 @@
           },
           "title": "Mitigations",
           "type": "array"
+        },
+        "verification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EvidenceVerification"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -635,6 +793,17 @@
           },
           "title": "Threats",
           "type": "array"
+        },
+        "verification_summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EvidenceCriticSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "title": "ThreatModel",

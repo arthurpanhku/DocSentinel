@@ -221,6 +221,18 @@ async def _parse_report(state: AssessmentGraphState) -> AssessmentGraphState:
     return {"report": report}
 
 
+async def _verify_threat_evidence(
+    state: AssessmentGraphState,
+) -> AssessmentGraphState:
+    from app.services.evidence_critic import verify_threat_model_evidence
+
+    report = await verify_threat_model_evidence(
+        state["report"],
+        state["parsed_documents"],
+    )
+    return {"report": report}
+
+
 async def _persist_governance(state: AssessmentGraphState) -> AssessmentGraphState:
     try:
         count = persist_assessment_control_evidence(
@@ -241,6 +253,7 @@ def compile_assessment_graph():
     graph.add_node("draft_assessment", _draft)
     graph.add_node("review_assessment", _review)
     graph.add_node("parse_report", _parse_report)
+    graph.add_node("verify_threat_evidence", _verify_threat_evidence)
     graph.add_node("persist_gate3_control_evidence", _persist_governance)
     graph.add_edge(START, "load_skill")
     graph.add_edge("load_skill", "build_document_context")
@@ -248,7 +261,8 @@ def compile_assessment_graph():
     graph.add_edge("gather_policy_history_and_evidence", "draft_assessment")
     graph.add_edge("draft_assessment", "review_assessment")
     graph.add_edge("review_assessment", "parse_report")
-    graph.add_edge("parse_report", "persist_gate3_control_evidence")
+    graph.add_edge("parse_report", "verify_threat_evidence")
+    graph.add_edge("verify_threat_evidence", "persist_gate3_control_evidence")
     graph.add_edge("persist_gate3_control_evidence", END)
     return graph.compile()
 

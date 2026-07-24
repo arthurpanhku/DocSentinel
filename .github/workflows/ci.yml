@@ -41,6 +41,9 @@ jobs:
       - name: Run tests
         run: pytest --cov=app --cov-report=xml --cov-report=term
 
+      - name: Run evaluation harness tests
+        run: pytest evals/tests
+
       - name: Verify generated contracts
         run: python scripts/export_contracts.py --check
 

@@ -201,10 +201,15 @@ stateDiagram-v2
 ### 2. SSDLC Orchestrator (LangGraph) | SSDLC 编排器
 
 -   Built on **LangChain + LangGraph**: stateful, graph-based agent workflow with conditional edges.
--   **Graph Definition**: `StateGraph` with nodes for Router, 6 phase agents, and Reviewer. Graph nodes: Parser → SSDLC Router → Policy+History Agent ∥ Evidence Agent → Drafter Agent → Reviewer Agent.
+-   **Graph Definition**: `StateGraph` with nodes for Router, 6 phase agents, and Reviewer. Assessment graph nodes: Skill Loader → Document Context → Policy+History ∥ Evidence → Drafter → Reviewer → Report Parser → Threat Evidence Critic → Governance Persistence.
 -   **State Schema**: `SSDLCState` TypedDict containing parsed documents, phase findings, threat models, cross-phase references, and metadata.
 -   **Conditional Edges**: Route based on requested phase, project risk level, or full SSDLC mode. SSDLC Router node determines the lifecycle stage and injects stage-specific skill + checklist.
 -   **Parallel Execution**: Policy and Evidence nodes run **in parallel** (LangGraph fan-out/fan-in). Within phases, sub-tasks (e.g. KB lookup + document parsing) run concurrently via `asyncio.gather`.
+-   **Threat Evidence Critic**: For Design reports, an independent inference-time
+    verifier checks every normalized STRIDE threat against stable, line-addressed
+    passages from the current uploaded documents. Unknown citations and verifier
+    failures become `insufficient_evidence`; policy and history chunks cannot prove
+    current-design facts.
 -   **Checkpointing**: Persistent state via LangGraph `MemorySaver` or database-backed checkpointer.
 -   Assessment submission is **non-blocking** — returns task_id immediately, processes in background.
 -   Singleton `KnowledgeBaseService` and cached LLM client shared across requests.

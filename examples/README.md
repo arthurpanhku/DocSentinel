@@ -7,6 +7,20 @@ Sample documents for testing DocSentinel locally.
 |------|-----|
 | **sample.txt** | Minimal "security questionnaire" for testing the assessment API. Use with `curl -F "files=@sample.txt"` or via Swagger `/docs`. |
 | **sample-policy.txt** | Short policy excerpt for testing KB upload and RAG query (`/api/v1/kb/documents`, then `/api/v1/kb/query`). |
+| **evidence-critic-architecture.md** | Public-demo design document with supported, contradicted, and insufficient-evidence STRIDE scenarios for the inference-time Evidence Critic. |
+
+## Threat Evidence Critic demo
+
+1. Start the API and React console, then open `/console/assessments`.
+2. Upload `examples/evidence-critic-architecture.md`.
+3. Select phase `design`, skill `SSDLC Design Agent`, and enable human review.
+4. Open the completed assessment. The **Threat Evidence Critic** panel shows each
+   threat's verdict, support score, exact document line locator, source excerpt,
+   and human-review requirement.
+
+The critic uses the configured runtime model and the uploaded document only. It
+does not require fine-tuning or a training dataset. If verification fails, every
+unverified threat safely falls back to `insufficient_evidence`.
 
 ## Quick test (from repo root)
 

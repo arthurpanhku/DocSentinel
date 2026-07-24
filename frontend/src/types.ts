@@ -12,6 +12,7 @@ export type RiskItem = Schemas["RiskItem"];
 export type ComplianceGap = Schemas["ComplianceGap"];
 export type Remediation = Schemas["Remediation"];
 export type SourceCitation = Schemas["SourceCitation"];
+export type Threat = Schemas["Threat"];
 export type ThreatModel = Schemas["ThreatModel"];
 export type Vulnerability = Schemas["Vulnerability"];
 export type CrossPhaseRef = Schemas["CrossPhaseRef"];
