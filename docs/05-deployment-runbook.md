@@ -181,7 +181,20 @@ When running through Docker or a reverse proxy, configure
 | `LIGHTRAG_WORKING_DIR`   | LightRAG data directory               | `./data/lightrag` |
 | `GRAPH_RAG_QUERY_MODE`   | Query mode: naive/local/global/hybrid | `hybrid`          |
 
-### 4.8 SSDLC Pipeline
+### 4.8 Threat Evidence Critic
+
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `EVIDENCE_CRITIC_ENABLED` | Run inference-time evidence verification for Design threats | `true` |
+| `EVIDENCE_CRITIC_MAX_CANDIDATES` | Current-document passages supplied per threat | `5` |
+| `EVIDENCE_CRITIC_MAX_THREATS` | Threats included in one verifier request | `20` |
+
+The critic never uses policy or assessment-history chunks as proof of a current
+design fact. If inference is unavailable or a returned evidence ID does not
+resolve to an allowed current-document passage, the affected threat is marked
+`insufficient_evidence` and remains subject to human review.
+
+### 4.9 SSDLC Pipeline
 
 | Variable              | Description                                                          | Default |
 | :-------------------- | :------------------------------------------------------------------- | :------ |

@@ -2,6 +2,7 @@ import { Check, FileUp, MessageSquare, RefreshCw, Send, Shield, X } from "lucide
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { SeverityBadge, StatusBadge, taskTitle } from "../components/domain";
+import { ThreatEvidencePanel } from "../components/ThreatEvidencePanel";
 import {
   Badge,
   Button,
@@ -502,7 +503,12 @@ function ReportSections({
         ) : <EmptyState title="No citations." />}
       </Card>
 
-      {report.threat_model ? <FutureJson title="Threat Model" value={report.threat_model} /> : null}
+      {report.threat_model ? (
+        <ThreatEvidencePanel
+          threatModel={report.threat_model}
+          sources={report.sources}
+        />
+      ) : null}
       {report.vulnerabilities?.length ? <FutureJson title="Vulnerabilities" value={report.vulnerabilities} /> : null}
       {report.cross_phase_refs?.length ? <FutureJson title="Cross Phase References" value={report.cross_phase_refs} /> : null}
     </div>

@@ -73,6 +73,9 @@ class Settings(BaseSettings):
         "http://localhost:1234/v1,http://127.0.0.1:1234/v1,"
         "http://[::1]:1234/v1"
     )
+    EVIDENCE_CRITIC_ENABLED: bool = True
+    EVIDENCE_CRITIC_MAX_CANDIDATES: int = 5
+    EVIDENCE_CRITIC_MAX_THREATS: int = 20
 
     # Governance and optional infrastructure
     POLICY_PACK_ID: str = "generic-ssdlc"

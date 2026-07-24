@@ -257,7 +257,8 @@ async def _drafter_agent(
         "You are DrafterAgent in a multi-agent security workflow. "
         f"{UNTRUSTED_CONTENT_INSTRUCTION} "
         "Create an assessment draft in JSON only with keys: summary, risk_items, "
-        "compliance_gaps, remediations."
+        "compliance_gaps, threat_model, remediations. For design reviews, "
+        "threat_model must use STRIDE categories and identify affected components."
     )
 
     if skill:
@@ -267,7 +268,12 @@ async def _drafter_agent(
             f"Focus areas: {', '.join(skill.risk_focus)}.\n"
             f"{UNTRUSTED_CONTENT_INSTRUCTION}\n"
             "Output strictly JSON with keys: summary, risk_items, "
-            "compliance_gaps, remediations."
+            "compliance_gaps, threat_model, remediations. For design reviews, "
+            "threat_model must contain methodology and a threats array. Every threat "
+            "must contain id, category, description, affected_component, and "
+            "mitigations. Category must be exactly one of: Spoofing, Tampering, "
+            "Repudiation, InformationDisclosure, DenialOfService, "
+            "ElevationOfPrivilege."
         )
 
     user_prompt = (
@@ -318,8 +324,9 @@ async def _merge_drafts(drafts: list[str], skill: object | None = None) -> str:
         f"{UNTRUSTED_CONTENT_INSTRUCTION} "
         f"{skill_info}"
         "Deduplicate findings, keep the highest-severity version of duplicates, "
-        "and merge remediations. "
-        "Output JSON with keys: summary, risk_items, compliance_gaps, remediations."
+        "merge threat-model entries, and merge remediations. "
+        "Output JSON with keys: summary, risk_items, compliance_gaps, threat_model, "
+        "remediations."
     )
     user_prompt = (
         f"{_truncate_at_boundary(drafts_text, 14000)}\n\n"
@@ -352,7 +359,8 @@ async def _reviewer_agent(
         "hallucination resistance. "
         f"{UNTRUSTED_CONTENT_INSTRUCTION} "
         "Output JSON only with keys: summary, confidence, risk_items, "
-        "compliance_gaps, remediations, sources. "
+        "compliance_gaps, threat_model, remediations, sources. Preserve and improve "
+        "the design threat model when one is present. "
         f"Available chunk IDs: {chunk_ids}. "
         "In the `sources` array each entry MUST have: "
         '`"chunk_id"` (one of the available IDs above) and '
@@ -367,7 +375,8 @@ async def _reviewer_agent(
             "Ensure findings match the persona's focus. "
             f"{UNTRUSTED_CONTENT_INSTRUCTION} "
             "Output JSON only with keys: summary, confidence, risk_items, "
-            "compliance_gaps, remediations, sources. "
+            "compliance_gaps, threat_model, remediations, sources. Preserve and "
+            "improve the design threat model when one is present. "
             f"Available chunk IDs: {chunk_ids}. "
             "In the `sources` array each entry MUST have: "
             '`"chunk_id"` (one of the available IDs above) and '
@@ -467,6 +476,7 @@ def _resolve_citations_from_llm(
                 excerpt=src.get("quote", doc.page_content[:240]),
                 evidence_link=evidence_link,
                 score=float(metadata["score"]) if metadata.get("score") else None,
+                source_kind="history" if is_history else "policy",
             )
         )
     return citations
@@ -494,11 +504,99 @@ def _derive_sources_from_chunks(
                 excerpt=doc.page_content[:240],
                 evidence_link=f"{file}#chunk={paragraph_id}" if paragraph_id else None,
                 score=float(metadata.get("score")) if metadata.get("score") else None,
+                source_kind=origin,
             )
         )
         if origin == "history" and citations[-1].evidence_link:
             citations[-1].evidence_link = f"history://{citations[-1].evidence_link}"
     return citations
+
+
+_THREAT_CATEGORY_ALIASES = {
+    "spoofing": "Spoofing",
+    "tampering": "Tampering",
+    "repudiation": "Repudiation",
+    "informationdisclosure": "InformationDisclosure",
+    "informationleakage": "InformationDisclosure",
+    "denialofservice": "DenialOfService",
+    "dos": "DenialOfService",
+    "elevationofprivilege": "ElevationOfPrivilege",
+    "privilegeescalation": "ElevationOfPrivilege",
+}
+
+
+def _canonical_threat_category(value: object) -> str | None:
+    normalized = "".join(character for character in str(value) if character.isalnum())
+    return _THREAT_CATEGORY_ALIASES.get(normalized.casefold())
+
+
+def _normalized_dread_score(value: object) -> dict | None:
+    if not isinstance(value, dict):
+        return None
+    normalized: dict[str, int | float] = {}
+    for key in [
+        "damage",
+        "reproducibility",
+        "exploitability",
+        "affected_users",
+        "discoverability",
+    ]:
+        try:
+            normalized[key] = min(10, max(1, int(value[key])))
+        except (KeyError, TypeError, ValueError):
+            continue
+    try:
+        normalized["total"] = float(value["total"])
+    except (KeyError, TypeError, ValueError):
+        pass
+    return normalized or None
+
+
+def _normalize_threat_model(value: object) -> dict | None:
+    """Normalize common model variations into the strict report contract."""
+    if not isinstance(value, dict):
+        return None
+    raw_threats = value.get("threats", [])
+    if not isinstance(raw_threats, list):
+        return None
+
+    threats: list[dict] = []
+    seen_ids: set[str] = set()
+    for index, raw in enumerate(raw_threats, start=1):
+        if not isinstance(raw, dict):
+            continue
+        category = _canonical_threat_category(raw.get("category"))
+        description = str(raw.get("description") or "").strip()
+        if not category or not description:
+            continue
+        threat_id = str(raw.get("id") or f"T{index}").strip() or f"T{index}"
+        if threat_id in seen_ids:
+            threat_id = f"{threat_id}-{index}"
+        seen_ids.add(threat_id)
+        mitigations = raw.get("mitigations", [])
+        if not isinstance(mitigations, list):
+            mitigations = [mitigations] if mitigations else []
+        threats.append(
+            {
+                "id": threat_id,
+                "category": category,
+                "description": description,
+                "affected_component": raw.get("affected_component"),
+                "dread_score": _normalized_dread_score(raw.get("dread_score")),
+                "mitigations": [
+                    str(mitigation).strip()
+                    for mitigation in mitigations
+                    if str(mitigation).strip()
+                ],
+            }
+        )
+
+    if not threats:
+        return None
+    methodology = str(value.get("methodology") or "STRIDE_DREAD").upper()
+    if methodology not in {"STRIDE", "DREAD", "STRIDE_DREAD"}:
+        methodology = "STRIDE_DREAD"
+    return {"methodology": methodology, "threats": threats}
 
 
 def _parse_llm_output_to_report(
@@ -565,7 +663,7 @@ def _parse_llm_output_to_report(
             )
             for gap in parsed.get("compliance_gaps", [])
         ],
-        threat_model=parsed.get("threat_model"),
+        threat_model=_normalize_threat_model(parsed.get("threat_model")),
         vulnerabilities=parsed.get("vulnerabilities", []),
         remediations=[
             Remediation(

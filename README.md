@@ -249,6 +249,26 @@ project workflows:
 - **Human-in-the-loop**: Interrupt points for human review at phase boundaries
 - **Checkpointing**: Long-running assessments persist state and resume
 
+### Threat Evidence Critic
+Design-phase STRIDE threats are independently checked against the currently
+uploaded architecture documents in one inference-time pass:
+
+- Every threat receives a `supported`, `contradicted`, or
+  `insufficient_evidence` verdict with a support score and reviewer-facing
+  rationale.
+- Evidence references use content hashes plus stable line locators and include
+  the exact source excerpt shown in the Assessment Workbench.
+- Only current-project document passages are accepted. Invented, missing, policy,
+  or historical references cannot make a threat appear supported.
+- Verification failures safely abstain as `insufficient_evidence`; all verdicts
+  still require human review.
+- No training or fine-tuning pipeline is required. The critic uses the configured
+  OpenAI, Anthropic, Qwen, DeepSeek, compatible, or local runtime model.
+
+For a public-demo input and walkthrough, see
+[`examples/evidence-critic-architecture.md`](./examples/evidence-critic-architecture.md)
+and [`examples/README.md`](./examples/README.md).
+
 ### RAG-Powered Knowledge Base
 Upload your organization's security policies, standards, and past audits. Phase-specific collections ensure each agent retrieves the most relevant context:
 - Requirements: compliance frameworks, security policies
@@ -279,6 +299,9 @@ implemented path covers OWASP Benchmark v1.2 SAST triage:
   semantics while staying self-contained.
 - **Hard-key scoring**: M1 scores CWE-based binary triage with accuracy,
   precision, recall, F1, and false-positive rate, with no LLM judge.
+- **Threat grounding scoring**: the Evidence Critic scorer measures verdict
+  accuracy, supported precision/recall/F1, contradiction recall, abstention rate,
+  citation validity, and the full verdict confusion matrix.
 - **Scorecards**: every run writes machine-readable `scorecard.json` and a
   human-readable `scorecard.md` under `evals/reports/<run_id>/`.
 
@@ -563,6 +586,9 @@ DocSentinel/
 | `DEEPSEEK_API_KEY` / `DEEPSEEK_MODEL` | DeepSeek OpenAI-compatible API | -- / `deepseek-chat` |
 | `COMPAT_API_KEY` / `COMPAT_BASE_URL` / `COMPAT_MODEL` | Any OpenAI-compatible hosted API | -- |
 | `LOCAL_API_KEY` / `LOCAL_BASE_URL` / `LOCAL_MODEL` | Local OpenAI-compatible API | -- / `http://localhost:1234/v1` / `local-model` |
+| `EVIDENCE_CRITIC_ENABLED` | Verify Design-phase threats against current document evidence | `true` |
+| `EVIDENCE_CRITIC_MAX_CANDIDATES` | Candidate passages supplied per threat | `5` |
+| `EVIDENCE_CRITIC_MAX_THREATS` | Maximum threats verified in one inference pass | `20` |
 | `CHROMA_PERSIST_DIR` | Vector DB path | `./data/chroma` |
 | `PARSER_ENGINE` | Parser: `auto`, `docling`, or `legacy` | `auto` |
 | `ENABLE_GRAPH_RAG` | Enable LightRAG graph retrieval | `true` |

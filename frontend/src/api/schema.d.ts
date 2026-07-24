@@ -1336,6 +1336,61 @@ export interface components {
             /** Total */
             total?: number | null;
         };
+        /** EvidenceCriticSummary */
+        EvidenceCriticSummary: {
+            /**
+             * Contradicted
+             * @default 0
+             */
+            contradicted: number;
+            /**
+             * Insufficient Evidence
+             * @default 0
+             */
+            insufficient_evidence: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "completed" | "fallback";
+            /**
+             * Supported
+             * @default 0
+             */
+            supported: number;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /** Verifier */
+            verifier: string;
+        };
+        /** EvidenceVerification */
+        EvidenceVerification: {
+            /** Counterevidence Ids */
+            counterevidence_ids?: string[];
+            /** Evidence Ids */
+            evidence_ids?: string[];
+            /** Rationale */
+            rationale: string;
+            /**
+             * Requires Human Review
+             * @default true
+             * @constant
+             */
+            requires_human_review: true;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "supported" | "contradicted" | "insufficient_evidence";
+            /**
+             * Support Score
+             * @default 0
+             */
+            support_score: number;
+        };
         /** GateReviewPayload */
         GateReviewPayload: {
             /** Reviewed By Id */
@@ -1734,6 +1789,8 @@ export interface components {
         };
         /** SourceCitation */
         SourceCitation: {
+            /** Document Hash */
+            document_hash?: string | null;
             /** Evidence Link */
             evidence_link?: string | null;
             /** Excerpt */
@@ -1742,12 +1799,20 @@ export interface components {
             file: string;
             /** Id */
             id: string;
+            /** Locator */
+            locator?: string | null;
             /** Page */
             page?: number | null;
             /** Paragraph Id */
             paragraph_id?: string | null;
             /** Score */
             score?: number | null;
+            /**
+             * Source Kind
+             * @default policy
+             * @enum {string}
+             */
+            source_kind: "current_document" | "policy" | "history";
         };
         /**
          * SubAgentStatus
@@ -1783,6 +1848,10 @@ export interface components {
              * @enum {string}
              */
             category: "Spoofing" | "Tampering" | "Repudiation" | "InformationDisclosure" | "DenialOfService" | "ElevationOfPrivilege";
+            /** Citation Ids */
+            citation_ids?: string[];
+            /** Confidence */
+            confidence?: number | null;
             /** Description */
             description: string;
             dread_score?: components["schemas"]["DreadScore"] | null;
@@ -1790,6 +1859,7 @@ export interface components {
             id: string;
             /** Mitigations */
             mitigations?: string[];
+            verification?: components["schemas"]["EvidenceVerification"] | null;
         };
         /** ThreatModel */
         ThreatModel: {
@@ -1797,6 +1867,7 @@ export interface components {
             methodology?: ("STRIDE" | "DREAD" | "STRIDE_DREAD") | null;
             /** Threats */
             threats?: components["schemas"]["Threat"][];
+            verification_summary?: components["schemas"]["EvidenceCriticSummary"] | null;
         };
         /** TokenRequest */
         TokenRequest: {

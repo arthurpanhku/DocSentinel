@@ -9,6 +9,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased] — PallasGuard merge
 
 ### Added
+- Inference-time Threat Evidence Critic for Design assessments, with
+  supported/contradicted/insufficient-evidence verdicts, stable current-document
+  line citations, safe abstention, grounding metrics, and a reviewer-facing
+  evidence panel.
+- Public threat-model demo architecture document under `examples/`.
 - Governance domain model and Alembic migrations for projects, submissions,
   control instances, questionnaires, audit trails, prompt audit records, and
   sub-agent runs.
@@ -36,6 +41,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - v5 product trust RFC and architecture, evidence-model, and frontend-design ADRs.
 
 ### Changed
+- Design Drafter and Reviewer prompts now preserve a normalized STRIDE/DREAD
+  threat model before the independent evidence-verification graph node runs.
 - Converged orchestration on LangGraph while keeping DocSentinel's assessment
   task lifecycle, report contracts, and existing API surface intact.
 - Converged LLM access on the DocSentinel provider abstraction with

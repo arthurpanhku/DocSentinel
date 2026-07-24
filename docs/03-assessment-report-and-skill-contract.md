@@ -12,6 +12,12 @@
 
 Agent outputs a **structured report** conforming to this schema. It is used for API responses, cross-phase traceability, sign-off workflows, and optional ServiceNow write-back. Each report is tagged with the SSDLC phase that generated it.
 
+For Design assessments, every threat may also carry an inference-time evidence
+verdict. `supported` means current-project document passages establish the
+architectural preconditions of the threat; `contradicted` means current evidence
+explicitly conflicts with it; `insufficient_evidence` is the mandatory abstention
+state when support cannot be verified. All three remain drafts until human review.
+
 ### 1.1 JSON Schema
 
 ```json
@@ -125,6 +131,9 @@ Agent outputs a **structured report** conforming to this schema. It is used for 
               "category": { "type": "string", "enum": ["Spoofing", "Tampering", "Repudiation", "InformationDisclosure", "DenialOfService", "ElevationOfPrivilege"] },
               "description": { "type": "string" },
               "affected_component": { "type": "string" },
+              "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+              "citation_ids": { "type": "array", "items": { "type": "string" } },
+              "verification": { "$ref": "#/$defs/EvidenceVerification" },
               "dread_score": {
                 "type": "object",
                 "properties": {
@@ -139,7 +148,34 @@ Agent outputs a **structured report** conforming to this schema. It is used for 
               "mitigations": { "type": "array", "items": { "type": "string" } }
             }
           }
-        }
+        },
+        "verification_summary": { "$ref": "#/$defs/EvidenceCriticSummary" }
+      }
+    },
+    "EvidenceVerification": {
+      "type": "object",
+      "required": ["status", "support_score", "rationale", "requires_human_review"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["supported", "contradicted", "insufficient_evidence"]
+        },
+        "support_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "rationale": { "type": "string" },
+        "evidence_ids": { "type": "array", "items": { "type": "string" } },
+        "counterevidence_ids": { "type": "array", "items": { "type": "string" } },
+        "requires_human_review": { "type": "boolean", "const": true }
+      }
+    },
+    "EvidenceCriticSummary": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["completed", "fallback"] },
+        "verifier": { "type": "string" },
+        "supported": { "type": "integer" },
+        "contradicted": { "type": "integer" },
+        "insufficient_evidence": { "type": "integer" },
+        "total": { "type": "integer" }
       }
     },
     "Vulnerability": {
@@ -195,7 +231,13 @@ Agent outputs a **structured report** conforming to this schema. It is used for 
         "paragraph_id": { "type": "string" },
         "excerpt": { "type": "string", "description": "Relevant excerpt from source" },
         "evidence_link": { "type": "string" },
-        "score": { "type": "number", "description": "Relevance score" }
+        "score": { "type": "number", "description": "Relevance score" },
+        "document_hash": { "type": "string", "description": "Stable current-document content hash" },
+        "locator": { "type": "string", "description": "Stable page, paragraph, table, or line locator" },
+        "source_kind": {
+          "type": "string",
+          "enum": ["current_document", "policy", "history"]
+        }
       }
     }
   }
