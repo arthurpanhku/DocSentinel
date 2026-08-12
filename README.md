@@ -243,11 +243,14 @@ project workflows:
   evidence depth, and next actions in the React governance portal.
 
 ### Intelligent Agent Orchestration (LangGraph)
-- **Stateful workflows**: LangGraph state machine maintains context across phases
+- **Structured workflows**: LangGraph nodes separate context collection, drafting,
+  evidence review, schema conversion, and governance persistence
 - **Cross-phase traceability**: Threats from Design link to test cases in Testing and monitoring rules in Operations
 - **Conditional routing**: Agents activate based on project risk level, compliance requirements, or user selection
-- **Human-in-the-loop**: Interrupt points for human review at phase boundaries
-- **Checkpointing**: Long-running assessments persist state and resume
+- **Human-in-the-loop**: Agent-created assessments enter a review queue and cannot
+  approve themselves
+- **Planned hardening**: Explicit plan gates, durable LangGraph checkpoints, and
+  resumable execution are tracked in the development roadmap below
 
 ### Threat Evidence Critic
 Design-phase STRIDE threats are independently checked against the currently
@@ -316,6 +319,160 @@ python -m evals.runner.run_eval \
 
 See [docs/07-evaluation-plan.md](./docs/07-evaluation-plan.md) for the full
 methodology and milestone roadmap.
+
+---
+
+## Agent Architecture Development Roadmap
+
+This roadmap turns the project's agent-safety principles into implementation
+work that can be delivered and reviewed incrementally. It is informed by
+Microsoft Learn's
+[Designing Agent Architecture and SDLC Integration](https://learn.microsoft.com/en-us/training/modules/design-agent-architecture-integration/)
+module and follows one governing rule: **agents propose; deterministic policy
+and authorized humans accept**.
+
+The target control flow is:
+
+```text
+Task contract -> Visible plan -> Bounded execution -> Objective evaluation
+              -> Human/policy approval -> Published result
+```
+
+Status legend: `[x]` implemented baseline, `[ ]` planned work. Priorities indicate
+delivery order rather than release dates.
+
+### Current Baseline
+
+- [x] Phase-specific SSDLC skills and a shared assessment pipeline for REST,
+  MCP, and A2A entry points.
+- [x] Human review is mandatory for agent-gateway submissions; external agents
+  cannot approve their own work.
+- [x] MCP document-root confinement, token/loopback boundaries, bounded KB
+  results, input guardrails, and LLM base-URL network checks.
+- [x] Structured reports with citations, document hashes, confidence, threat
+  evidence verification, and remediation tracking.
+- [x] Reproducible evaluation harness with OWASP triage and threat-grounding
+  scorecards.
+
+### M0 — Repository Governance (P0)
+
+Goal: make the pull request the enforceable control point for human and
+agent-generated changes.
+
+- [ ] Add `CODEOWNERS` for security-sensitive paths, including
+  `.github/workflows/`, `app/core/`, `app/agent_gateway/`, migrations,
+  deployment files, and policy packs.
+- [ ] Expand the pull request template with required Goal, Scope, Plan, Success
+  Criteria, Risk/Mitigations, Evidence, and Rollback/Escalation sections.
+- [ ] Add a required Plan Gate workflow that validates meaningful PR fields and
+  classifies changes as low, medium, high, or critical risk.
+- [ ] Configure the `main` ruleset to require pull requests, passing CI and Plan
+  Gate checks, resolved conversations, and CODEOWNERS approval for sensitive
+  changes.
+- [ ] Upload test, coverage, contract, and evaluation outputs as durable GitHub
+  Actions artifacts named with the workflow run ID and commit SHA.
+
+Exit criteria: a planless change or an unreviewed sensitive-path change cannot
+be merged into `main`.
+
+### M1 — Task Contract and Plan–Act–Evaluate Graph (P1)
+
+Goal: make agent intent, authority, outputs, and success conditions inspectable
+before effects occur.
+
+- [ ] Define a versioned `AgentTaskContract` schema containing goal, inputs,
+  allowed paths/tools, expected outputs, success criteria, risk tier, approval
+  mode, retry limit, and escalation owner.
+- [ ] Persist the task contract and expose it through the assessment API and
+  review console.
+- [ ] Add an explicit read-only planning node and immutable `PlanArtifact` to the
+  assessment graph.
+- [ ] Implement a risk policy: low-risk tasks may use plan + execution in one
+  review; workflow, authentication, infrastructure, and production-impacting
+  tasks require plan-first approval.
+- [ ] Separate evaluation from generation so schema validation, evidence
+  grounding, deterministic rules, and evaluation thresholds remain independent
+  of the drafting agent.
+- [ ] Add transition and authorization tests proving that agents cannot skip the
+  plan/evaluation stages or approve their own output.
+
+Exit criteria: every assessment can answer what was requested, what the agent
+was allowed to do, what plan it followed, and which signals determined success.
+
+### M2 — Durable Execution and Reliability (P1)
+
+Goal: make long-running assessments restart-safe, bounded, and recoverable.
+
+- [ ] Replace in-memory assessment task state with database-backed task,
+  revision, activity, and review records.
+- [ ] Compile LangGraph workflows with a database-backed checkpointer using
+  `task_id` as the stable execution/thread identifier.
+- [ ] Make nodes idempotent and store node input/output hashes to prevent
+  duplicate side effects during resume.
+- [ ] Add bounded retries for transient failures only; after two repeated
+  failures, stop and escalate with attempted actions, evidence, and a suggested
+  human next step.
+- [ ] Add cancellation, timeout, resume, and disaster-recovery tests.
+
+Exit criteria: a process restart can resume an assessment without losing review
+history, duplicating effects, or entering an infinite retry loop.
+
+### M3 — Observability, Tools, MCP, and Secrets (P2)
+
+Goal: make every meaningful agent action attributable and enforce least
+privilege independently of model instructions.
+
+- [ ] Create an evidence manifest for each run containing task and graph-run
+  IDs, node, source channel, document/output hashes, skill and policy-pack
+  versions, model/prompt identifiers, citations, timestamps, and reviewer
+  decision.
+- [ ] Define capability profiles: planning and review agents are read-only;
+  execution agents receive narrow allowlisted tools for the current task.
+- [ ] Treat additions or expansions to MCP tools as high-risk governed changes
+  with explicit security tests and owner review.
+- [ ] Add pre-action policy hooks, post-action audit hooks, and error hooks for
+  escalation; hooks must be able to block actions without relying on the LLM.
+- [ ] Scope secrets to the smallest runtime component and environment, prevent
+  secret values from entering prompts/artifacts, and document network-egress
+  policy for hosted deployments.
+
+Exit criteria: operators can determine who or what performed an action, against
+which inputs and code state, under which capability policy, and with what result.
+
+### M4 — Evaluation and Release Gates (P2)
+
+Goal: turn assessment quality and production safety into objective release
+signals.
+
+- [ ] Expand the evaluation harness across all SSDLC phases and add held-out
+  expert-labelled cases with inter-annotator agreement.
+- [ ] Version approved scorecard baselines and fail CI on agreed grounding,
+  recall, false-positive, calibration, or latency regressions.
+- [ ] Report variance across repeated runs and preserve judge rationales and
+  human-audit results as reviewable artifacts.
+- [ ] Require protected GitHub Environments and authorized reviewers for
+  production-impacting exports or deployments; agents may prepare but not
+  approve or execute the final release action.
+- [ ] Deploy sensitive configuration from an explicit commit or tag rather than
+  an unpinned branch head, with a tested rollback procedure.
+
+Exit criteria: releases have reproducible quality evidence, an approved code
+reference, a human decision for critical effects, and a verified rollback path.
+
+### Definition of Done for Roadmap Work
+
+Every roadmap PR must include:
+
+- a bounded plan and changed-path scope;
+- verifiable functional and security success criteria;
+- automated tests for allowed and denied behavior;
+- durable evidence or artifacts linked to the commit under test;
+- documentation and migration notes where contracts or persistence change; and
+- rollback and escalation guidance for high-risk changes.
+
+Implementation should proceed in milestone order because M0 establishes the
+repository controls used to review M1–M4 safely. Each unchecked item is intended
+to be small enough to become a dedicated GitHub issue and pull request.
 
 ---
 
