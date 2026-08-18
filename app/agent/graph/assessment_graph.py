@@ -10,6 +10,7 @@ from sqlmodel import Session
 
 from app.core.config import settings
 from app.core.db import engine
+from app.models.agent_execution import AgentTaskContract
 from app.models.assessment import AssessmentReport
 from app.models.governance import ControlEvidenceItem, ControlInstance
 from app.models.parser import ParsedDocument
@@ -141,6 +142,17 @@ async def _build_context(state: AssessmentGraphState) -> AssessmentGraphState:
     }
 
 
+async def _plan(state: AssessmentGraphState) -> AssessmentGraphState:
+    from app.agent.task_contract import build_plan_artifact
+
+    return {
+        "plan_artifact": build_plan_artifact(
+            state["task_contract"],
+            skill_id=state.get("skill_id"),
+        )
+    }
+
+
 async def _gather_context(state: AssessmentGraphState) -> AssessmentGraphState:
     from app.agent import orchestrator as legacy
 
@@ -233,6 +245,23 @@ async def _verify_threat_evidence(
     return {"report": report}
 
 
+async def _evaluate(state: AssessmentGraphState) -> AssessmentGraphState:
+    from app.agent.task_contract import evaluate_assessment_report
+
+    evaluation = evaluate_assessment_report(
+        state["report"],
+        state["task_contract"],
+    )
+    report = state["report"].model_copy(
+        update={
+            "task_contract": state["task_contract"],
+            "plan_artifact": state["plan_artifact"],
+            "evaluation": evaluation,
+        }
+    )
+    return {"evaluation": evaluation, "report": report}
+
+
 async def _persist_governance(state: AssessmentGraphState) -> AssessmentGraphState:
     try:
         count = persist_assessment_control_evidence(
@@ -248,21 +277,25 @@ async def _persist_governance(state: AssessmentGraphState) -> AssessmentGraphSta
 def compile_assessment_graph():
     graph = StateGraph(AssessmentGraphState)
     graph.add_node("load_skill", _load_skill)
+    graph.add_node("plan_assessment", _plan)
     graph.add_node("build_document_context", _build_context)
     graph.add_node("gather_policy_history_and_evidence", _gather_context)
     graph.add_node("draft_assessment", _draft)
     graph.add_node("review_assessment", _review)
     graph.add_node("parse_report", _parse_report)
     graph.add_node("verify_threat_evidence", _verify_threat_evidence)
+    graph.add_node("evaluate_assessment", _evaluate)
     graph.add_node("persist_gate3_control_evidence", _persist_governance)
     graph.add_edge(START, "load_skill")
-    graph.add_edge("load_skill", "build_document_context")
+    graph.add_edge("load_skill", "plan_assessment")
+    graph.add_edge("plan_assessment", "build_document_context")
     graph.add_edge("build_document_context", "gather_policy_history_and_evidence")
     graph.add_edge("gather_policy_history_and_evidence", "draft_assessment")
     graph.add_edge("draft_assessment", "review_assessment")
     graph.add_edge("review_assessment", "parse_report")
     graph.add_edge("parse_report", "verify_threat_evidence")
-    graph.add_edge("verify_threat_evidence", "persist_gate3_control_evidence")
+    graph.add_edge("verify_threat_evidence", "evaluate_assessment")
+    graph.add_edge("evaluate_assessment", "persist_gate3_control_evidence")
     graph.add_edge("persist_gate3_control_evidence", END)
     return graph.compile()
 
@@ -275,7 +308,16 @@ async def run_assessment_graph(
     project_id: str | None = None,
     phase: str | None = None,
     skill_id: str | None = None,
+    task_contract: AgentTaskContract | None = None,
 ) -> AssessmentReport:
+    if task_contract is None:
+        from app.agent.task_contract import build_task_contract
+
+        task_contract = build_task_contract(
+            task_id=task_id,
+            parsed_documents=parsed_documents,
+            phase=phase,
+        )
     compiled = compile_assessment_graph()
     final_state = await compiled.ainvoke(
         {
@@ -285,6 +327,7 @@ async def run_assessment_graph(
             "project_id": project_id,
             "phase": phase,
             "skill_id": skill_id,
+            "task_contract": task_contract,
         }
     )
     return final_state["report"]

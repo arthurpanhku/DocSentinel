@@ -94,6 +94,9 @@ def test_submit_assessment_with_txt_file(client):
     data = r.json()
     assert data.get("status") == "accepted"
     assert "task_id" in data
+    assert data["task_contract"]["version"] == "1.0"
+    assert data["task_contract"]["goal"]
+    assert data["task_contract"]["allowed_paths"]
     task_id = data["task_id"]
     r2 = client.get(f"/api/v1/assessments/{task_id}")
     assert r2.status_code == 200
@@ -102,6 +105,8 @@ def test_submit_assessment_with_txt_file(client):
     assert r2_data.get("report") is not None
     assert "confidence" in r2_data.get("report", {})
     assert "sources" in r2_data.get("report", {})
+    assert r2_data["task_contract"] == data["task_contract"]
+    assert r2_data["report"]["task_contract"] == data["task_contract"]
 
 
 def test_submit_assessment_with_skill(client):

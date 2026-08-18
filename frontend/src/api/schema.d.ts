@@ -1129,6 +1129,51 @@ export interface components {
             /** Transport */
             transport: string;
         };
+        /** AgentTaskContract */
+        AgentTaskContract: {
+            /** Allowed Paths */
+            allowed_paths: string[];
+            /** Allowed Tools */
+            allowed_tools: string[];
+            /**
+             * Approval Mode
+             * @enum {string}
+             */
+            approval_mode: "human_review" | "plan_first";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Escalation Owner */
+            escalation_owner: string;
+            /** Expected Outputs */
+            expected_outputs: string[];
+            /** Goal */
+            goal: string;
+            /** Inputs */
+            inputs: components["schemas"]["TaskInputReference"][];
+            /** Retry Limit */
+            retry_limit: number;
+            /**
+             * Risk Tier
+             * @enum {string}
+             */
+            risk_tier: "low" | "medium" | "high" | "critical";
+            /** Success Criteria */
+            success_criteria: string[];
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Version
+             * @default 1.0
+             * @constant
+             */
+            version: "1.0";
+        };
         /** AssessmentReport */
         AssessmentReport: {
             /** Compliance Gaps */
@@ -1140,6 +1185,7 @@ export interface components {
             confidence: number;
             /** Cross Phase Refs */
             cross_phase_refs?: components["schemas"]["CrossPhaseRef"][];
+            evaluation?: components["schemas"]["EvaluationArtifact"] | null;
             /**
              * Format
              * @default json
@@ -1149,6 +1195,7 @@ export interface components {
             metadata?: components["schemas"]["ReportMetadata"] | null;
             /** Phase */
             phase?: string | null;
+            plan_artifact?: components["schemas"]["PlanArtifact"] | null;
             /** Remediations */
             remediations?: components["schemas"]["Remediation"][];
             /** Risk Items */
@@ -1162,6 +1209,7 @@ export interface components {
             status: "completed" | "partial" | "failed";
             /** Summary */
             summary: string;
+            task_contract?: components["schemas"]["AgentTaskContract"] | null;
             /** Task Id */
             task_id: string;
             threat_model?: components["schemas"]["ThreatModel"] | null;
@@ -1182,6 +1230,7 @@ export interface components {
              * @enum {string}
              */
             status: "accepted" | "queued";
+            task_contract: components["schemas"]["AgentTaskContract"];
             /**
              * Task Id
              * Format: uuid
@@ -1205,12 +1254,15 @@ export interface components {
             created_at: string;
             /** Error Message */
             error_message?: string | null;
+            evaluation?: components["schemas"]["EvaluationArtifact"] | null;
+            plan_artifact?: components["schemas"]["PlanArtifact"] | null;
             report?: components["schemas"]["AssessmentReport"] | null;
             /**
              * Status
              * @enum {string}
              */
             status: "pending" | "running" | "review_pending" | "approved" | "rejected" | "escalated" | "completed" | "failed";
+            task_contract: components["schemas"]["AgentTaskContract"];
             /**
              * Task Id
              * Format: uuid
@@ -1335,6 +1387,52 @@ export interface components {
             reproducibility?: number | null;
             /** Total */
             total?: number | null;
+        };
+        /** EvaluationArtifact */
+        EvaluationArtifact: {
+            /** Checks */
+            checks: components["schemas"]["EvaluationCheck"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Evaluator
+             * @default deterministic_policy
+             * @constant
+             */
+            evaluator: "deterministic_policy";
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "passed" | "needs_review" | "failed";
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Version
+             * @default 1.0
+             * @constant
+             */
+            version: "1.0";
+        };
+        /** EvaluationCheck */
+        EvaluationCheck: {
+            /** Details */
+            details: string;
+            /** Name */
+            name: string;
+            /** Passed */
+            passed: boolean;
+            /**
+             * Required
+             * @default true
+             */
+            required: boolean;
         };
         /** EvidenceCriticSummary */
         EvidenceCriticSummary: {
@@ -1488,6 +1586,65 @@ export interface components {
             require_human_for_high_risk_ai: boolean;
             /** Updated By Id */
             updated_by_id?: number | null;
+        };
+        /** PlanArtifact */
+        PlanArtifact: {
+            /**
+             * Contract Version
+             * @default 1.0
+             * @constant
+             */
+            contract_version: "1.0";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Mode
+             * @default read_only
+             * @constant
+             */
+            mode: "read_only";
+            /** Skill Id */
+            skill_id?: string | null;
+            /** Steps */
+            steps: components["schemas"]["PlanStep"][];
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Version
+             * @default 1.0
+             * @constant
+             */
+            version: "1.0";
+        };
+        /** PlanStep */
+        PlanStep: {
+            /** Action */
+            action: string;
+            /** Id */
+            id: string;
+            /**
+             * Inputs
+             * @default []
+             */
+            inputs: string[];
+            /**
+             * Outputs
+             * @default []
+             */
+            outputs: string[];
+            /**
+             * Phase
+             * @enum {string}
+             */
+            phase: "plan" | "act" | "evaluate";
+            /** Success Check */
+            success_check: string;
         };
         /** ProjectCreate */
         ProjectCreate: {
@@ -1838,6 +1995,17 @@ export interface components {
             answers?: {
                 [key: string]: unknown;
             };
+        };
+        /** TaskInputReference */
+        TaskInputReference: {
+            /** Filename */
+            filename: string;
+            /** Media Type */
+            media_type: string;
+            /** Sha256 */
+            sha256: string;
+            /** Uri */
+            uri: string;
         };
         /** Threat */
         Threat: {

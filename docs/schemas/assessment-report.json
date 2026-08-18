@@ -1,5 +1,114 @@
 {
   "$defs": {
+    "AgentTaskContract": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_paths": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Allowed Paths",
+          "type": "array"
+        },
+        "allowed_tools": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Allowed Tools",
+          "type": "array"
+        },
+        "approval_mode": {
+          "enum": [
+            "human_review",
+            "plan_first"
+          ],
+          "title": "Approval Mode",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "escalation_owner": {
+          "title": "Escalation Owner",
+          "type": "string"
+        },
+        "expected_outputs": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Expected Outputs",
+          "type": "array"
+        },
+        "goal": {
+          "title": "Goal",
+          "type": "string"
+        },
+        "inputs": {
+          "items": {
+            "$ref": "#/$defs/TaskInputReference"
+          },
+          "minItems": 1,
+          "title": "Inputs",
+          "type": "array"
+        },
+        "retry_limit": {
+          "maximum": 5,
+          "minimum": 0,
+          "title": "Retry Limit",
+          "type": "integer"
+        },
+        "risk_tier": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "title": "Risk Tier",
+          "type": "string"
+        },
+        "success_criteria": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Success Criteria",
+          "type": "array"
+        },
+        "task_id": {
+          "format": "uuid",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "created_at",
+        "goal",
+        "inputs",
+        "allowed_paths",
+        "allowed_tools",
+        "expected_outputs",
+        "success_criteria",
+        "risk_tier",
+        "approval_mode",
+        "retry_limit",
+        "escalation_owner"
+      ],
+      "title": "AgentTaskContract",
+      "type": "object"
+    },
     "ComplianceGap": {
       "properties": {
         "citation_ids": {
@@ -201,6 +310,87 @@
       "title": "DreadScore",
       "type": "object"
     },
+    "EvaluationArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/EvaluationCheck"
+          },
+          "minItems": 1,
+          "title": "Checks",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "evaluator": {
+          "const": "deterministic_policy",
+          "default": "deterministic_policy",
+          "title": "Evaluator",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "passed",
+            "needs_review",
+            "failed"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "task_id": {
+          "format": "uuid",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "created_at",
+        "outcome",
+        "checks"
+      ],
+      "title": "EvaluationArtifact",
+      "type": "object"
+    },
+    "EvaluationCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "details": {
+          "title": "Details",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "passed",
+        "details"
+      ],
+      "title": "EvaluationCheck",
+      "type": "object"
+    },
     "EvidenceCriticSummary": {
       "properties": {
         "contradicted": {
@@ -291,6 +481,116 @@
         "rationale"
       ],
       "title": "EvidenceVerification",
+      "type": "object"
+    },
+    "PlanArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "contract_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "mode": {
+          "const": "read_only",
+          "default": "read_only",
+          "title": "Mode",
+          "type": "string"
+        },
+        "skill_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Skill Id"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/PlanStep"
+          },
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        },
+        "task_id": {
+          "format": "uuid",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "created_at",
+        "steps"
+      ],
+      "title": "PlanArtifact",
+      "type": "object"
+    },
+    "PlanStep": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "title": "Action",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "inputs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "outputs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Outputs",
+          "type": "array"
+        },
+        "phase": {
+          "enum": [
+            "plan",
+            "act",
+            "evaluate"
+          ],
+          "title": "Phase",
+          "type": "string"
+        },
+        "success_check": {
+          "title": "Success Check",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "phase",
+        "action",
+        "success_check"
+      ],
+      "title": "PlanStep",
       "type": "object"
     },
     "Remediation": {
@@ -675,6 +975,35 @@
       "title": "SourceCitation",
       "type": "object"
     },
+    "TaskInputReference": {
+      "additionalProperties": false,
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "media_type": {
+          "title": "Media Type",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "uri": {
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "filename",
+        "media_type",
+        "sha256"
+      ],
+      "title": "TaskInputReference",
+      "type": "object"
+    },
     "Threat": {
       "properties": {
         "affected_component": {
@@ -958,6 +1287,17 @@
       "title": "Cross Phase Refs",
       "type": "array"
     },
+    "evaluation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EvaluationArtifact"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "format": {
       "default": "json",
       "enum": [
@@ -989,6 +1329,17 @@
       ],
       "default": null,
       "title": "Phase"
+    },
+    "plan_artifact": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PlanArtifact"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "remediations": {
       "items": {
@@ -1023,6 +1374,17 @@
     "summary": {
       "title": "Summary",
       "type": "string"
+    },
+    "task_contract": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AgentTaskContract"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "task_id": {
       "title": "Task Id",

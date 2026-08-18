@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
@@ -10,6 +11,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from app.agent.orchestrator import run_assessment
+from app.agent.task_contract import build_task_contract
 from app.kb.service import get_kb_service
 from app.models.assessment import (
     AssessmentReport,
@@ -42,6 +44,21 @@ class InvalidTaskStateError(ValueError):
     """Raised when an operation is invalid for the current task state."""
 
 
+def _runner_accepts_task_contract(runner: AssessmentRunner) -> bool:
+    """Detect the optional contract parameter without executing a runner twice."""
+    side_effect = getattr(runner, "side_effect", None)
+    target = side_effect if callable(side_effect) else runner
+    try:
+        parameters = inspect.signature(target).parameters.values()
+    except (TypeError, ValueError):
+        return False
+    return any(
+        parameter.name == "task_contract"
+        or parameter.kind is inspect.Parameter.VAR_KEYWORD
+        for parameter in parameters
+    )
+
+
 class AssessmentService:
     def __init__(self) -> None:
         self._tasks: dict[str, dict[str, Any]] = {}
@@ -64,6 +81,12 @@ class AssessmentService:
         task_id = uuid4()
         task_id_str = str(task_id)
         created_at = datetime.now(UTC)
+        task_contract = build_task_contract(
+            task_id=task_id,
+            parsed_documents=parsed_documents,
+            phase=phase,
+            created_at=created_at,
+        )
         self._tasks[task_id_str] = {
             "task_id": task_id,
             "status": "pending",
@@ -81,6 +104,7 @@ class AssessmentService:
             "revisions": [],
             "comments": [],
             "remediation_tracking": {},
+            "task_contract": task_contract,
         }
         asyncio.create_task(
             self._run(
@@ -99,6 +123,7 @@ class AssessmentService:
             task_id=task_id,
             status="accepted",
             message="Assessment task created.",
+            task_contract=task_contract,
         )
 
     async def _run(
@@ -123,14 +148,19 @@ class AssessmentService:
             }
         )
         try:
-            report = await runner(
-                task_id,
-                parsed_documents,
-                scenario_id=scenario_id,
-                project_id=project_id,
-                phase=phase,
-                skill_id=skill_id,
-            )
+            runner_kwargs = {
+                "scenario_id": scenario_id,
+                "project_id": project_id,
+                "phase": phase,
+                "skill_id": skill_id,
+            }
+            if _runner_accepts_task_contract(runner):
+                runner_kwargs["task_contract"] = task["task_contract"]
+            report = await runner(task_id, parsed_documents, **runner_kwargs)
+            if report.task_contract is None:
+                report = report.model_copy(
+                    update={"task_contract": task["task_contract"]}
+                )
             if report.metadata:
                 report.metadata.ssdlc_stage = phase
                 report.metadata.ssdlc_phase = phase
@@ -151,6 +181,8 @@ class AssessmentService:
                     "report": report.model_dump(),
                     "completed_at": now,
                     "remediation_tracking": tracking,
+                    "plan_artifact": report.plan_artifact,
+                    "evaluation": report.evaluation,
                 }
             )
             task["revisions"].append(
@@ -215,6 +247,9 @@ class AssessmentService:
             version=task.get("version", 1),
             assignee=task.get("assignee"),
             comments=task.get("comments", []),
+            task_contract=task["task_contract"],
+            plan_artifact=task.get("plan_artifact"),
+            evaluation=task.get("evaluation"),
         )
 
     def list(
