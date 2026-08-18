@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.core.guardrails import UNTRUSTED_CONTENT_INSTRUCTION, wrap_untrusted_content
 from app.kb.service import get_kb_service
 from app.llm.base import invoke_llm
+from app.models.agent_execution import AgentTaskContract
 from app.models.assessment import (
     AssessmentReport,
     ComplianceGap,
@@ -119,6 +120,7 @@ async def run_assessment(
     project_id: str | None = None,
     phase: str | None = None,
     skill_id: str | None = None,
+    task_contract: AgentTaskContract | None = None,
 ) -> AssessmentReport:
     from app.agent.graph.assessment_graph import run_assessment_graph
 
@@ -129,6 +131,7 @@ async def run_assessment(
         project_id=project_id,
         phase=phase,
         skill_id=skill_id,
+        task_contract=task_contract,
     )
 
 

@@ -75,11 +75,21 @@ def _patch_deps(skill, llm_response='{"summary": "Test", "risk_items": []}'):
 async def test_orchestrator_uses_skill_prompt():
     skill = _make_skill()
     with _patch_deps(skill) as mock_invoke:
-        await run_assessment(uuid4(), [_make_doc()], skill_id="test-skill")
+        report = await run_assessment(
+            uuid4(),
+            [_make_doc()],
+            skill_id="test-skill",
+        )
 
         calls = mock_invoke.call_args_list
         found = any("YOU ARE A TEST SKILL" in call.args[0] for call in calls)
         assert found, "Skill system prompt was not injected into LLM calls"
+        assert report.task_contract is not None
+        assert report.plan_artifact is not None
+        assert report.plan_artifact.skill_id == "test-skill"
+        assert report.evaluation is not None
+        assert report.evaluation.evaluator == "deterministic_policy"
+        assert report.evaluation.outcome in {"passed", "needs_review"}
 
 
 # ---------------------------------------------------------------------------
@@ -268,9 +278,15 @@ def test_graph_registry_exports_assessment_mermaid():
     assert "docsentinel_assessment" in GRAPH_REGISTRY
     compiled = GRAPH_REGISTRY["docsentinel_assessment"][1]()
     mermaid = compiled.get_graph(xray=True).draw_mermaid()
+    assert "plan_assessment" in mermaid
     assert "draft_assessment" in mermaid
     assert "verify_threat_evidence" in mermaid
+    assert "evaluate_assessment" in mermaid
     assert "persist_gate3_control_evidence" in mermaid
+    assert "load_skill --> plan_assessment" in mermaid
+    assert "plan_assessment --> build_document_context" in mermaid
+    assert "verify_threat_evidence --> evaluate_assessment" in mermaid
+    assert "evaluate_assessment --> persist_gate3_control_evidence" in mermaid
 
 
 def test_normalize_threat_model_accepts_common_stride_variations():

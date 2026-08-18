@@ -6,6 +6,11 @@ from uuid import UUID
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 
+from app.models.agent_execution import (
+    AgentTaskContract,
+    EvaluationArtifact,
+    PlanArtifact,
+)
 from app.models.assessment import AssessmentReport
 from app.models.parser import ParsedDocument
 
@@ -58,3 +63,6 @@ class AssessmentGraphState(TypedDict, total=False):
     reviewed_raw: str
     report: AssessmentReport
     persisted_controls: int
+    task_contract: AgentTaskContract
+    plan_artifact: PlanArtifact
+    evaluation: EvaluationArtifact

@@ -10,6 +10,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.models.agent_execution import (
+    AgentTaskContract,
+    EvaluationArtifact,
+    PlanArtifact,
+)
+
 
 class RiskItem(BaseModel):
     id: str
@@ -168,6 +174,9 @@ class AssessmentReport(BaseModel):
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     sources: list[SourceCitation] = Field(default_factory=list)
     metadata: ReportMetadata | None = None
+    task_contract: AgentTaskContract | None = None
+    plan_artifact: PlanArtifact | None = None
+    evaluation: EvaluationArtifact | None = None
     format: Literal["json", "markdown"] = "json"
 
 
@@ -175,6 +184,7 @@ class AssessmentTaskCreated(BaseModel):
     task_id: UUID
     status: Literal["accepted", "queued"]
     message: str | None = None
+    task_contract: AgentTaskContract
 
 
 class AssessmentTaskResult(BaseModel):
@@ -196,6 +206,9 @@ class AssessmentTaskResult(BaseModel):
     version: int = 1
     assignee: str | None = None
     comments: list[dict] = Field(default_factory=list)
+    task_contract: AgentTaskContract
+    plan_artifact: PlanArtifact | None = None
+    evaluation: EvaluationArtifact | None = None
 
 
 class RemediationTracking(BaseModel):

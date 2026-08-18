@@ -1,5 +1,6 @@
 import json
 from unittest.mock import AsyncMock
+from uuid import UUID
 
 import httpx
 import pytest
@@ -50,6 +51,7 @@ async def test_agent_submission_uses_shared_task_and_requires_review(
     assert result["status"] == "review_pending"
     assert result["report"]["phase"] == "design"
     runner.assert_awaited_once()
+    assert runner.await_args.kwargs["task_contract"].task_id == UUID(created["task_id"])
 
 
 def test_agent_gateway_status_and_token_boundary(monkeypatch):
