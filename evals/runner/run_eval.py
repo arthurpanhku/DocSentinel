@@ -21,6 +21,18 @@ from app.models.assessment import AssessmentReport
 from app.services.assessment_service import AssessmentRunner, AssessmentService
 from evals.models import EvalCase, RunConfig
 from evals.runner.parse import parse_inputs
+from evals.scoring.scorers.set_detection import (
+    GoldenRecord,
+)
+from evals.scoring.scorers.set_detection import (
+    record_from_report as golden_record_from_report,
+)
+from evals.scoring.scorers.set_detection import (
+    score_records as score_golden_records,
+)
+from evals.scoring.scorers.set_detection import (
+    serialize_record as serialize_golden_record,
+)
 from evals.scoring.scorers.triage import (
     TriageRecord,
     record_from_report,
@@ -78,12 +90,15 @@ async def run_cases(
     report_root: Path | None = None,
     assessment_runner: AssessmentRunner | None = None,
 ) -> dict[str, Any]:
-    """Run cases, score SAST triage, and write scorecard files."""
+    """Run cases, apply the registry-selected scorer, and write scorecards."""
     selected = list(cases)
     if cfg.limit is not None:
         selected = selected[: cfg.limit]
 
-    records: list[TriageRecord] = []
+    dataset_meta = _dataset_meta(cfg.dataset_id)
+    scorer = str(dataset_meta.get("scorer") or "triage")
+    triage_records: list[TriageRecord] = []
+    golden_records: list[GoldenRecord] = []
     for case in selected:
         for repeat in range(cfg.repeats):
             report = await run_case(
@@ -92,19 +107,84 @@ async def run_cases(
                 input_root=input_root,
                 assessment_runner=assessment_runner,
             )
-            records.append(record_from_report(case, report, repeat))
+            if scorer == "triage":
+                triage_records.append(record_from_report(case, report, repeat))
+            elif scorer == "ssdlc_golden":
+                golden_records.append(golden_record_from_report(case, report, repeat))
+            else:
+                raise ValueError(f"Unsupported scorer for {cfg.dataset_id}: {scorer}")
 
-    scorecard = build_scorecard(
-        records,
-        cfg,
-        n_cases=len(selected),
-        dataset_meta=_dataset_meta(cfg.dataset_id),
-    )
+    if scorer == "triage":
+        scorecard = build_scorecard(
+            triage_records,
+            cfg,
+            n_cases=len(selected),
+            dataset_meta=dataset_meta,
+        )
+    else:
+        scorecard = build_golden_scorecard(
+            golden_records,
+            cfg,
+            n_cases=len(selected),
+            dataset_meta=dataset_meta,
+        )
     write_scorecard(
         scorecard,
         (report_root or EVALS_DIR / "reports") / cfg.run_id,
     )
     return scorecard
+
+
+def build_golden_scorecard(
+    records: list[GoldenRecord],
+    cfg: RunConfig,
+    *,
+    n_cases: int,
+    dataset_meta: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a six-phase set-detection and fidelity scorecard."""
+    phase_skill: dict[tuple[str, str], list[GoldenRecord]] = {}
+    for record in records:
+        phase_skill.setdefault((record.phase, record.skill_id), []).append(record)
+    return {
+        "schema_version": "eval-scorecard-v2",
+        "run_id": cfg.run_id,
+        "created_at": datetime.now(UTC).isoformat(),
+        "dataset": {
+            "id": cfg.dataset_id,
+            "source_url": dataset_meta.get("source_url"),
+            "license": dataset_meta.get("license"),
+            "checksum_algorithm": dataset_meta.get("checksum_algorithm"),
+            "checksum": dataset_meta.get("checksum"),
+            "contamination_risk": dataset_meta.get("contamination_risk"),
+            "review_status": dataset_meta.get("review_status"),
+        },
+        "model": {
+            "provider": cfg.provider,
+            "model_id": cfg.model_id,
+            "temperature": cfg.temperature,
+        },
+        "run_config": {
+            "repeats": cfg.repeats,
+            "timeout_seconds": cfg.timeout_seconds,
+            "collaborative": cfg.collaborative,
+            "phase": cfg.phase,
+            "skill_id": cfg.skill_id,
+            "limit": cfg.limit,
+        },
+        "n_cases": n_cases,
+        "n_records": len(records),
+        "metrics": score_golden_records(records),
+        "by_phase_skill": [
+            {
+                "phase": phase,
+                "skill_id": skill_id,
+                "metrics": score_golden_records(group),
+            }
+            for (phase, skill_id), group in sorted(phase_skill.items())
+        ],
+        "cases": [serialize_golden_record(record) for record in records],
+    }
 
 
 def build_scorecard(
@@ -182,6 +262,8 @@ def write_scorecard(scorecard: dict[str, Any], output_dir: Path) -> None:
 
 
 def render_scorecard_markdown(scorecard: dict[str, Any]) -> str:
+    if scorecard["schema_version"] == "eval-scorecard-v2":
+        return render_golden_scorecard_markdown(scorecard)
     metrics = scorecard["metrics"]
     lines = [
         f"# Eval Scorecard: {scorecard['run_id']}",
@@ -230,6 +312,77 @@ def render_scorecard_markdown(scorecard: dict[str, Any]) -> str:
         [
             "",
             "M1 uses hard-key CWE matching for OWASP Benchmark and no LLM judge.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def render_golden_scorecard_markdown(scorecard: dict[str, Any]) -> str:
+    """Render six-phase finding and fidelity metrics without overstating review."""
+    metrics = scorecard["metrics"]
+    lines = [
+        f"# Eval Scorecard: {scorecard['run_id']}",
+        "",
+        f"- Dataset: `{scorecard['dataset']['id']}`",
+        f"- Model: `{scorecard['model']['provider']}:{scorecard['model']['model_id']}`",
+        f"- Repeats: `{scorecard['run_config']['repeats']}`",
+        f"- Contamination risk: `{scorecard['dataset']['contamination_risk']}`",
+        f"- Review status: `{scorecard['dataset']['review_status']}`",
+        "",
+        "> This synthetic dataset has not been expert reviewed. Scores are",
+        "> provisional until maintainers approve the golden findings.",
+        "",
+        "## Overall Metrics",
+        "",
+        "| Surface | Precision | Recall | F1 | FP | FN |",
+        "| :--- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for label, key in (
+        ("Risk findings", "risk_detection"),
+        ("Compliance gaps", "compliance_gap_detection"),
+        ("All findings", "overall_detection"),
+    ):
+        group = metrics[key]
+        lines.append(
+            f"| {label} | {group['precision']:.4f} | {group['recall']:.4f} | "
+            f"{group['f1']:.4f} | {group['false_positive']} | "
+            f"{group['false_negative']} |"
+        )
+    lines.extend(
+        [
+            "",
+            "| Fidelity check | Value |",
+            "| :--- | ---: |",
+            "| Severity accuracy (matched risks) | "
+            f"{metrics['severity_accuracy_on_matched']:.4f} |",
+            "| Policy mapping accuracy (matched gaps) | "
+            f"{metrics['policy_mapping_accuracy_on_matched']:.4f} |",
+            "| Evidence locator accuracy (matched findings) | "
+            f"{metrics['evidence_locator_accuracy_on_matched']:.4f} |",
+            f"| Schema validity | {metrics['schema_validity']:.4f} |",
+            "",
+            "## By Skill / Phase",
+            "",
+            "| Phase | Skill | Finding F1 | Severity | Policy | Evidence |",
+            "| :--- | :--- | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for item in scorecard["by_phase_skill"]:
+        group = item["metrics"]
+        lines.append(
+            f"| {item['phase']} | {item['skill_id']} | "
+            f"{group['overall_detection']['f1']:.4f} | "
+            f"{group['severity_accuracy_on_matched']:.4f} | "
+            f"{group['policy_mapping_accuracy_on_matched']:.4f} | "
+            f"{group['evidence_locator_accuracy_on_matched']:.4f} |"
+        )
+    lines.extend(
+        [
+            "",
+            "Matching is deterministic and one-to-one. Exact finding IDs win; "
+            "otherwise at least 60% of the case's declared match terms must appear. "
+            "No embedding model or LLM judge is used.",
             "",
         ]
     )

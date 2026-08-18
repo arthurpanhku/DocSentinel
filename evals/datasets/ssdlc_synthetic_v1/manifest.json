@@ -1,0 +1,29 @@
+{
+  "dataset_id": "ssdlc_synthetic_v1",
+  "version": "1.0.0",
+  "license": "MIT (same as the containing repository)",
+  "provenance": "fully_synthetic",
+  "authoring": "AI-assisted synthetic fixtures with deterministic validation",
+  "review_status": "not_expert_reviewed",
+  "contains_real_personal_data": false,
+  "contains_third_party_content": false,
+  "n_cases": 6,
+  "phases": [
+    "requirements",
+    "design",
+    "development",
+    "testing",
+    "deployment",
+    "operations"
+  ],
+  "files": {
+    "README.md": "2b587a684e47c266fc9ff676e98dd06c0a93658ff772eec9480e621f4d9eebc1",
+    "cases.jsonl": "f3a81e28128a7dbba58a094a5cdd54d496e90a43b98ec0102686db1caa612cef",
+    "inputs/deployment.md": "dd30bd9bf38ebd3645a92f7bb245333f4504c9b64b990c172380d72ec0636e33",
+    "inputs/design.md": "48855d7fc5164f068df65de7f7fb1a4cbe6f88c24835703533303c17457a1686",
+    "inputs/development.md": "9777a29e273904461a6fd32f92bae135202693d53babecb4c8b53e53fd8d2fc2",
+    "inputs/operations.md": "c5348319bbe56b3d42e82d5bd8943edc1c74760baae05be1c34ea60e309af02b",
+    "inputs/requirements.md": "bd279ff8a023bc8c79ea21f8d0b7c752167d91e1a0b488285765369ab780c58b",
+    "inputs/testing.md": "03fbe427e74ab59dd54e6fec6523236197ed940a6200a84a03aa816c312478ab"
+  }
+}

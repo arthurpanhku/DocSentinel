@@ -21,6 +21,12 @@ supported precision/recall/F1, contradiction recall, abstention, citation
 validity, and confusion reporting. This vertical slice supports the public demo
 but does not mark the broader M2 or M5 milestones complete.
 
+A separate six-case `ssdlc_synthetic_v1` starter set now covers all six phases
+with deterministic risk/compliance-gap detection, severity, policy-control,
+evidence-locator, and schema metrics. Its manifest explicitly records
+`not_expert_reviewed`; it validates the data and scoring contracts but does not
+satisfy M4's 20–30 case or two-senior-reviewer requirements.
+
 ---
 
 ## 1. Goals and Non-Goals
