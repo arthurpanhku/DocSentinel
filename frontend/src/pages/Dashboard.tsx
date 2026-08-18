@@ -82,7 +82,7 @@ export default function Dashboard() {
           <IconButton label="Refresh dashboard" onClick={() => void load()} disabled={loading}>
             <RefreshCw aria-hidden="true" />
           </IconButton>
-          <Link to="/assessments">
+          <Link className="sm:hidden" to="/assessments#new-assessment">
             <Button>
               <FileCheck2 className="h-4 w-4" />
               New assessment

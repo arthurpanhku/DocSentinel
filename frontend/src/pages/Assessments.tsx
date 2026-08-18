@@ -1,5 +1,15 @@
-import { Check, FileUp, MessageSquare, RefreshCw, Send, Shield, X } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Check,
+  FileUp,
+  MessageSquare,
+  RefreshCw,
+  Send,
+  Shield,
+  X
+} from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { SeverityBadge, StatusBadge, taskTitle } from "../components/domain";
 import { ThreatEvidencePanel } from "../components/ThreatEvidencePanel";
@@ -57,6 +67,8 @@ const statusOptions = [
 ];
 
 export default function Assessments() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<AssessmentTask[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -68,6 +80,19 @@ export default function Assessments() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const submitOpen = location.hash === "#new-assessment";
+
+  function setSubmitOpen(open: boolean) {
+    navigate(
+      {
+        pathname: location.pathname,
+        search: location.search,
+        hash: open ? "new-assessment" : ""
+      },
+      { replace: true }
+    );
+  }
 
   async function loadTasks(nextSelectedId = selectedId) {
     setLoading(true);
@@ -129,11 +154,11 @@ export default function Assessments() {
     const form = new FormData(event.currentTarget);
     const files = form.getAll("files").filter((value): value is File => value instanceof File && value.size > 0);
     if (!files.length) {
-      setError("Select at least one document.");
+      setSubmitError("Select at least one document.");
       return;
     }
     setBusy(true);
-    setError(null);
+    setSubmitError(null);
     try {
       const created = await submitAssessment({
         files,
@@ -145,8 +170,11 @@ export default function Assessments() {
       });
       event.currentTarget.reset();
       await loadTasks(created.task_id);
+      setSubmitOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Assessment submission failed.");
+      setSubmitError(
+        err instanceof Error ? err.message : "Assessment submission failed."
+      );
     } finally {
       setBusy(false);
     }
@@ -205,48 +233,108 @@ export default function Assessments() {
       <PageHeader
         title="Assessments"
         description="Submit project material, inspect evidence-backed drafts, and complete human review."
+        actions={
+          <Button onClick={() => setSubmitOpen(true)} type="button">
+            <FileUp className="h-4 w-4" aria-hidden="true" />
+            New assessment
+          </Button>
+        }
       />
-      <div className="grid gap-4 xl:grid-cols-[360px_1fr]">
+
+      <Dialog.Root open={submitOpen} onOpenChange={setSubmitOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-40 bg-[#020408]/75 backdrop-blur-sm" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[min(92vw,680px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-line bg-panel shadow-command">
+            <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+              <div>
+                <Dialog.Title className="text-lg font-semibold tracking-tight text-text">
+                  New assessment
+                </Dialog.Title>
+                <Dialog.Description className="mt-1 text-sm leading-5 text-muted">
+                  Define the evidence boundary, SSDLC phase, and review policy.
+                </Dialog.Description>
+              </div>
+              <Dialog.Close asChild>
+                <IconButton label="Close new assessment">
+                  <X aria-hidden="true" />
+                </IconButton>
+              </Dialog.Close>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4 p-5">
+              <Field label="Documents">
+                <Input
+                  name="files"
+                  type="file"
+                  multiple
+                  accept=".txt,.md,.pdf,.docx,.xlsx,.pptx"
+                />
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="SSDLC phase">
+                  <Select name="phase" defaultValue="auto">
+                    {phases.map((phase) => (
+                      <option key={phase} value={phase}>
+                        {phase}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Assessment skill">
+                  <Select name="skill_id" defaultValue="ssdlc-design">
+                    <option value="">Default</option>
+                    {skills.map((skill) => (
+                      <option key={skill.id} value={skill.id}>
+                        {skill.name}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Scenario">
+                  <Input name="scenario_id" placeholder="threat-modeling" />
+                </Field>
+                <Field label="Project reference">
+                  <Input name="project_id" placeholder="SNOW-1234 or repo/project" />
+                </Field>
+              </div>
+              <label className="flex items-start gap-3 rounded-xl border border-line bg-canvas p-3 text-sm text-muted">
+                <input
+                  name="collaborative_mode"
+                  type="checkbox"
+                  defaultChecked
+                  className="mt-0.5 h-4 w-4 accent-accent"
+                />
+                <span>
+                  <span className="block font-medium text-text">
+                    Require human review
+                  </span>
+                  <span className="mt-0.5 block text-xs leading-5">
+                    Agent output remains a draft until an authorized reviewer acts.
+                  </span>
+                </span>
+              </label>
+              <ErrorNote message={submitError} />
+              <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:flex-row sm:justify-end">
+                <Dialog.Close asChild>
+                  <Button type="button" variant="quiet">
+                    Cancel
+                  </Button>
+                </Dialog.Close>
+                <Button disabled={busy}>
+                  <FileUp className="h-4 w-4" aria-hidden="true" />
+                  {busy ? "Submitting..." : "Submit for assessment"}
+                </Button>
+              </div>
+            </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <div className="grid gap-4 xl:grid-cols-[400px_1fr]">
         <div className="space-y-4">
         <Card>
-          <CardHeader title="Submit Assessment" meta="Files, phase, skill, and review mode." />
-          <form onSubmit={handleSubmit} className="space-y-3 p-4">
-            <Field label="Documents">
-              <Input name="files" type="file" multiple accept=".txt,.md,.pdf,.docx,.xlsx,.pptx" />
-            </Field>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              <Field label="SSDLC phase">
-                <Select name="phase" defaultValue="auto">
-                  {phases.map((phase) => <option key={phase} value={phase}>{phase}</option>)}
-                </Select>
-              </Field>
-              <Field label="Skill">
-                <Select name="skill_id" defaultValue="ssdlc-design">
-                  <option value="">Default</option>
-                  {skills.map((skill) => <option key={skill.id} value={skill.id}>{skill.name}</option>)}
-                </Select>
-              </Field>
-            </div>
-            <Field label="Scenario">
-              <Input name="scenario_id" placeholder="threat-modeling" />
-            </Field>
-            <Field label="Project">
-              <Input name="project_id" placeholder="SNOW-1234 or repo/project" />
-            </Field>
-            <label className="flex items-center gap-2 text-sm text-muted">
-              <input name="collaborative_mode" type="checkbox" defaultChecked className="h-4 w-4 accent-accent" />
-              Human review before closure
-            </label>
-            <Button className="w-full" disabled={busy}>
-              <FileUp className="h-4 w-4" />
-              Submit
-            </Button>
-          </form>
-        </Card>
-
-        <Card>
           <CardHeader
-            title="Queue"
+            title="Assessment queue"
+            meta="Prioritized by risk and recency"
             action={
               <IconButton
                 label="Refresh assessment queue"
