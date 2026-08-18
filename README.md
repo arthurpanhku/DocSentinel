@@ -5,9 +5,9 @@
 </div>
 
 <p align="center">
-  <img src="docs/images/docsentinel-mascot.png" width="220" alt="DocSentinel mascot logo"/>
+  <img src="docs/images/docsentinel-mascot.png" width="220" alt="DocSentinel binary-particle fox mascot"/>
   <br/>
-  <sub>Security review mascot logo for the DocSentinel console and documentation.</sub>
+  <sub>Binary-particle security review mascot for the DocSentinel console and documentation.</sub>
 </p>
 
 <p align="center">
