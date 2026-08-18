@@ -40,8 +40,8 @@ lightrag-hku>=1.0.0
 
 # HTTP & async
 httpx>=0.26.0
-# FastMCP remains under mcp.server.fastmcp in the 1.x SDK used by the app.
-mcp>=1.0.0,<2.0.0
+# Pin the SDK whose public FastMCP import path is used by the app.
+mcp==1.28.1
 a2a-sdk[fastapi]==1.1.0
 
 # Database, auth & migrations
