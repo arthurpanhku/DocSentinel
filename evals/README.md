@@ -13,9 +13,14 @@ Current scope:
   precision/recall/F1, contradiction recall, abstention rate, citation validity,
   and a verdict confusion matrix. This is a focused Design-phase addition; it
   does not claim completion of the broader M2 or M5 milestones.
+- **Six-phase synthetic starter set**: one offline, license-clean case for each
+  SSDLC phase, with 24 golden risks and compliance gaps total, stable evidence
+  locators, project-local policy mappings, deterministic one-to-one matching,
+  and set/severity/policy/evidence scorecards.
 
-Raw datasets are not committed. Use the dataset-specific fetch script to download
-public data into ignored local paths.
+External raw datasets are not committed. Use each dataset-specific fetch script
+to download public data into ignored local paths. Fully synthetic fixtures may
+be committed when their manifest and license metadata explicitly permit it.
 
 ```bash
 python evals/datasets/owasp_benchmark/fetch.py
@@ -32,3 +37,19 @@ The runner writes:
 - `evals/reports/<run_id>/scorecard.md`
 
 M1 uses deterministic hard-key CWE triage scoring and does not use an LLM judge.
+
+## Six-phase synthetic starter set
+
+```bash
+python -m evals.runner.run_eval \
+  --dataset-id ssdlc_synthetic_v1 \
+  --raw-dir evals/datasets/ssdlc_synthetic_v1 \
+  --run-id local-six-phase \
+  --repeats 1
+```
+
+The dataset manifest pins every committed fixture and ground-truth file. Its
+`review_status` is deliberately `not_expert_reviewed`: this is a small,
+AI-assisted starter set and scorer contract, not completion of M4's 20–30 case,
+two-expert annotation protocol. The checked-in deterministic oracle baseline
+tests the harness itself and must not be reported as model performance.

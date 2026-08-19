@@ -14,3 +14,19 @@ datasets:
     contamination_risk: high
     n_cases: 2740
     raw_data_policy: fetch_only_do_not_commit
+    scorer: triage
+  ssdlc_synthetic_v1:
+    id: ssdlc_synthetic_v1
+    name: DocSentinel Six-Phase Synthetic SSDLC Golden Set v1
+    source_url: https://github.com/arthurpanhku/DocSentinel/tree/main/evals/datasets/ssdlc_synthetic_v1
+    license: MIT (same as the containing repository)
+    phase: full_ssdlc
+    skill_id: phase-specific
+    adapter: evals.adapters.ssdlc_synthetic:to_cases
+    scorer: ssdlc_golden
+    checksum_algorithm: sha256-per-file-manifest
+    checksum: see evals/datasets/ssdlc_synthetic_v1/manifest.json
+    contamination_risk: low
+    review_status: not_expert_reviewed
+    n_cases: 6
+    raw_data_policy: committed_fully_synthetic

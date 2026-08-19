@@ -1,0 +1,43 @@
+{
+  "approved": false,
+  "baseline_kind": "deterministic_oracle_scorer_contract",
+  "dataset_id": "ssdlc_synthetic_v1",
+  "description": "Perfect synthetic predictions used only to regression-test adapter, runner, matching, and scorecard contracts. This is not model performance and the golden findings are not expert reviewed.",
+  "metrics": {
+    "compliance_gap_detection": {
+      "expected": 12,
+      "f1": 1.0,
+      "false_negative": 0,
+      "false_positive": 0,
+      "precision": 1.0,
+      "predicted": 12,
+      "recall": 1.0,
+      "true_positive": 12
+    },
+    "evidence_locator_accuracy_on_matched": 1.0,
+    "overall_detection": {
+      "expected": 24,
+      "f1": 1.0,
+      "false_negative": 0,
+      "false_positive": 0,
+      "precision": 1.0,
+      "predicted": 24,
+      "recall": 1.0,
+      "true_positive": 24
+    },
+    "policy_mapping_accuracy_on_matched": 1.0,
+    "risk_detection": {
+      "expected": 12,
+      "f1": 1.0,
+      "false_negative": 0,
+      "false_positive": 0,
+      "precision": 1.0,
+      "predicted": 12,
+      "recall": 1.0,
+      "true_positive": 12
+    },
+    "schema_validity": 1.0,
+    "severity_accuracy_on_matched": 1.0
+  },
+  "review_status": "not_expert_reviewed"
+}

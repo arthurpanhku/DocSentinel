@@ -8,10 +8,13 @@ datasets:
     repeats: 1
     phase: testing
     skill_id: ssdlc-testing
+  ssdlc_synthetic_v1:
+    repeats: 1
+    phase: full_ssdlc
+    skill_id: phase-specific
 
 models:
   - id: ollama-local
     provider: ollama
     model_id: llama2
     temperature: 0.0
-

@@ -18,6 +18,7 @@ Phase = Literal[
     "full_ssdlc",
 ]
 TruthLabel = Literal["true_positive", "false_positive"]
+Severity = Literal["low", "medium", "high", "critical"]
 
 
 class EvalInput(BaseModel):
@@ -36,12 +37,34 @@ class VulnerabilityTruth(BaseModel):
     test_name: str | None = None
 
 
+class RiskTruth(BaseModel):
+    """Expected report risk with deterministic matching and evidence anchors."""
+
+    id: str | None = None
+    title: str | None = None
+    severity: Severity
+    description: str
+    match_terms: list[str] = Field(default_factory=list)
+    evidence_locators: list[str] = Field(default_factory=list)
+
+
+class ComplianceGapTruth(BaseModel):
+    """Expected policy gap aligned to one project-local control identifier."""
+
+    id: str | None = None
+    framework: str
+    control_or_clause: str
+    gap_description: str
+    match_terms: list[str] = Field(default_factory=list)
+    evidence_locators: list[str] = Field(default_factory=list)
+
+
 class EvalGroundTruth(BaseModel):
     """Ground-truth item sets, aligned to the assessment report schema."""
 
     threats: list[dict[str, Any]] = Field(default_factory=list)
-    risk_items: list[dict[str, Any]] = Field(default_factory=list)
-    compliance_gaps: list[dict[str, Any]] = Field(default_factory=list)
+    risk_items: list[RiskTruth] = Field(default_factory=list)
+    compliance_gaps: list[ComplianceGapTruth] = Field(default_factory=list)
     vulnerabilities: list[VulnerabilityTruth] = Field(default_factory=list)
 
 
@@ -75,4 +98,3 @@ class RunConfig(BaseModel):
     phase: Phase = "testing"
     skill_id: str = "ssdlc-testing"
     limit: int | None = Field(default=None, ge=1)
-
