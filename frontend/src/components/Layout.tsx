@@ -5,7 +5,6 @@ import {
   FilePlus2,
   Menu,
   Search,
-  ShieldCheck,
   UserRound,
   X
 } from "lucide-react";
@@ -30,8 +29,13 @@ function Brand({ compact = false }: { compact?: boolean }) {
       className="focus-ring flex min-w-0 items-center gap-3 rounded-lg"
       to="/"
     >
-      <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent shadow-[inset_0_0_18px_rgba(88,166,255,0.08)]">
-        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+      <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl border border-accent/30 bg-black shadow-[0_0_18px_rgba(88,166,255,0.12)]">
+        <img
+          alt=""
+          aria-hidden="true"
+          className="h-full w-full object-cover"
+          src={`${import.meta.env.BASE_URL}icons/docsentinel-icon-dark.png`}
+        />
         <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border-2 border-canvas bg-good" />
       </div>
       {!compact ? (
