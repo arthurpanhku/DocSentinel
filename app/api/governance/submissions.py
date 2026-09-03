@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
 from app.core.db import get_session
+from app.core.deps import get_current_user
+from app.core.security import ensure_role
 from app.models.governance import (
     EvidenceItem,
     EvidenceType,
@@ -18,7 +20,10 @@ from app.models.governance import (
     RequirementRow,
     ReviewStatus,
 )
-from app.models.governance.submission import COMMENT_REQUIRED_TRANSITIONS
+from app.models.governance.submission import (
+    COMMENT_REQUIRED_TRANSITIONS,
+    GATE_STATUS_TRANSITIONS,
+)
 from app.services.schema_service import get_gate3_controls
 
 from .utils import (
@@ -26,6 +31,7 @@ from .utils import (
     ok,
     serialize_gate_submission,
     serialize_requirement_row,
+    write_audit_event,
 )
 
 router = APIRouter(tags=["governance-submissions"])
@@ -39,7 +45,7 @@ class GateSubmissionPayload(BaseModel):
 class GateReviewPayload(BaseModel):
     status: Literal["approved", "changes_requested", "rejected", "completed"]
     reviewer_comments: str | None = None
-    reviewed_by_id: int | None = None
+    reviewed_by_id: int | None = None  # Deprecated: authenticated actor is used.
 
 
 class RequirementRowUpdate(BaseModel):
@@ -90,6 +96,20 @@ def _evidence_by_row(
             select(EvidenceItem).where(EvidenceItem.requirement_row_id == row.id)
         ).all()
     return result
+
+
+def _project_for_row(
+    row: RequirementRow,
+    session: Session,
+    current_user: Any,
+) -> None:
+    submission = session.get(GateSubmission, row.gate_submission_id)
+    if submission is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Gate submission not found",
+        )
+    get_project_or_404(submission.project_id, session, current_user)
 
 
 def _get_or_create_submission(
@@ -150,8 +170,9 @@ async def get_gate_submission(
     project_id: uuid.UUID,
     gate_number: int,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    get_project_or_404(project_id, session)
+    get_project_or_404(project_id, session, current_user)
     submission = session.exec(
         select(GateSubmission).where(
             GateSubmission.project_id == project_id,
@@ -175,8 +196,10 @@ async def upsert_gate_submission(
     gate_number: int,
     payload: GateSubmissionPayload,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    get_project_or_404(project_id, session)
+    ensure_role(current_user, "client", "security_reviewer", "admin")
+    get_project_or_404(project_id, session, current_user)
     submission = _get_or_create_submission(project_id, gate_number, session)
     if payload.intake_payload:
         submission.intake_payload = payload.intake_payload
@@ -195,6 +218,14 @@ async def upsert_gate_submission(
         )
     _seed_gate3_rows(submission, session)
     session.add(submission)
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="gate.submission.update",
+        resource_type="gate_submission",
+        resource_id=str(submission.id),
+        details={"gate_number": gate_number},
+    )
     session.commit()
     rows = _rows_for(session, submission.id)
     return ok(
@@ -207,12 +238,30 @@ async def submit_gate(
     project_id: uuid.UUID,
     gate_number: int,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    get_project_or_404(project_id, session)
+    get_project_or_404(project_id, session, current_user)
     submission = _get_or_create_submission(project_id, gate_number, session)
+    transition = (submission.status, GateStatus.pending.value)
+    allowed_roles = GATE_STATUS_TRANSITIONS.get(transition)
+    if allowed_roles is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Transition '{transition[0]}' -> '{transition[1]}' is not allowed.",
+        )
+    ensure_role(current_user, *allowed_roles)
     submission.status = GateStatus.pending.value
     submission.submitted_at = datetime.now(UTC)
+    submission.submitted_by_id = current_user.id
     session.add(submission)
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="gate.submit",
+        resource_type="gate_submission",
+        resource_id=str(submission.id),
+        details={"gate_number": gate_number},
+    )
     session.commit()
     rows = _rows_for(session, submission.id)
     return ok(
@@ -226,10 +275,25 @@ async def review_gate(
     gate_number: int,
     payload: GateReviewPayload,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    get_project_or_404(project_id, session)
+    get_project_or_404(project_id, session, current_user)
     submission = _get_or_create_submission(project_id, gate_number, session)
     transition = (submission.status, payload.status)
+    allowed_roles = GATE_STATUS_TRANSITIONS.get(transition)
+    if allowed_roles is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Transition '{transition[0]}' -> '{transition[1]}' is not allowed.",
+        )
+    ensure_role(current_user, *allowed_roles)
+    if submission.submitted_by_id is not None and (
+        submission.submitted_by_id == current_user.id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The submitter cannot review the same gate submission.",
+        )
     if transition in COMMENT_REQUIRED_TRANSITIONS and not payload.reviewer_comments:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -237,9 +301,17 @@ async def review_gate(
         )
     submission.status = payload.status
     submission.reviewer_comments = payload.reviewer_comments
-    submission.reviewed_by_id = payload.reviewed_by_id
+    submission.reviewed_by_id = current_user.id
     submission.reviewed_at = datetime.now(UTC)
     session.add(submission)
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="gate.review",
+        resource_type="gate_submission",
+        resource_id=str(submission.id),
+        details={"from": transition[0], "to": transition[1]},
+    )
     session.commit()
     rows = _rows_for(session, submission.id)
     return ok(
@@ -252,6 +324,7 @@ async def update_requirement_row(
     row_id: uuid.UUID,
     payload: RequirementRowUpdate,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
     row = session.get(RequirementRow, row_id)
     if row is None:
@@ -259,9 +332,19 @@ async def update_requirement_row(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Requirement row not found",
         )
+    _project_for_row(row, session, current_user)
+    ensure_role(current_user, "security_reviewer", "security_approver", "admin")
     for key, value in payload.model_dump(exclude_unset=True).items():
         setattr(row, key, value)
     session.add(row)
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="requirement.review.update",
+        resource_type="requirement_row",
+        resource_id=str(row.id),
+        details={"fields": sorted(payload.model_dump(exclude_unset=True))},
+    )
     session.commit()
     session.refresh(row)
     evidence = session.exec(
@@ -275,6 +358,7 @@ async def add_requirement_evidence(
     row_id: uuid.UUID,
     payload: RequirementEvidenceRequest,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
     row = session.get(RequirementRow, row_id)
     if row is None:
@@ -282,6 +366,8 @@ async def add_requirement_evidence(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Requirement row not found",
         )
+    _project_for_row(row, session, current_user)
+    ensure_role(current_user, "client", "security_reviewer", "admin")
     item = EvidenceItem(
         requirement_row_id=row.id,
         evidence_type=EvidenceType(payload.evidence_type).value,
@@ -290,6 +376,14 @@ async def add_requirement_evidence(
         url=payload.url,
     )
     session.add(item)
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="requirement.evidence.add",
+        resource_type="requirement_row",
+        resource_id=str(row.id),
+        details={"evidence_type": payload.evidence_type},
+    )
     session.commit()
     session.refresh(item)
     evidence = session.exec(

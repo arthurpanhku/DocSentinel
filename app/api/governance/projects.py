@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
 from app.core.db import get_session
+from app.core.deps import get_current_user
 from app.models.governance import (
     ControlEvidenceItem,
     ControlInstance,
@@ -27,6 +28,7 @@ from .utils import (
     ok,
     serialize_control,
     serialize_project,
+    write_audit_event,
 )
 
 router = APIRouter(prefix="/projects", tags=["governance-projects"])
@@ -96,9 +98,14 @@ async def list_projects(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
     projects = session.exec(
-        select(Project).offset(skip).limit(limit).order_by(Project.created_at.desc())
+        select(Project)
+        .where(Project.tenant_id == current_user.tenant_id)
+        .offset(skip)
+        .limit(limit)
+        .order_by(Project.created_at.desc())
     ).all()
     return ok(
         [serialize_project(project) for project in projects],
@@ -110,16 +117,26 @@ async def list_projects(
 async def create_project(
     payload: ProjectCreate,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
     values = payload.model_dump()
+    values["owner_id"] = values.get("owner_id") or current_user.id
     project = Project(
         **values,
+        tenant_id=current_user.tenant_id,
         control_profile=_derive_control_profile(
             values.get("risk_level"),
             values.get("risk_tier"),
         ),
     )
     session.add(project)
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="project.create",
+        resource_type="project",
+        resource_id=str(project.id),
+    )
     session.commit()
     session.refresh(project)
     frameworks = list(project.compliance_frameworks or [])
@@ -140,8 +157,9 @@ async def create_project(
 async def get_project(
     project_id: uuid.UUID,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    project = get_project_or_404(project_id, session)
+    project = get_project_or_404(project_id, session, current_user)
     return ok(serialize_project(project))
 
 
@@ -150,8 +168,9 @@ async def update_project(
     project_id: uuid.UUID,
     payload: ProjectUpdate,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    project = get_project_or_404(project_id, session)
+    project = get_project_or_404(project_id, session, current_user)
     updates = payload.model_dump(exclude_unset=True)
     for field, value in updates.items():
         setattr(project, field, value)
@@ -161,6 +180,14 @@ async def update_project(
             project.risk_tier,
         )
     session.add(project)
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="project.update",
+        resource_type="project",
+        resource_id=str(project.id),
+        details={"fields": sorted(updates)},
+    )
     session.commit()
     session.refresh(project)
     return ok(serialize_project(project))
@@ -171,8 +198,9 @@ async def generate_controls(
     project_id: uuid.UUID,
     payload: GenerateControlsRequest,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    project = get_project_or_404(project_id, session)
+    project = get_project_or_404(project_id, session, current_user)
     framework_ids = payload.framework_ids or list(project.compliance_frameworks or [])
     if not framework_ids:
         framework_ids = [item["id"] for item in list_overlay_packs()]
@@ -194,8 +222,9 @@ async def list_controls(
     status_filter: str | None = Query(None, alias="status"),
     applicable_only: bool = False,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    get_project_or_404(project_id, session)
+    get_project_or_404(project_id, session, current_user)
     stmt = select(ControlInstance).where(ControlInstance.project_id == project_id)
     if framework_id:
         stmt = stmt.where(ControlInstance.framework_id == framework_id)
@@ -219,8 +248,9 @@ async def list_controls(
 async def get_controls_summary(
     project_id: uuid.UUID,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    get_project_or_404(project_id, session)
+    get_project_or_404(project_id, session, current_user)
     return ok(summarize_controls(project_id, session))
 
 
@@ -228,8 +258,9 @@ async def get_controls_summary(
 async def get_pallas_lens(
     project_id: uuid.UUID,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    project = get_project_or_404(project_id, session)
+    project = get_project_or_404(project_id, session, current_user)
     controls = session.exec(
         select(ControlInstance).where(ControlInstance.project_id == project_id)
     ).all()
@@ -252,10 +283,11 @@ async def get_pallas_lens(
 async def list_gates(
     project_id: uuid.UUID,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
     from app.models.governance import GateSubmission
 
-    get_project_or_404(project_id, session)
+    get_project_or_404(project_id, session, current_user)
     submissions = {
         submission.gate_number: submission
         for submission in session.exec(

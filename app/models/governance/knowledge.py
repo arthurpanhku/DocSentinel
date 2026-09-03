@@ -22,6 +22,7 @@ class PolicyDocument(SQLModel, table=True):
     __tablename__ = "policy_documents"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    tenant_id: str = Field(default="default", index=True, max_length=128)
     title: str = Field(max_length=512)
     language: str = Field(default=Language.en.value, max_length=8)
     doc_type: str | None = Field(default=None, max_length=128)

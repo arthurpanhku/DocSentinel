@@ -10,13 +10,21 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.core.db import get_session
+from app.core.deps import get_current_user
+from app.core.security import ensure_role
 from app.models.governance import (
     ControlEvidenceItem,
     ControlInstance,
     ControlStatus,
 )
 
-from .utils import ok, serialize_control, serialize_control_evidence
+from .utils import (
+    get_project_or_404,
+    ok,
+    serialize_control,
+    serialize_control_evidence,
+    write_audit_event,
+)
 
 router = APIRouter(
     prefix="/projects/{project_id}/controls",
@@ -34,14 +42,16 @@ class AddEvidenceRequest(BaseModel):
 class HumanReviewRequest(BaseModel):
     decision: Literal["approved", "rejected", "needs_clarification"]
     notes: str | None = None
-    reviewer_id: int | None = None
+    reviewer_id: int | None = None  # Deprecated: the authenticated actor is used.
 
 
 def _load_control(
     project_id: uuid.UUID,
     control_id: str,
     session: Session,
+    current_user: Any,
 ) -> ControlInstance:
+    get_project_or_404(project_id, session, current_user)
     control = session.exec(
         select(ControlInstance).where(
             ControlInstance.project_id == project_id,
@@ -62,8 +72,10 @@ async def add_evidence(
     control_id: str,
     payload: AddEvidenceRequest,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    control = _load_control(project_id, control_id, session)
+    ensure_role(current_user, "client", "security_reviewer", "admin")
+    control = _load_control(project_id, control_id, session, current_user)
     item = ControlEvidenceItem(
         control_instance_id=control.id,
         evidence_type=payload.evidence_type,
@@ -74,6 +86,14 @@ async def add_evidence(
     session.add(item)
     control.status = ControlStatus.evidence_submitted.value
     session.add(control)
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="control.evidence.add",
+        resource_type="control",
+        resource_id=str(control.id),
+        details={"evidence_type": payload.evidence_type},
+    )
     session.commit()
     session.refresh(item)
     return ok(serialize_control_evidence(item))
@@ -84,8 +104,9 @@ async def list_evidence(
     project_id: uuid.UUID,
     control_id: str,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    control = _load_control(project_id, control_id, session)
+    control = _load_control(project_id, control_id, session, current_user)
     items = session.exec(
         select(ControlEvidenceItem).where(
             ControlEvidenceItem.control_instance_id == control.id
@@ -102,14 +123,29 @@ async def submit_human_review(
     control_id: str,
     payload: HumanReviewRequest,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    control = _load_control(project_id, control_id, session)
+    ensure_role(
+        current_user,
+        "security_reviewer",
+        "security_approver",
+        "admin",
+    )
+    control = _load_control(project_id, control_id, session, current_user)
     control.human_decision = payload.decision
     control.human_notes = payload.notes
-    control.human_reviewer_id = payload.reviewer_id
+    control.human_reviewer_id = current_user.id
     control.human_reviewed_at = datetime.now(UTC)
     control.status = payload.decision
     session.add(control)
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="control.human_review",
+        resource_type="control",
+        resource_id=str(control.id),
+        details={"decision": payload.decision},
+    )
     session.commit()
     session.refresh(control)
     return ok(serialize_control(control))
@@ -120,8 +156,9 @@ async def get_review_history(
     project_id: uuid.UUID,
     control_id: str,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    control = _load_control(project_id, control_id, session)
+    control = _load_control(project_id, control_id, session, current_user)
     history = []
     if control.ai_reviewed_at:
         history.append(

@@ -12,6 +12,7 @@ class UserBase(SQLModel):
     is_active: bool = True
     is_superuser: bool = False
     role: str = Field(default="user")  # admin/auditor/user + governance roles
+    tenant_id: str = Field(default="default", index=True, max_length=128)
 
 
 class User(UserBase, table=True):

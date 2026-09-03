@@ -101,6 +101,7 @@ class AgentGateway:
             collaborative_mode=True,
             runner=runner,
             source=source,
+            tenant_id=settings.AGENT_GATEWAY_TENANT_ID,
         )
         return {
             "task_id": str(created.task_id),
@@ -110,7 +111,10 @@ class AgentGateway:
         }
 
     def get_assessment(self, task_id: str) -> dict[str, Any]:
-        return assessment_service.get(task_id).model_dump(mode="json")
+        return assessment_service.get(
+            task_id,
+            tenant_id=settings.AGENT_GATEWAY_TENANT_ID,
+        ).model_dump(mode="json")
 
     async def wait_for_assessment(
         self,
@@ -121,6 +125,7 @@ class AgentGateway:
         result = await assessment_service.wait_for_terminal(
             task_id,
             timeout_seconds or settings.AGENT_GATEWAY_TASK_TIMEOUT_SECONDS,
+            tenant_id=settings.AGENT_GATEWAY_TENANT_ID,
         )
         return result.model_dump(mode="json")
 

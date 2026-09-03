@@ -22,7 +22,20 @@ from .assessment import (
     TrackedRemediation,
     Vulnerability,
 )
+from .assessment_task import AssessmentTaskRecord
 from .audit import AuditLog
+from .evidence import (
+    EvidenceEnvelope,
+    EvidenceLocator,
+    EvidenceProducer,
+    EvidenceSignature,
+    EvidenceSubject,
+    EvidenceValidation,
+    GateDecision,
+    GateFinding,
+    GatePolicy,
+    RiskWaiver,
+)
 from .governance import (
     ComplianceObligation,
     ControlEvidenceItem,
@@ -50,6 +63,7 @@ __all__ = [
     "AssessmentReport",
     "AssessmentTaskCreated",
     "AssessmentTaskResult",
+    "AssessmentTaskRecord",
     "AuditLog",
     "ComplianceGap",
     "ComplianceObligation",
@@ -59,7 +73,16 @@ __all__ = [
     "DreadScore",
     "EvaluationArtifact",
     "EvaluationCheck",
+    "EvidenceEnvelope",
+    "EvidenceLocator",
+    "EvidenceProducer",
+    "EvidenceSignature",
+    "EvidenceSubject",
+    "EvidenceValidation",
     "GateSubmission",
+    "GateDecision",
+    "GateFinding",
+    "GatePolicy",
     "GovernanceAuditLog",
     "OrgFrameworkConfig",
     "ParsedDocument",
@@ -75,6 +98,7 @@ __all__ = [
     "RemediationTracking",
     "RequirementRow",
     "RiskItem",
+    "RiskWaiver",
     "SourceCitation",
     "SubAgentRun",
     "Threat",

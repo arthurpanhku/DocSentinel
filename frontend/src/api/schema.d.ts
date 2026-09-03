@@ -1261,7 +1261,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "pending" | "running" | "review_pending" | "approved" | "rejected" | "escalated" | "completed" | "failed";
+            status: "pending" | "running" | "review_pending" | "approved" | "rejected" | "escalated" | "completed" | "failed" | "cancelled" | "interrupted";
             task_contract: components["schemas"]["AgentTaskContract"];
             /**
              * Task Id
@@ -1286,6 +1286,8 @@ export interface components {
              * @description Documents to assess
              */
             files: string[];
+            /** Idempotency Key */
+            idempotency_key?: string | null;
             /**
              * Phase
              * @default auto
@@ -1335,11 +1337,8 @@ export interface components {
         CommentRequest: {
             /** Content */
             content: string;
-            /**
-             * User Id
-             * @default anonymous
-             */
-            user_id: string;
+            /** User Id */
+            user_id?: string | null;
         };
         /** ComplianceGap */
         ComplianceGap: {
@@ -1980,11 +1979,8 @@ export interface components {
         SubAgentStatusUpdate: {
             /** Actor Id */
             actor_id?: number | null;
-            /**
-             * Actor Role
-             * @default admin
-             */
-            actor_role: string;
+            /** Actor Role */
+            actor_role?: string | null;
             /** Comment */
             comment?: string | null;
             status: components["schemas"]["SubAgentStatus"];

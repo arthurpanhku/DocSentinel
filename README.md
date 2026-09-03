@@ -756,6 +756,7 @@ DocSentinel/
 | `MCP_DOCUMENT_ROOTS` | Filesystem roots available to document assessment tools | `./examples` |
 | `AGENT_GATEWAY_ENABLED` | Enable MCP HTTP and A2A endpoints | `true` |
 | `AGENT_GATEWAY_TOKEN` | Bearer token for remote agent access; empty is loopback-only | -- |
+| `AGENT_GATEWAY_TENANT_ID` | Tenant assigned to the shared MCP/A2A gateway credential | `default` |
 | `AGENT_GATEWAY_PUBLIC_URL` | Public URL advertised by the A2A Agent Card | `http://localhost:8000` |
 | `AGENT_GATEWAY_ALLOWED_HOSTS` | MCP DNS-rebinding Host allow-list | local hosts |
 | `AGENT_GATEWAY_ALLOWED_ORIGINS` | MCP browser Origin allow-list | local origins |

@@ -20,6 +20,8 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
 from app.core.db import get_session
+from app.core.deps import get_current_user
+from app.core.security import ensure_role
 from app.models.governance import (
     GovernanceAuditLog,
     KnowledgeBaseType,
@@ -36,7 +38,7 @@ from app.services.control_generator import (
 from app.services.graphify_kb import GRAPH_DIR, RAW_DIR, parse_document, write_artifacts
 from app.services.policy_pack import list_overlay_packs
 
-from .utils import iso, ok
+from .utils import iso, ok, write_audit_event
 
 router = APIRouter(tags=["governance-admin"])
 
@@ -55,6 +57,7 @@ class GenerateControlsRequest(BaseModel):
 def _serialize_org_config(config: OrgFrameworkConfig) -> dict[str, Any]:
     return {
         "id": str(config.id),
+        "tenant_id": config.tenant_id,
         "framework_ids": config.framework_ids or [],
         "default_review_mode": config.default_review_mode,
         "require_human_for_high_risk_ai": config.require_human_for_high_risk_ai,
@@ -65,9 +68,14 @@ def _serialize_org_config(config: OrgFrameworkConfig) -> dict[str, Any]:
     }
 
 
-def _get_or_create_org_config(session: Session) -> OrgFrameworkConfig:
+def _get_or_create_org_config(
+    session: Session,
+    current_user: Any,
+) -> OrgFrameworkConfig:
     config = session.exec(
-        select(OrgFrameworkConfig).order_by(OrgFrameworkConfig.updated_at.desc())
+        select(OrgFrameworkConfig)
+        .where(OrgFrameworkConfig.tenant_id == current_user.tenant_id)
+        .order_by(OrgFrameworkConfig.updated_at.desc())
     ).first()
     if config is not None:
         return config
@@ -75,6 +83,8 @@ def _get_or_create_org_config(session: Session) -> OrgFrameworkConfig:
         framework_ids=[],
         default_review_mode="ai_first",
         require_human_for_high_risk_ai=True,
+        tenant_id=current_user.tenant_id,
+        created_by_id=current_user.id,
     )
     session.add(config)
     session.commit()
@@ -91,31 +101,45 @@ async def list_admin_frameworks() -> dict[str, Any]:
 @router.get("/admin/org-config/frameworks")
 async def get_org_framework_config(
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    return ok(_serialize_org_config(_get_or_create_org_config(session)))
+    return ok(_serialize_org_config(_get_or_create_org_config(session, current_user)))
 
 
 @router.put("/admin/org-config/frameworks")
 async def update_org_framework_config(
     payload: OrgFrameworkConfigUpdate,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
+    ensure_role(current_user, "admin")
     if not payload.framework_ids:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="At least one compliance framework must be selected.",
         )
-    config = _get_or_create_org_config(session)
+    config = _get_or_create_org_config(session, current_user)
     config.framework_ids = payload.framework_ids
     config.default_review_mode = payload.default_review_mode
     config.require_human_for_high_risk_ai = payload.require_human_for_high_risk_ai
-    config.updated_by_id = payload.updated_by_id
+    config.updated_by_id = current_user.id
     session.add(config)
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="organization.frameworks.update",
+        resource_type="organization_config",
+        resource_id=str(config.id),
+        details={"framework_ids": payload.framework_ids},
+    )
     session.commit()
     session.refresh(config)
 
     projects = session.exec(
-        select(Project).where(Project.framework_ids_locked.is_(False))
+        select(Project).where(
+            Project.tenant_id == current_user.tenant_id,
+            Project.framework_ids_locked.is_(False),
+        )
     ).all()
     generated = []
     for project in projects:
@@ -137,7 +161,9 @@ async def update_org_framework_config(
 @router.post("/admin/org-config/preview-controls")
 async def preview_controls_for_frameworks(
     payload: GenerateControlsRequest,
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
+    ensure_role(current_user, "admin", "security_reviewer", "auditor")
     controls = resolve_control_set(payload.framework_ids)
     by_framework: dict[str, int] = {}
     data: list[dict[str, Any]] = []
@@ -165,7 +191,9 @@ async def upload_policy_document(
     version: str = Form("1.0"),
     kb_type: str = Form("user_side"),
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
+    ensure_role(current_user, "admin")
     try:
         lang = Language(language)
         kb = KnowledgeBaseType(kb_type)
@@ -198,6 +226,7 @@ async def upload_policy_document(
         ) from exc
     doc = PolicyDocument(
         id=doc_id,
+        tenant_id=current_user.tenant_id,
         title=title,
         language=lang.value,
         doc_type=doc_type,
@@ -205,8 +234,17 @@ async def upload_policy_document(
         version=version,
         is_active=True,
         kb_type=kb.value,
+        uploaded_by_id=current_user.id,
     )
     session.add(doc)
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="knowledge.document.upload",
+        resource_type="policy_document",
+        resource_id=str(doc.id),
+        details={"title": title, "version": version},
+    )
     session.commit()
     return ok(
         {
@@ -226,9 +264,11 @@ async def list_policy_documents(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
     docs = session.exec(
         select(PolicyDocument)
+        .where(PolicyDocument.tenant_id == current_user.tenant_id)
         .order_by(PolicyDocument.created_at.desc())
         .offset(skip)
         .limit(limit)
@@ -253,7 +293,17 @@ async def list_policy_documents(
 
 
 @router.get("/knowledge/documents/{doc_id}/graph")
-async def get_policy_document_graph(doc_id: uuid.UUID) -> dict[str, Any]:
+async def get_policy_document_graph(
+    doc_id: uuid.UUID,
+    session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
+) -> dict[str, Any]:
+    document = session.get(PolicyDocument, doc_id)
+    if document is None or document.tenant_id != current_user.tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Policy document not found",
+        )
     graph_path = GRAPH_DIR / f"{doc_id}.json"
     if not graph_path.exists():
         raise HTTPException(
@@ -268,9 +318,11 @@ async def get_audit_log(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
     logs = session.exec(
         select(GovernanceAuditLog)
+        .where(GovernanceAuditLog.tenant_id == current_user.tenant_id)
         .order_by(GovernanceAuditLog.created_at.desc())
         .offset(skip)
         .limit(limit)
@@ -280,10 +332,15 @@ async def get_audit_log(
             {
                 "id": str(row.id),
                 "user_id": row.user_id,
+                "tenant_id": row.tenant_id,
                 "action": row.action,
                 "resource_type": row.resource_type,
                 "resource_id": row.resource_id,
                 "details": row.details or {},
+                "outcome": row.outcome,
+                "request_id": row.request_id,
+                "previous_hash": row.previous_hash,
+                "event_hash": row.event_hash,
                 "created_at": iso(row.created_at),
             }
             for row in logs
@@ -297,9 +354,14 @@ async def get_prompt_audit_log(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
+    project_ids = session.exec(
+        select(Project.id).where(Project.tenant_id == current_user.tenant_id)
+    ).all()
     rows = session.exec(
         select(PromptAuditLog)
+        .where(PromptAuditLog.project_id.in_(project_ids))
         .order_by(PromptAuditLog.created_at.desc())
         .offset(skip)
         .limit(limit)
