@@ -198,6 +198,8 @@ class AssessmentTaskResult(BaseModel):
         "escalated",
         "completed",
         "failed",
+        "cancelled",
+        "interrupted",
     ]
     report: AssessmentReport | None = None
     error_message: str | None = None

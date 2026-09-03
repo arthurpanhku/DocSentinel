@@ -523,7 +523,9 @@
               "rejected",
               "escalated",
               "completed",
-              "failed"
+              "failed",
+              "cancelled",
+              "interrupted"
             ],
             "title": "Status",
             "type": "string"
@@ -566,6 +568,17 @@
             },
             "title": "Files",
             "type": "array"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
           },
           "phase": {
             "default": "auto",
@@ -682,9 +695,15 @@
             "type": "string"
           },
           "user_id": {
-            "default": "anonymous",
-            "title": "User Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
           }
         },
         "required": [
@@ -2712,9 +2731,15 @@
             "title": "Actor Id"
           },
           "actor_role": {
-            "default": "admin",
-            "title": "Actor Role",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Role"
           },
           "comment": {
             "anyOf": [
@@ -3188,6 +3213,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Admin Frameworks",
         "tags": [
           "governance-admin"
@@ -3211,6 +3241,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Org Framework Config",
         "tags": [
           "governance-admin"
@@ -3252,6 +3287,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Org Framework Config",
         "tags": [
           "governance-admin"
@@ -3295,6 +3335,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Preview Controls For Frameworks",
         "tags": [
           "governance-admin"
@@ -3387,6 +3432,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Assessments",
         "tags": [
           "assessments"
@@ -3474,6 +3524,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Assessment Result",
         "tags": [
           "assessments"
@@ -3514,6 +3569,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Task Activity",
         "tags": [
           "assessments"
@@ -3615,6 +3675,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Tracked Remediations",
         "tags": [
           "assessments"
@@ -3731,6 +3796,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Reuse Candidates",
         "tags": [
           "assessments"
@@ -3844,6 +3914,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Audit Log",
         "tags": [
           "governance-admin"
@@ -3978,6 +4053,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Framework Questionnaire",
         "tags": [
           "governance-schemas"
@@ -4186,6 +4266,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Policy Documents",
         "tags": [
           "governance-admin"
@@ -4231,6 +4316,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Policy Document Graph",
         "tags": [
           "governance-admin"
@@ -4274,6 +4364,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Upload Policy Document",
         "tags": [
           "governance-admin"
@@ -4297,6 +4392,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Ontology Graph",
         "tags": [
           "governance-schemas"
@@ -4346,6 +4446,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Export Oscal Catalog",
         "tags": [
           "governance-exports"
@@ -4369,6 +4474,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Available Policy Packs",
         "tags": [
           "governance-schemas"
@@ -4427,6 +4537,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Projects",
         "tags": [
           "governance-projects"
@@ -4468,6 +4583,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Create Project",
         "tags": [
           "governance-projects"
@@ -4491,6 +4611,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Compliance Frameworks",
         "tags": [
           "governance-projects"
@@ -4536,6 +4661,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Project",
         "tags": [
           "governance-projects"
@@ -4589,6 +4719,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Project",
         "tags": [
           "governance-projects"
@@ -4676,6 +4811,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Controls",
         "tags": [
           "governance-projects"
@@ -4721,6 +4861,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Controls Summary",
         "tags": [
           "governance-projects"
@@ -4775,6 +4920,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Evidence",
         "tags": [
           "governance-controls"
@@ -4837,6 +4987,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Add Evidence",
         "tags": [
           "governance-controls"
@@ -4901,6 +5056,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Submit Human Review",
         "tags": [
           "governance-controls"
@@ -4955,6 +5115,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Review History",
         "tags": [
           "governance-controls"
@@ -5000,6 +5165,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Gates",
         "tags": [
           "governance-projects"
@@ -5064,6 +5234,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Review Gate",
         "tags": [
           "governance-submissions"
@@ -5118,6 +5293,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Gate Submission",
         "tags": [
           "governance-submissions"
@@ -5180,6 +5360,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Upsert Gate Submission",
         "tags": [
           "governance-submissions"
@@ -5234,6 +5419,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Submit Gate",
         "tags": [
           "governance-submissions"
@@ -5289,6 +5479,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Generate Controls",
         "tags": [
           "governance-projects"
@@ -5335,6 +5530,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Export Project Oscal Assessment Results",
         "tags": [
           "governance-exports"
@@ -5380,6 +5580,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Pallas Lens",
         "tags": [
           "governance-projects"
@@ -5425,6 +5630,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Questionnaire",
         "tags": [
           "governance-questionnaire"
@@ -5480,6 +5690,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Submit Answers",
         "tags": [
           "governance-questionnaire"
@@ -5525,6 +5740,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Questionnaire Progress",
         "tags": [
           "governance-questionnaire"
@@ -5570,6 +5790,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Sub Agent Runs",
         "tags": [
           "governance-sub-agents"
@@ -5633,6 +5858,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Sub Agent Run",
         "tags": [
           "governance-sub-agents"
@@ -5708,6 +5938,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Save Sub Agent Output",
         "tags": [
           "governance-sub-agents"
@@ -5781,6 +6016,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Sub Agent Status",
         "tags": [
           "governance-sub-agents"
@@ -5839,6 +6079,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Prompt Audit Log",
         "tags": [
           "governance-admin"
@@ -5894,6 +6139,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Requirement Row",
         "tags": [
           "governance-submissions"
@@ -5949,6 +6199,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Add Requirement Evidence",
         "tags": [
           "governance-submissions"
@@ -5992,6 +6247,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Evaluate Risk Assessment",
         "tags": [
           "governance-risk-assessment"
@@ -6015,6 +6275,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Reload Risk Ontology",
         "tags": [
           "governance-risk-assessment"
@@ -6058,6 +6323,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Evaluate Legacy S2O",
         "tags": [
           "governance-risk-assessment"
@@ -6081,6 +6351,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Node Schemas",
         "tags": [
           "governance-schemas"
@@ -6125,6 +6400,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Node Schema",
         "tags": [
           "governance-schemas"

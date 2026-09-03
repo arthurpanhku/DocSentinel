@@ -11,7 +11,9 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from app.agent.orchestrator import run_assessment
-from app.agent.task_contract import build_task_contract
+from app.agent.task_contract import AgentTaskContract, build_task_contract
+from app.core.config import settings
+from app.core.db import engine
 from app.kb.service import get_kb_service
 from app.models.assessment import (
     AssessmentReport,
@@ -22,6 +24,12 @@ from app.models.assessment import (
     TrackedRemediation,
 )
 from app.models.parser import ParsedDocument
+from app.services.assessment_store import (
+    AssessmentTaskStore,
+    MemoryAssessmentTaskStore,
+    SqlAssessmentTaskStore,
+    iter_incomplete,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +41,8 @@ TERMINAL_STATUSES = {
     "escalated",
     "completed",
     "failed",
+    "cancelled",
+    "interrupted",
 }
 
 
@@ -60,11 +70,30 @@ def _runner_accepts_task_contract(runner: AssessmentRunner) -> bool:
 
 
 class AssessmentService:
-    def __init__(self) -> None:
+    def __init__(self, store: AssessmentTaskStore | None = None) -> None:
         self._tasks: dict[str, dict[str, Any]] = {}
+        self._active: dict[str, asyncio.Task] = {}
+        if store is not None:
+            self._store = store
+        elif settings.ASSESSMENT_PERSISTENCE_ENABLED:
+            self._store = SqlAssessmentTaskStore(
+                engine,
+                create_tables=settings.ENABLE_CREATE_ALL,
+            )
+        else:
+            self._store = MemoryAssessmentTaskStore()
 
     def clear(self) -> None:
+        for active in self._active.values():
+            active.cancel()
+        self._active.clear()
         self._tasks.clear()
+        self._store.clear()
+
+    def _save(self, task: dict[str, Any]) -> None:
+        task["updated_at"] = datetime.now(UTC)
+        self._tasks[str(task["task_id"])] = task
+        self._store.save(task)
 
     async def submit(
         self,
@@ -77,7 +106,20 @@ class AssessmentService:
         collaborative_mode: bool = True,
         runner: AssessmentRunner = run_assessment,
         source: str = "rest",
+        tenant_id: str = "default",
+        submitted_by_id: int | None = None,
+        idempotency_key: str | None = None,
     ) -> AssessmentTaskCreated:
+        if idempotency_key:
+            existing = self._store.find_idempotent(tenant_id, idempotency_key)
+            if existing is not None:
+                self._tasks[str(existing["task_id"])] = existing
+                return AssessmentTaskCreated(
+                    task_id=existing["task_id"],
+                    status="queued" if existing["status"] == "pending" else "accepted",
+                    message="Existing idempotent assessment task returned.",
+                    task_contract=existing["task_contract"],
+                )
         task_id = uuid4()
         task_id_str = str(task_id)
         created_at = datetime.now(UTC)
@@ -94,6 +136,9 @@ class AssessmentService:
             "version": 1,
             "phase": phase,
             "source": source,
+            "tenant_id": tenant_id,
+            "submitted_by_id": submitted_by_id,
+            "idempotency_key": idempotency_key,
             "activity": [
                 {
                     "type": "task_created",
@@ -105,8 +150,21 @@ class AssessmentService:
             "comments": [],
             "remediation_tracking": {},
             "task_contract": task_contract,
+            "execution": {
+                "parsed_documents": [
+                    document.model_dump(mode="json") for document in parsed_documents
+                ],
+                "scenario_id": scenario_id,
+                "project_id": project_id,
+                "phase": phase,
+                "skill_id": skill_id,
+                "collaborative_mode": collaborative_mode,
+                "resumable": runner is run_assessment,
+                "attempt": 0,
+            },
         }
-        asyncio.create_task(
+        self._save(self._tasks[task_id_str])
+        active = asyncio.create_task(
             self._run(
                 task_id_str,
                 task_id,
@@ -119,6 +177,8 @@ class AssessmentService:
                 runner,
             )
         )
+        self._active[task_id_str] = active
+        active.add_done_callback(lambda _task: self._active.pop(task_id_str, None))
         return AssessmentTaskCreated(
             task_id=task_id,
             status="accepted",
@@ -147,7 +207,9 @@ class AssessmentService:
                 "message": "Assessment processing started",
             }
         )
+        self._save(task)
         try:
+            task_contract = AgentTaskContract.model_validate(task["task_contract"])
             runner_kwargs = {
                 "scenario_id": scenario_id,
                 "project_id": project_id,
@@ -155,8 +217,30 @@ class AssessmentService:
                 "skill_id": skill_id,
             }
             if _runner_accepts_task_contract(runner):
-                runner_kwargs["task_contract"] = task["task_contract"]
-            report = await runner(task_id, parsed_documents, **runner_kwargs)
+                runner_kwargs["task_contract"] = task_contract
+            attempts = int(task.get("execution", {}).get("attempt", 0))
+            retry_limit = int(task_contract.retry_limit)
+            while True:
+                try:
+                    report = await asyncio.wait_for(
+                        runner(task_id, parsed_documents, **runner_kwargs),
+                        timeout=settings.ASSESSMENT_TASK_TIMEOUT_SECONDS,
+                    )
+                    break
+                except (TimeoutError, ConnectionError) as exc:
+                    attempts += 1
+                    task["execution"]["attempt"] = attempts
+                    task["activity"].append(
+                        {
+                            "type": "transient_failure",
+                            "at": datetime.now(UTC).isoformat(),
+                            "attempt": attempts,
+                            "message": type(exc).__name__,
+                        }
+                    )
+                    self._save(task)
+                    if attempts > retry_limit:
+                        raise
             if report.task_contract is None:
                 report = report.model_copy(
                     update={"task_contract": task["task_contract"]}
@@ -200,12 +284,33 @@ class AssessmentService:
                     "message": "AI generated draft report",
                 }
             )
+            task["execution"]["parsed_documents"] = []
+            self._save(task)
             self._index_history(task_id_str, scenario_id, report)
+        except asyncio.CancelledError:
+            task["status"] = "cancelled"
+            task["completed_at"] = datetime.now(UTC)
+            task["activity"].append(
+                {
+                    "type": "assessment_cancelled",
+                    "at": task["completed_at"].isoformat(),
+                    "message": "Assessment processing cancelled",
+                }
+            )
+            self._save(task)
         except Exception as exc:
             logger.exception("Assessment %s failed", task_id_str)
             task["status"] = "failed"
             task["error"] = str(exc)
             task["completed_at"] = datetime.now(UTC)
+            task["activity"].append(
+                {
+                    "type": "assessment_failed",
+                    "at": task["completed_at"].isoformat(),
+                    "message": type(exc).__name__,
+                }
+            )
+            self._save(task)
 
     def _index_history(
         self,
@@ -228,15 +333,29 @@ class AssessmentService:
                     "message": "History indexing unavailable in current runtime",
                 }
             )
+            self._save(self._tasks[task_id])
 
-    def _record(self, task_id: str) -> dict[str, Any]:
-        try:
-            return self._tasks[task_id]
-        except KeyError:
-            raise TaskNotFoundError(task_id) from None
+    def _record(
+        self,
+        task_id: str,
+        *,
+        tenant_id: str | None = None,
+    ) -> dict[str, Any]:
+        task = self._tasks.get(task_id)
+        if task is None:
+            task = self._store.get(task_id)
+            if task is not None:
+                self._tasks[task_id] = task
+        if task is None:
+            raise TaskNotFoundError(task_id)
+        if tenant_id is not None and task.get("tenant_id", "default") != tenant_id:
+            raise TaskNotFoundError(task_id)
+        return task
 
-    def get(self, task_id: str) -> AssessmentTaskResult:
-        task = self._record(task_id)
+    def get(
+        self, task_id: str, *, tenant_id: str | None = None
+    ) -> AssessmentTaskResult:
+        task = self._record(task_id, tenant_id=tenant_id)
         return AssessmentTaskResult(
             task_id=task["task_id"],
             status=task["status"],
@@ -259,10 +378,11 @@ class AssessmentService:
         assignee: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        tenant_id: str | None = None,
     ) -> list[AssessmentTaskResult]:
         tasks = [
             task
-            for task in self._tasks.values()
+            for task in self._store.list(tenant_id=tenant_id)
             if (not statuses or task.get("status") in statuses)
             and (not assignee or task.get("assignee") == assignee)
         ]
@@ -271,28 +391,40 @@ class AssessmentService:
             reverse=True,
         )
         return [
-            self.get(str(task["task_id"])) for task in tasks[offset : offset + limit]
+            self.get(str(task["task_id"]), tenant_id=tenant_id)
+            for task in tasks[offset : offset + limit]
         ]
 
     async def wait_for_terminal(
         self,
         task_id: str,
         timeout_seconds: int,
+        *,
+        tenant_id: str | None = None,
     ) -> AssessmentTaskResult:
         async def poll() -> AssessmentTaskResult:
             while True:
-                result = self.get(task_id)
+                result = self.get(task_id, tenant_id=tenant_id)
                 if result.status in TERMINAL_STATUSES:
                     return result
                 await asyncio.sleep(0.05)
 
         return await asyncio.wait_for(poll(), timeout=timeout_seconds)
 
-    def activity(self, task_id: str) -> list[dict[str, Any]]:
-        return list(self._record(task_id).get("activity", []))
+    def activity(
+        self, task_id: str, *, tenant_id: str | None = None
+    ) -> list[dict[str, Any]]:
+        return list(self._record(task_id, tenant_id=tenant_id).get("activity", []))
 
-    def add_comment(self, task_id: str, content: str, user_id: str) -> None:
-        task = self._record(task_id)
+    def add_comment(
+        self,
+        task_id: str,
+        content: str,
+        user_id: str,
+        *,
+        tenant_id: str | None = None,
+    ) -> None:
+        task = self._record(task_id, tenant_id=tenant_id)
         now = datetime.now(UTC)
         task["comments"].append(
             {"content": content, "user_id": user_id, "at": now.isoformat()}
@@ -304,6 +436,7 @@ class AssessmentService:
                 "preview": content[:50],
             }
         )
+        self._save(task)
 
     def review(
         self,
@@ -312,8 +445,11 @@ class AssessmentService:
         action: str,
         comment: str | None,
         assignee: str | None,
+        actor_id: int | None = None,
+        actor_name: str | None = None,
+        tenant_id: str | None = None,
     ) -> str:
-        task = self._record(task_id)
+        task = self._record(task_id, tenant_id=tenant_id)
         current_status = task["status"]
         if current_status not in {"review_pending", "escalated"}:
             raise InvalidTaskStateError(
@@ -324,6 +460,11 @@ class AssessmentService:
             "reject": "rejected",
             "escalate": "escalated",
         }
+        if action in {"approve", "reject"} and actor_id is not None:
+            if actor_id == task.get("submitted_by_id"):
+                raise InvalidTaskStateError(
+                    "Assessment submitter cannot review own output"
+                )
         new_status = status_by_action.get(action, current_status)
         task["status"] = new_status
         if assignee:
@@ -336,13 +477,80 @@ class AssessmentService:
                 "at": now.isoformat(),
                 "comment": comment,
                 "assignee": assignee,
+                "actor_id": actor_id,
+                "actor": actor_name,
             }
         )
         if comment:
             task["comments"].append(
                 {"content": comment, "at": now.isoformat(), "action": action}
             )
+        self._save(task)
         return new_status
+
+    def cancel(
+        self,
+        task_id: str,
+        *,
+        actor: str,
+        tenant_id: str | None = None,
+    ) -> str:
+        task = self._record(task_id, tenant_id=tenant_id)
+        if task["status"] in TERMINAL_STATUSES:
+            raise InvalidTaskStateError(
+                f"Cannot cancel task in status {task['status']}"
+            )
+        active = self._active.get(task_id)
+        if active:
+            active.cancel()
+        else:
+            task["status"] = "cancelled"
+            task["completed_at"] = datetime.now(UTC)
+            task["activity"].append(
+                {
+                    "type": "assessment_cancelled",
+                    "at": task["completed_at"].isoformat(),
+                    "actor": actor,
+                }
+            )
+            self._save(task)
+        return "cancelled"
+
+    async def resume_incomplete(self) -> int:
+        resumed = 0
+        for stored in iter_incomplete(self._store):
+            task_id_str = str(stored["task_id"])
+            if task_id_str in self._active:
+                continue
+            execution = stored.get("execution") or {}
+            documents = execution.get("parsed_documents") or []
+            if not execution.get("resumable") or not documents:
+                stored["status"] = "interrupted"
+                self._save(stored)
+                continue
+            self._tasks[task_id_str] = stored
+            parsed_documents = [
+                ParsedDocument.model_validate(item) for item in documents
+            ]
+            active = asyncio.create_task(
+                self._run(
+                    task_id_str,
+                    UUID(task_id_str),
+                    parsed_documents,
+                    execution.get("scenario_id"),
+                    execution.get("project_id"),
+                    execution.get("phase", "auto"),
+                    execution.get("skill_id"),
+                    bool(execution.get("collaborative_mode", True)),
+                    run_assessment,
+                )
+            )
+            self._active[task_id_str] = active
+            active.add_done_callback(
+                lambda _task, key=task_id_str: self._active.pop(key, None)
+            )
+            resumed += 1
+        return resumed
 
     def list_remediations(self, task_id: str) -> list[TrackedRemediation]:
         task = self._record(task_id)
@@ -399,6 +607,7 @@ class AssessmentService:
                 "external_ticket": existing.get("external_ticket"),
             }
         )
+        self._save(task)
         return RemediationTracking.model_validate(existing)
 
 

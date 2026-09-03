@@ -1,0 +1,17 @@
+# Default ownership and security-sensitive review boundaries.
+* @arthurpanhku
+
+/app/core/ @arthurpanhku
+/app/agent_gateway/ @arthurpanhku
+/app/api/governance/ @arthurpanhku
+/app/services/evidence_gate.py @arthurpanhku
+/app/services/slsa_verifier.py @arthurpanhku
+/alembic/ @arthurpanhku
+/.github/CODEOWNERS @arthurpanhku
+/.github/workflows/ @arthurpanhku
+/policy_packs/ @arthurpanhku
+/Dockerfile @arthurpanhku
+/deploy.sh @arthurpanhku
+/docker-compose.yml @arthurpanhku
+/docker-compose.ollama.yml @arthurpanhku
+/SECURITY.md @arthurpanhku

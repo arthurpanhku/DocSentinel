@@ -51,7 +51,7 @@ class ReviewActionRequest(BaseModel):
 
 class CommentRequest(BaseModel):
     content: str
-    user_id: str = "anonymous"
+    user_id: str | None = None  # Deprecated: actor identity is derived from auth.
 
 
 class RemediationTrackingUpdateRequest(BaseModel):
@@ -91,7 +91,8 @@ async def submit_assessment(
     phase: AssessmentPhase = Form("auto"),  # noqa: B008
     skill_id: str | None = Form(None),
     collaborative_mode: bool = Form(True),
-    _current_user: Any = ASSESSMENT_SUBMIT_DEP,
+    current_user: Any = ASSESSMENT_SUBMIT_DEP,
+    idempotency_key: str | None = Form(None),
 ):
     """Submit an assessment task; returns task_id immediately for polling."""
     if len(files) > settings.UPLOAD_MAX_FILES:
@@ -126,6 +127,9 @@ async def submit_assessment(
         collaborative_mode=collaborative_mode,
         runner=run_assessment,
         source="rest",
+        tenant_id=current_user.tenant_id,
+        submitted_by_id=current_user.id,
+        idempotency_key=idempotency_key,
     )
 
 
@@ -135,6 +139,7 @@ async def list_assessments(
     assignee: str | None = Query(None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
+    current_user: Any = ASSESSMENT_SUBMIT_DEP,
 ):
     statuses = (
         {item.strip() for item in status.split(",") if item.strip()} if status else None
@@ -144,20 +149,28 @@ async def list_assessments(
         assignee=assignee,
         limit=limit,
         offset=offset,
+        tenant_id=current_user.tenant_id,
     )
 
 
 @router.get("/{task_id}", response_model=AssessmentTaskResult)
-async def get_assessment_result(task_id: str):
+async def get_assessment_result(
+    task_id: str,
+    current_user: Any = ASSESSMENT_SUBMIT_DEP,
+):
     try:
-        return assessment_service.get(task_id)
+        return assessment_service.get(task_id, tenant_id=current_user.tenant_id)
     except TaskNotFoundError as exc:
         raise _not_found(exc) from exc
 
 
 @router.get("/{task_id}/remediations", response_model=list[TrackedRemediation])
-async def list_tracked_remediations(task_id: str):
+async def list_tracked_remediations(
+    task_id: str,
+    current_user: Any = ASSESSMENT_SUBMIT_DEP,
+):
     try:
+        assessment_service.get(task_id, tenant_id=current_user.tenant_id)
         return assessment_service.list_remediations(task_id)
     except TaskNotFoundError as exc:
         raise _not_found(exc) from exc
@@ -173,9 +186,10 @@ async def update_remediation_tracking(
     task_id: str,
     remediation_id: str,
     body: RemediationTrackingUpdateRequest,
-    _current_user: Any = ASSESSMENT_REVIEW_DEP,
+    current_user: Any = ASSESSMENT_REVIEW_DEP,
 ):
     try:
+        assessment_service.get(task_id, tenant_id=current_user.tenant_id)
         return assessment_service.update_remediation(
             task_id,
             remediation_id,
@@ -196,7 +210,7 @@ async def update_remediation_tracking(
 async def review_assessment(
     task_id: str,
     body: ReviewActionRequest,
-    _current_user: Any = ASSESSMENT_REVIEW_DEP,
+    current_user: Any = ASSESSMENT_REVIEW_DEP,
 ):
     try:
         status = assessment_service.review(
@@ -204,6 +218,9 @@ async def review_assessment(
             action=body.action,
             comment=body.comment,
             assignee=body.assignee,
+            actor_id=current_user.id,
+            actor_name=current_user.username,
+            tenant_id=current_user.tenant_id,
         )
     except TaskNotFoundError as exc:
         raise _not_found(exc) from exc
@@ -213,9 +230,12 @@ async def review_assessment(
 
 
 @router.get("/{task_id}/activity")
-async def get_task_activity(task_id: str):
+async def get_task_activity(
+    task_id: str,
+    current_user: Any = ASSESSMENT_SUBMIT_DEP,
+):
     try:
-        return assessment_service.activity(task_id)
+        return assessment_service.activity(task_id, tenant_id=current_user.tenant_id)
     except TaskNotFoundError as exc:
         raise _not_found(exc) from exc
 
@@ -224,19 +244,28 @@ async def get_task_activity(task_id: str):
 async def add_comment(
     task_id: str,
     body: CommentRequest,
-    _current_user: Any = ASSESSMENT_SUBMIT_DEP,
+    current_user: Any = ASSESSMENT_SUBMIT_DEP,
 ):
     try:
-        assessment_service.add_comment(task_id, body.content, body.user_id)
+        assessment_service.add_comment(
+            task_id,
+            body.content,
+            current_user.username,
+            tenant_id=current_user.tenant_id,
+        )
     except TaskNotFoundError as exc:
         raise _not_found(exc) from exc
     return {"message": "Comment added"}
 
 
 @router.get("/{task_id}/reuse")
-async def get_reuse_candidates(task_id: str, top_k: int = 3):
+async def get_reuse_candidates(
+    task_id: str,
+    top_k: int = 3,
+    current_user: Any = ASSESSMENT_SUBMIT_DEP,
+):
     try:
-        task = assessment_service.get(task_id)
+        task = assessment_service.get(task_id, tenant_id=current_user.tenant_id)
     except TaskNotFoundError as exc:
         raise _not_found(exc) from exc
     query_text = f"{task.report.summary if task.report else ''}\n{task_id}"

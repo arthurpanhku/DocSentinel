@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
 from app.core.db import get_session
+from app.core.deps import get_current_user
 from app.services.oscal_export import (
     build_oscal_catalog,
     build_project_assessment_results,
@@ -37,10 +38,11 @@ async def export_oscal_catalog(
 async def export_project_oscal_assessment_results(
     project_id: uuid.UUID,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
     """Export project controls, evidence, and findings as OSCAL assessment results."""
 
-    project = get_project_or_404(project_id, session)
+    project = get_project_or_404(project_id, session, current_user)
     return ok(
         build_project_assessment_results(project, session),
         {

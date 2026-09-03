@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
+from app.core.deps import get_current_user
+from app.core.security import ensure_role
 from app.services.s2o_rule_engine import get_engine
 
 from .utils import ok
@@ -40,7 +42,10 @@ async def evaluate_risk_assessment(
 
 
 @router.post("/risk-assessment/reload")
-async def reload_risk_ontology() -> dict[str, Any]:
+async def reload_risk_ontology(
+    current_user: Annotated[Any, Depends(get_current_user)],
+) -> dict[str, Any]:
+    ensure_role(current_user, "admin")
     get_engine().reload()
     return ok({"message": "Risk assessment ontology reloaded from YAML."})
 

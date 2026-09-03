@@ -1,0 +1,28 @@
+name: PR Plan Gate
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Fetch changed-file metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_REPO: ${{ github.repository }}
+        run: gh api --paginate "repos/$GH_REPO/pulls/$PR_NUMBER/files" > "$RUNNER_TEMP/files.json"
+      - name: Validate PR plan
+        run: |
+          set -o pipefail
+          result=0
+          python scripts/validate_pr_plan.py --event "$GITHUB_EVENT_PATH" --files "$RUNNER_TEMP/files.json" | tee "$RUNNER_TEMP/plan-gate.txt" || result=$?
+          cat "$RUNNER_TEMP/plan-gate.txt" >> "$GITHUB_STEP_SUMMARY"
+          exit "$result"

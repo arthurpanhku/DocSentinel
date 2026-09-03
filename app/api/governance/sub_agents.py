@@ -10,13 +10,15 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.core.db import get_session
+from app.core.deps import get_current_user
+from app.core.security import ensure_role
 from app.models.governance import (
     SubAgentRun,
     SubAgentStatus,
 )
 from app.models.governance.sub_agent_run import COMMENT_REQUIRED, STATUS_ROLE_MAP
 
-from .utils import get_project_or_404, iso, ok
+from .utils import get_project_or_404, iso, ok, write_audit_event
 
 router = APIRouter(
     prefix="/projects/{project_id}/sub-agents",
@@ -27,8 +29,8 @@ router = APIRouter(
 class SubAgentStatusUpdate(BaseModel):
     status: SubAgentStatus
     comment: str | None = None
-    actor_id: int | None = None
-    actor_role: str = "admin"
+    actor_id: int | None = None  # Deprecated: authenticated actor is used.
+    actor_role: str | None = None  # Deprecated: authenticated role is used.
 
 
 def _serialize_run(run: SubAgentRun) -> dict[str, Any]:
@@ -77,8 +79,9 @@ def _get_or_create_run(
 async def list_sub_agent_runs(
     project_id: uuid.UUID,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    get_project_or_404(project_id, session)
+    get_project_or_404(project_id, session, current_user)
     runs = session.exec(
         select(SubAgentRun).where(SubAgentRun.project_id == project_id)
     ).all()
@@ -91,8 +94,9 @@ async def get_sub_agent_run(
     gate: str,
     key: str,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    get_project_or_404(project_id, session)
+    get_project_or_404(project_id, session, current_user)
     run = _get_or_create_run(session, project_id, gate, key)
     return ok(_serialize_run(run))
 
@@ -104,8 +108,9 @@ async def update_sub_agent_status(
     key: str,
     payload: SubAgentStatusUpdate,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    get_project_or_404(project_id, session)
+    get_project_or_404(project_id, session, current_user)
     run = _get_or_create_run(session, project_id, gate, key)
     new_status = payload.status.value
     old_status = str(run.status)
@@ -120,16 +125,21 @@ async def update_sub_agent_status(
             detail=f"A comment is required when setting status to '{new_status}'.",
         )
     allowed_roles = STATUS_ROLE_MAP.get(new_status, set())
-    if allowed_roles and payload.actor_role not in allowed_roles:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Role '{payload.actor_role}' cannot set status to '{new_status}'.",
-        )
+    if allowed_roles:
+        ensure_role(current_user, *allowed_roles)
     run.status = new_status
-    run.actor_id = payload.actor_id
+    run.actor_id = current_user.id
     run.comment = payload.comment
     run.last_transitioned_at = datetime.now(UTC)
     session.add(run)
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="sub_agent.status.update",
+        resource_type="sub_agent_run",
+        resource_id=str(run.id),
+        details={"from": old_status, "to": new_status},
+    )
     session.commit()
     session.refresh(run)
     return ok(_serialize_run(run))
@@ -142,14 +152,23 @@ async def save_sub_agent_output(
     key: str,
     output: dict[str, Any],
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    get_project_or_404(project_id, session)
+    ensure_role(current_user, "security_reviewer", "admin")
+    get_project_or_404(project_id, session, current_user)
     run = _get_or_create_run(session, project_id, gate, key)
     run.run_output = output
     if run.status == SubAgentStatus.empty.value:
         run.status = SubAgentStatus.draft.value
         run.last_transitioned_at = datetime.now(UTC)
     session.add(run)
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="sub_agent.output.save",
+        resource_type="sub_agent_run",
+        resource_id=str(run.id),
+    )
     session.commit()
     session.refresh(run)
     return ok(_serialize_run(run))

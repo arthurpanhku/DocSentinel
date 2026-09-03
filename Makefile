@@ -28,7 +28,7 @@ contracts: ## Generate OpenAPI, JSON Schema, and frontend API types
 contracts-check: ## Verify committed generated contracts are current
 	python scripts/export_contracts.py --check
 	npm run api:generate --prefix frontend
-	git diff --exit-code -- docs/openapi.json docs/schemas/assessment-report.json frontend/src/api/schema.d.ts
+	git diff --exit-code -- docs/openapi.json docs/schemas/*.json frontend/src/api/schema.d.ts
 
 clean: ## Clean up build artifacts
 	rm -rf build dist *.egg-info .pytest_cache .ruff_cache .coverage htmlcov

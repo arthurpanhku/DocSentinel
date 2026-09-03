@@ -10,9 +10,12 @@ sys.path.insert(0, str(ROOT))
 
 from app.main import app  # noqa: E402
 from app.models.assessment import AssessmentReport  # noqa: E402
+from app.models.evidence import EvidenceEnvelope, GateDecision  # noqa: E402
 
 OPENAPI_PATH = ROOT / "docs" / "openapi.json"
 REPORT_SCHEMA_PATH = ROOT / "docs" / "schemas" / "assessment-report.json"
+EVIDENCE_SCHEMA_PATH = ROOT / "docs" / "schemas" / "evidence-envelope.json"
+GATE_SCHEMA_PATH = ROOT / "docs" / "schemas" / "gate-decision.json"
 
 
 def _render(value: dict) -> str:
@@ -23,6 +26,8 @@ def _contracts() -> dict[Path, str]:
     return {
         OPENAPI_PATH: _render(app.openapi()),
         REPORT_SCHEMA_PATH: _render(AssessmentReport.model_json_schema()),
+        EVIDENCE_SCHEMA_PATH: _render(EvidenceEnvelope.model_json_schema()),
+        GATE_SCHEMA_PATH: _render(GateDecision.model_json_schema()),
     }
 
 

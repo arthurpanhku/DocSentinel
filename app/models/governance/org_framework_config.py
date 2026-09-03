@@ -11,6 +11,7 @@ class OrgFrameworkConfig(SQLModel, table=True):
     __tablename__ = "org_framework_configs"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    tenant_id: str = Field(default="default", index=True, max_length=128)
     framework_ids: list[str] = Field(
         default_factory=list,
         sa_column=Column(JSON, nullable=False),

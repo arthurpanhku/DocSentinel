@@ -27,6 +27,7 @@ class AnonymousUser:
     role: str = "admin"
     is_active: bool = True
     is_superuser: bool = True
+    tenant_id: str = "default"
 
 
 def is_loopback_request(request: Request) -> bool:
@@ -70,7 +71,9 @@ def get_current_user(
 ) -> Any:
     if not settings.AUTH_ENABLED:
         if is_loopback_request(request):
-            return AnonymousUser()
+            user = AnonymousUser()
+            request.state.current_user = user
+            return user
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Tokenless API access is loopback-only when auth is disabled.",
@@ -91,6 +94,7 @@ def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User is inactive.",
         )
+    request.state.current_user = user
     return user
 
 

@@ -19,6 +19,7 @@ class Project(SQLModel, table=True):
     __tablename__ = "projects"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    tenant_id: str = Field(default="default", index=True, max_length=128)
     name: str = Field(index=True, max_length=255)
     description: str | None = Field(default=None, sa_column=Column(Text))
     business_owner: str | None = Field(default=None, max_length=255)

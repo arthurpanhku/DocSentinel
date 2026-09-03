@@ -9,17 +9,14 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
 from app.core.db import get_session
-from app.models.governance import (
-    ControlInstance,
-    Project,
-    QuestionnaireInstance,
-)
+from app.core.deps import get_current_user
+from app.models.governance import ControlInstance, QuestionnaireInstance
 from app.services.questionnaire_generator import (
     generate_questionnaire,
     update_applicability_on_answer,
 )
 
-from .utils import ok, serialize_questionnaire
+from .utils import get_project_or_404, ok, serialize_questionnaire, write_audit_event
 
 router = APIRouter(
     prefix="/projects/{project_id}/questionnaire",
@@ -35,13 +32,9 @@ class SubmitAnswersRequest(BaseModel):
 async def get_questionnaire(
     project_id: uuid.UUID,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
-    project = session.get(Project, project_id)
-    if project is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
+    project = get_project_or_404(project_id, session, current_user)
     questionnaire = session.exec(
         select(QuestionnaireInstance).where(
             QuestionnaireInstance.project_id == project_id
@@ -69,7 +62,9 @@ async def submit_answers(
     project_id: uuid.UUID,
     payload: SubmitAnswersRequest,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
+    get_project_or_404(project_id, session, current_user)
     try:
         result = update_applicability_on_answer(project_id, payload.answers, session)
     except ValueError as exc:
@@ -77,6 +72,15 @@ async def submit_answers(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
+    write_audit_event(
+        session,
+        actor=current_user,
+        action="questionnaire.answers.submit",
+        resource_type="project",
+        resource_id=str(project_id),
+        details={"answer_count": len(payload.answers)},
+    )
+    session.commit()
     return ok(result)
 
 
@@ -84,7 +88,9 @@ async def submit_answers(
 async def get_questionnaire_progress(
     project_id: uuid.UUID,
     session: Session = Depends(get_session),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
+    get_project_or_404(project_id, session, current_user)
     questionnaire = session.exec(
         select(QuestionnaireInstance).where(
             QuestionnaireInstance.project_id == project_id

@@ -35,6 +35,7 @@ def _serialize_user(user: User) -> dict[str, Any]:
         "role": user.role,
         "is_active": user.is_active,
         "is_superuser": user.is_superuser,
+        "tenant_id": user.tenant_id,
     }
 
 

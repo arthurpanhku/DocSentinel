@@ -23,6 +23,7 @@ This directory holds **executable design and specification** artifacts that acco
 | **04** | [Integration Guide](./04-integration-guide.md)                                       | AAD, ServiceNow, SAST/DAST tool configuration and mapping.                     | Integration Phase    |
 | **05** | [Deployment Runbook](./05-deployment-runbook.md)                                     | Deployment, config reference, ops.                                               | Pre-Release          |
 | **06** | [Agent Integration (MCP + A2A)](./06-agent-integration.md)                           | Local/remote MCP and A2A agent integration.                                     | Integration Phase    |
+| **08** | [Enterprise Trust Foundation](./08-enterprise-trust-foundation.md)                   | Tenant isolation, durable tasks, evidence gates, SLSA, and rollback.             | v5 Foundation        |
 | **RFC-001** | [Product Trust Contract](./rfcs/001-product-trust-contract.md)                  | Evidence, human-review, data-boundary, and release guarantees for v5.            | v5 Foundation        |
 | **ADR-001** | [Modular Monolith](./adr/001-modular-monolith.md)                               | Target backend module and persistence architecture.                              | v5 Foundation        |
 | **ADR-002** | [Evidence Model](./adr/002-evidence-model.md)                                   | Control-level conclusions, evidence locators, and review decisions.              | v5 Foundation        |
@@ -52,7 +53,7 @@ Aligned with PRD and current implementation:
 
 1.  **Start with 01**: Confirm stack and architecture (LangGraph + LangChain).
 2.  **Generate contracts**: Run `python scripts/export_contracts.py`; committed
-    `openapi.json` and `schemas/assessment-report.json` are generated artifacts.
+    `openapi.json` and all files under `schemas/` are generated artifacts.
 3.  **Generate frontend types**: Run `npm run api:generate --prefix frontend`.
 4.  **Refine 04/05**: Update when integrating with real environments (AAD, ServiceNow, SAST/DAST tools).
 
@@ -68,6 +69,9 @@ docs/
 ├── 04-integration-guide.md
 ├── 05-deployment-runbook.md
 ├── 06-agent-integration.md
+├── 08-enterprise-trust-foundation.md
 └── schemas/
-    └── assessment-report.json
+    ├── assessment-report.json
+    ├── evidence-envelope.json
+    └── gate-decision.json
 ```

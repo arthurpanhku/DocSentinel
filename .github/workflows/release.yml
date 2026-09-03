@@ -1,0 +1,59 @@
+name: Secure Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+jobs:
+  build-attest-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.lock
+      - name: Install locked build dependencies
+        run: python -m pip install --require-hashes -r requirements.lock
+      - name: Verify tag matches package version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+          version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+          assert os.environ["RELEASE_TAG"] == f"v{version}", "tag/version mismatch"
+          PY
+      - name: Build distribution
+        run: python -m build
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./dist
+          format: spdx-json
+          output-file: sbom.spdx.json
+          upload-artifact: false
+      - name: Generate checksums
+        run: sha256sum dist/* sbom.spdx.json > SHA256SUMS
+      - name: Attest build provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/*
+      - name: Attest SBOM
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/*
+          sbom-path: sbom.spdx.json
+      - name: Publish immutable release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* sbom.spdx.json SHA256SUMS --generate-notes --verify-tag

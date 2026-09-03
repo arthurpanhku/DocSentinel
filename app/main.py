@@ -37,10 +37,12 @@ async def lifespan(app: FastAPI):
     sync_task = None
     async with AsyncExitStack() as stack:
         from app.core.db import check_migrations_current
+        from app.services.assessment_service import assessment_service
         from app.services.llm_config_store import load_and_apply
 
         load_and_apply()
         check_migrations_current()
+        await assessment_service.resume_incomplete()
         if settings.AGENT_GATEWAY_ENABLED:
             await stack.enter_async_context(mcp.session_manager.run())
         if settings.KB_AUTO_SYNC_INTERVAL_SECONDS > 0:

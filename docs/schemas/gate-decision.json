@@ -1,0 +1,85 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "applied_waiver_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Applied Waiver Ids",
+      "type": "array"
+    },
+    "decision_id": {
+      "format": "uuid",
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "finding_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Finding Ids",
+      "type": "array"
+    },
+    "human_approval_required": {
+      "title": "Human Approval Required",
+      "type": "boolean"
+    },
+    "input_digest": {
+      "title": "Input Digest",
+      "type": "string"
+    },
+    "outcome": {
+      "enum": [
+        "pass",
+        "fail",
+        "conditional",
+        "insufficient_evidence"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "policy_version": {
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "reasons": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Reasons",
+      "type": "array"
+    },
+    "version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "outcome",
+    "policy_version",
+    "evaluated_at",
+    "evidence_ids",
+    "finding_ids",
+    "reasons",
+    "human_approval_required",
+    "input_digest"
+  ],
+  "title": "GateDecision",
+  "type": "object"
+}

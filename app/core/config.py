@@ -90,6 +90,8 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./database.db"
     ENABLE_CREATE_ALL: bool = True
+    ASSESSMENT_PERSISTENCE_ENABLED: bool = True
+    ASSESSMENT_TASK_TIMEOUT_SECONDS: int = 900
     INITIAL_ADMIN_EMAIL: str = "admin@example.com"
     INITIAL_ADMIN_PASSWORD: str = ""
     INITIAL_ADMIN_FULL_NAME: str = "System Admin"
@@ -129,6 +131,7 @@ class Settings(BaseSettings):
     # accept loopback clients.
     AGENT_GATEWAY_ENABLED: bool = True
     AGENT_GATEWAY_TOKEN: str = ""
+    AGENT_GATEWAY_TENANT_ID: str = "default"
     AGENT_GATEWAY_PUBLIC_URL: str = "http://localhost:8000"
     AGENT_GATEWAY_ALLOWED_HOSTS: str = "127.0.0.1:*,localhost:*,[::1]:*"
     AGENT_GATEWAY_ALLOWED_ORIGINS: str = "http://127.0.0.1:*,http://localhost:*"

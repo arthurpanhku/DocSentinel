@@ -61,6 +61,7 @@ class GateSubmission(SQLModel, table=True):
     gate_number: int = Field(index=True)
     status: str = Field(default=GateStatus.draft.value, index=True, max_length=32)
     submitted_at: datetime | None = None
+    submitted_by_id: int | None = Field(default=None, foreign_key="user.id")
     reviewed_at: datetime | None = None
     reviewed_by_id: int | None = Field(default=None, foreign_key="user.id")
     intake_payload: dict | None = Field(default=None, sa_column=Column(JSON))
