@@ -118,6 +118,9 @@ and rollback section for high-risk paths. CodeQL and dependency update workflows
 provide continuous scanning. Tagged releases build from the dependency lock,
 emit checksums and an SPDX SBOM, and use GitHub artifact attestations for SLSA
 provenance and the SBOM.
+The release build toolchain uses the small, platform-neutral
+`requirements-build.lock`; the broader runtime lock remains platform-specific
+and is not used as a Linux CI lock until it is regenerated for all targets.
 
 Repository administrators must still enable branch/ruleset enforcement for the
 required CI, PR Plan Gate, CodeQL, and CODEOWNERS approvals after these workflows

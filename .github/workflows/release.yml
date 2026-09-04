@@ -19,9 +19,9 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: requirements.lock
+          cache-dependency-path: requirements-build.lock
       - name: Install locked build dependencies
-        run: python -m pip install --require-hashes -r requirements.lock
+        run: python -m pip install --require-hashes -r requirements-build.lock
       - name: Verify tag matches package version
         env:
           RELEASE_TAG: ${{ github.ref_name }}
@@ -34,7 +34,7 @@ jobs:
           assert os.environ["RELEASE_TAG"] == f"v{version}", "tag/version mismatch"
           PY
       - name: Build distribution
-        run: python -m build
+        run: python -m build --no-isolation
       - name: Generate SPDX SBOM
         uses: anchore/sbom-action@v0
         with:
