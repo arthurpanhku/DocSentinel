@@ -19,7 +19,7 @@ from app.api import assessments, governance, health, integrations, kb, skills
 from app.core.config import settings
 from app.core.ratelimit import RateLimitMiddleware, build_rate_limiter
 from app.kb.service import get_kb_service
-from app.mcp_server import mcp
+from app.mcp_server import mcp, streamable_http_app
 
 
 class SPAStaticFiles(StaticFiles):
@@ -105,7 +105,7 @@ app.include_router(
 )
 app.include_router(governance.router, prefix=settings.API_PREFIX)
 app.router.routes.extend(a2a_routes)
-app.mount("/mcp", mcp.streamable_http_app(), name="mcp")
+app.mount("/mcp", streamable_http_app(), name="mcp")
 
 # Mount docs directory for demo purposes
 if Path("docs").exists():
