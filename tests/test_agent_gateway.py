@@ -3,13 +3,14 @@ from unittest.mock import AsyncMock
 from uuid import UUID
 
 import httpx
+import httpx2
 import pytest
 from a2a.client import A2ACardResolver, ClientConfig, create_client
 from a2a.helpers import new_text_message
 from a2a.types.a2a_pb2 import Role, SendMessageRequest, TaskState
 from fastapi.testclient import TestClient
 from mcp import ClientSession
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
 
 from app.agent_gateway.service import agent_gateway
 from app.core.config import settings
@@ -123,22 +124,19 @@ async def test_a2a_status_round_trip():
 
 @pytest.mark.asyncio
 async def test_streamable_http_mcp_lists_governed_tools():
-    def http_client_factory(headers=None, timeout=None, auth=None):
-        return httpx.AsyncClient(
-            headers=headers,
-            timeout=timeout,
-            auth=auth,
-            transport=httpx.ASGITransport(
-                app=app,
-                client=("127.0.0.1", 43124),
-            ),
-        )
+    # mcp 2.x takes a pre-built httpx2 client instead of a factory.
+    http_client = httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(
+            app=app,
+            client=("127.0.0.1", 43124),
+        ),
+    )
 
-    async with app.router.lifespan_context(app):
-        async with streamablehttp_client(
+    async with app.router.lifespan_context(app), http_client:
+        async with streamable_http_client(
             "http://localhost:8000/mcp/",
-            httpx_client_factory=http_client_factory,
-        ) as (read, write, _):
+            http_client=http_client,
+        ) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 tools = await session.list_tools()

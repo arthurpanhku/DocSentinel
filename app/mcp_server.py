@@ -2,28 +2,41 @@
 
 import json
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
+from starlette.applications import Starlette
 
 from app.agent.orchestrator import run_assessment
 from app.agent_gateway.service import agent_gateway
 from app.core.config import settings
 
-mcp = FastMCP(
+mcp = MCPServer(
     "DocSentinel",
     instructions=(
         "Security assessment tools. Document paths must be inside configured "
         "MCP_DOCUMENT_ROOTS and all agent submissions require human review."
     ),
-    json_response=True,
-    stateless_http=True,
-    streamable_http_path="/",
-    transport_security=TransportSecuritySettings(
-        enable_dns_rebinding_protection=True,
-        allowed_hosts=settings.agent_gateway_allowed_hosts,
-        allowed_origins=settings.agent_gateway_allowed_origins,
-    ),
 )
+
+
+def streamable_http_app() -> Starlette:
+    """Build the Streamable HTTP ASGI app mounted by the FastAPI application.
+
+    The transport options live here rather than on the server because mcp 2.x
+    moved them off the constructor. Calling this also creates the session
+    manager that ``mcp.session_manager`` exposes, so it must run before the
+    application lifespan enters that manager.
+    """
+    return mcp.streamable_http_app(
+        streamable_http_path="/",
+        json_response=True,
+        stateless_http=True,
+        transport_security=TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=settings.agent_gateway_allowed_hosts,
+            allowed_origins=settings.agent_gateway_allowed_origins,
+        ),
+    )
 
 
 @mcp.tool()
