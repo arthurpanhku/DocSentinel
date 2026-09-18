@@ -14,6 +14,13 @@ updates:
     groups:
       frontend-runtime:
         patterns: ["*"]
+    ignore:
+      # openapi-typescript peers on typescript ^5.x and the api:generate
+      # script runs it, so a TypeScript major fails `npm ci` with ERESOLVE
+      # before the frontend job can build (see #58). Drop this once
+      # openapi-typescript ships a release that supports TypeScript 7.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
