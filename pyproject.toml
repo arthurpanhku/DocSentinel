@@ -41,7 +41,7 @@ dependencies = [
     "aiofiles",
     "moviepy",
     "mcp",
-    "a2a-sdk[fastapi]==1.1.2",
+    "a2a-sdk[fastapi]==1.2.0",
     "docling>=2.0.0",
     "lightrag-hku>=1.0.0",
     "sqlmodel>=0.0.22",
