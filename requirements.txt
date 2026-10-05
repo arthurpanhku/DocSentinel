@@ -6,7 +6,7 @@ numpy<3
 
 # Web & API
 fastapi>=0.141.1
-uvicorn[standard]>=0.52.4
+uvicorn[standard]>=0.54.0
 
 # Config & validation
 pydantic>=2.13.5
@@ -41,8 +41,8 @@ lightrag-hku>=1.0.0
 # HTTP & async
 httpx>=0.28.1
 # Pin the SDK whose public MCPServer import path is used by the app.
-mcp==2.1.1
-a2a-sdk[fastapi]==1.1.2
+mcp==2.2.0
+a2a-sdk[fastapi]==1.2.0
 
 # Database, auth & migrations
 sqlmodel>=0.0.22
