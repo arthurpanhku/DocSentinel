@@ -5,7 +5,7 @@
 numpy<3
 
 # Web & API
-fastapi>=0.141.1
+fastapi>=0.142.2
 uvicorn[standard]>=0.54.0
 
 # Config & validation
@@ -41,8 +41,8 @@ lightrag-hku>=1.0.0
 # HTTP & async
 httpx>=0.28.1
 # Pin the SDK whose public MCPServer import path is used by the app.
-mcp==2.2.0
-a2a-sdk[fastapi]==1.2.0
+mcp==2.3.0
+a2a-sdk[fastapi]==1.2.1
 
 # Database, auth & migrations
 sqlmodel>=0.0.22
@@ -52,5 +52,5 @@ alembic>=1.13.0
 
 # Utils
 python-multipart>=0.0.32
-python-dotenv>=1.2.3
+python-dotenv>=1.2.4
 pyyaml>=6.0.0
