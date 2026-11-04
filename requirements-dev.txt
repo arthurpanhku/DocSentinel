@@ -4,4 +4,4 @@ pytest
 pytest-asyncio
 pytest-cov
 httpx
-reportlab>=5.0.1
+reportlab>=5.1.0
